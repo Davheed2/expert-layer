@@ -327,7 +327,7 @@ router.post('/upload-profile-picture', multerUpload.single('photo'), userControl
 /**
  * @openapi
  * /user/suspend-user:
- *   patch:
+ *   post:
  *     summary: Suspend or unsuspend a user
  *     description: Allows an admin to suspend or unsuspend a user by providing the user ID and suspension status. The endpoint validates the admin’s login status and role, ensures the admin is not modifying their own account, and updates the user’s suspension status in the database.
  *     tags:
