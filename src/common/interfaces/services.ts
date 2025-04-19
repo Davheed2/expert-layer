@@ -2,13 +2,15 @@ import { ServiceStatus } from '../constants';
 
 export interface IService {
 	id: string;
+    userId: string;
 	name: string;
 	description: string;
 	serviceImage: string;
+    taskId?: string;
 	taskName: string;
 	taskTitle: string;
 	taskDescription: string;
-	taskAmount: number;
+	taskPrice: number;
 	taskDetails: string;
 	reference?: string;
 	duration: string;

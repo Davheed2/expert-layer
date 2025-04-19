@@ -94,10 +94,10 @@ export class NotificationController {
 
 		return AppResponse(res, 200, toJSON([notification]), 'System notification fetched successfully');
 	});
+
 	updateSysNotification = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
-		const { sysNotificationId } = req.query;
-		const { title, body } = req.body;
+		const { title, body, sysNotificationId } = req.body;
 
 		if (!user) {
 			throw new AppError('You are not logged in', 401);
@@ -109,12 +109,12 @@ export class NotificationController {
 			throw new AppError('notification ID is required', 401);
 		}
 
-		const existing = await sysNotificationRepository.findById(Number(sysNotificationId));
+		const existing = await sysNotificationRepository.findById(sysNotificationId);
 		if (!existing) {
 			throw new AppError('Notification not found', 404);
 		}
 
-		const updated = await sysNotificationRepository.update(sysNotificationId as string, {
+		const updated = await sysNotificationRepository.update(sysNotificationId, {
 			...(title ? { title } : {}),
 			...(body ? { body } : {}),
 		});
@@ -179,7 +179,7 @@ export class NotificationController {
 			throw new AppError('failed to fetch unread notifications', 404);
 		}
 
-		return AppResponse(res, 200, toJSON(notification), 'Unread user notifications fetched successfully');
+		return AppResponse(res, 200, toJSON(notification), 'User notifications fetched successfully');
 	});
 
 	markAsRead = catchAsync(async (req: Request, res: Response) => {

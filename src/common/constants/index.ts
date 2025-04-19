@@ -25,11 +25,9 @@ export enum NotificationSource {
 }
 
 export enum ServiceStatus {
-	ACTIVE = 'active',
-	INACTIVE = 'inactive',
 	PENDING = 'pending',
-	DELETED = 'deleted',
 	COMPLETED = 'completed',
-	INPROGRESS = 'inProgress',
-	FAILED = 'failed',
+	INPROGRESS = 'inprogress',
+	CANCELLED = 'cancelled',
+	PAID = 'paid',
 }

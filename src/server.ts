@@ -15,7 +15,7 @@ import '@/common/interfaces/request';
 import { AppError, logger, stream } from '@/common/utils';
 import { errorHandler } from '@/controllers';
 import { timeoutMiddleware, validateDataWithZod } from '@/middlewares';
-import { userRouter, authRouter, notificationRouter, tasksRouter } from '@/routes';
+import { userRouter, authRouter, notificationRouter, tasksRouter, serviceRouter } from '@/routes';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -51,7 +51,7 @@ const appName = ENVIRONMENT.APP.NAME;
  */
 app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']); // Enable trust proxy
 app.use(cookieParser());
-app.use(express.json({ limit: '10kb' }));
+app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 /**
@@ -162,6 +162,7 @@ app.use('/api/v1/user', userRouter);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/notification', notificationRouter);
 app.use('/api/v1/tasks', tasksRouter);
+app.use('/api/v1/service', serviceRouter);
 
 // Swagger documentation
 app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
