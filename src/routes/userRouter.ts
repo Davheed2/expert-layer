@@ -98,7 +98,7 @@ router.get('/', userController.getProfile);
 // router.get('/all', userController.getAllUsers);
 /**
  * @openapi
- * /user/update-user:
+ * /user/update:
  *   post:
  *     summary: Update user profile
  *     description: Allows a logged-in user to update their profile information, including first name, last name, and email. The endpoint validates the user’s login status, ensures only allowed fields are updated, and applies the changes to the user’s profile in the database.
@@ -207,7 +207,7 @@ router.get('/', userController.getProfile);
  *                   type: string
  *                   example: "Failed to update profile"
  */
-router.post('/update-user', userController.updateProfile);
+router.post('/update', userController.updateProfile);
 /**
  * @openapi
  * /user/upload-profile-picture:
@@ -324,7 +324,109 @@ router.post('/update-user', userController.updateProfile);
  *                   example: "Failed to update profile picture"
  */
 router.post('/upload-profile-picture', multerUpload.single('photo'), userController.uploadProfilePicture);
-// router.post('/suspend-user', userController.suspendUser);
+/**
+ * @openapi
+ * /user/suspend-user:
+ *   patch:
+ *     summary: Suspend or unsuspend a user
+ *     description: Allows an admin to suspend or unsuspend a user by providing the user ID and suspension status. The endpoint validates the admin’s login status and role, ensures the admin is not modifying their own account, and updates the user’s suspension status in the database.
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - suspend
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 format: uuid
+ *                 example: "d171a5f8-3ec0-486a-a148-0d3c2dc07289"
+ *                 description: The ID of the user to suspend or unsuspend
+ *               suspend:
+ *                 type: boolean
+ *                 example: true
+ *                 description: Indicates whether to suspend (true) or unsuspend (false) the user
+ *     responses:
+ *       200:
+ *         description: User suspended or unsuspended successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: null
+ *                   example: null
+ *                 message:
+ *                   type: string
+ *                   example: "User suspended successfully"
+ *       401:
+ *         description: Unauthorized - User not logged in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Please log in again"
+ *       403:
+ *         description: Forbidden - Non-admin user or attempting to modify own account
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Only admins can modify user data"
+ *                   enum:
+ *                     - Only admins can modify user data
+ *                     - You cant perform this operation on your account
+ *       404:
+ *         description: Not Found - User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal Server Error - Failed to suspend or unsuspend user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Failed to suspend user"
+ */
+router.post('/suspend-user', userController.suspendUser);
 // router.post('/make-admin', userController.makeAdmin);
 
 export { router as userRouter };

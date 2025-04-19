@@ -86,34 +86,34 @@ export class UserController {
 		return AppResponse(res, 200, toJSON(updateProfile), 'Profile picture updated successfully');
 	});
 
-	// suspendUser = catchAsync(async (req: Request, res: Response) => {
-	// 	const { user } = req;
-	// 	const { suspend, userId } = req.body;
+	suspendUser = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+		const { suspend, userId } = req.body;
 
-	// 	if (!user) {
-	// 		throw new AppError('Please log in again', 401);
-	// 	}
-	// 	if (user.role === 'user') {
-	// 		throw new AppError('Only admins can modify user data', 403);
-	// 	}
-	// 	if (user.id === userId) {
-	// 		throw new AppError('You cant perform this operation on your account', 403);
-	// 	}
+		if (!user) {
+			throw new AppError('Please log in again', 401);
+		}
+		if (user.role !== 'admin') {
+			throw new AppError('Only admins can modify user data', 403);
+		}
+		if (user.id === userId) {
+			throw new AppError('You cant perform this operation on your account', 403);
+		}
 
-	// 	const extinguishUser = await userRepository.findById(userId);
-	// 	if (!extinguishUser) {
-	// 		throw new AppError('User not found', 404);
-	// 	}
+		const extinguishUser = await userRepository.findById(userId);
+		if (!extinguishUser) {
+			throw new AppError('User not found', 404);
+		}
 
-	// 	const suspendUser = await userRepository.update(userId, {
-	// 		isSuspended: suspend ? true : false,
-	// 	});
-	// 	if (!suspendUser) {
-	// 		throw new AppError(`Failed to ${suspend ? 'suspend' : 'un suspend'} user`, 500);
-	// 	}
+		const suspendUser = await userRepository.update(userId, {
+			isSuspended: suspend ? true : false,
+		});
+		if (!suspendUser) {
+			throw new AppError(`Failed to ${suspend ? 'suspend' : 'un suspend'} user`, 500);
+		}
 
-	// 	return AppResponse(res, 200, null, `User ${suspend ? 'suspended' : 'unsuspended'} successfully`);
-	// });
+		return AppResponse(res, 200, null, `User ${suspend ? 'suspended' : 'unsuspended'} successfully`);
+	});
 
 	// makeAdmin = catchAsync(async (req: Request, res: Response) => {
 	// 	const { user } = req;
