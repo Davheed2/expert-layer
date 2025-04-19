@@ -98,12 +98,12 @@ router.get('/', userController.getProfile);
 // router.get('/all', userController.getAllUsers);
 /**
  * @openapi
- * /users/update-user:
+ * /user/update-user:
  *   post:
  *     summary: Update user profile
  *     description: Allows a logged-in user to update their profile information, including first name, last name, and email. The endpoint validates the user’s login status, ensures only allowed fields are updated, and applies the changes to the user’s profile in the database.
  *     tags:
- *       - Users
+ *       - User
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -215,7 +215,7 @@ router.post('/update-user', userController.updateProfile);
  *     summary: Upload user profile picture
  *     description: Allows a logged-in user to upload a profile picture. The endpoint validates the user’s login status, ensures a file is provided, uploads the image to cloud storage, and updates the user’s profile with the new image URL.
  *     tags:
- *       - Users
+ *       - User
  *     security:
  *       - bearerAuth: []
  *     requestBody:
