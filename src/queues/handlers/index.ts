@@ -38,7 +38,7 @@ export const sendEmail = async (job: EmailJobData) => {
 	}
 
 	const mailOptions = {
-		from: `"MILLENIA" <${ENVIRONMENT.EMAIL.GMAIL_USER}>`,
+		from: `"Expert Layer" <${ENVIRONMENT.EMAIL.GMAIL_USER}>`,
 		to: data.to,
 		subject: subject,
 		html: htmlContent,

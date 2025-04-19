@@ -1,11 +1,12 @@
 {
-	"name": "millenia-trades-backend",
+	"name": "expert-layer-backend",
 	"version": "1.0.0",
-	"description": "Expressjs project generated using startease CLI tool",
+	"description": "Expressjs project for expert layer backend",
 	"main": "server.js",
 	"scripts": {
 		"start": "node -r ts-node/register/transpile-only -r tsconfig-paths/register build/server.js",
-		"start-prod": "node -r module-alias/register build/server.js",
+		"start-prod": "npm run migrate && node -r module-alias/register build/server.js",
+		"migrate": "npx ts-node -r dotenv/config node_modules/.bin/knex migrate:latest --knexfile build/knexfile.js",
 		"build": "tsc",
 		"migrate-dev": "npx ts-node -r dotenv/config ./node_modules/knex/bin/cli.js migrate:latest --knexfile src/knexfile.ts",
 		"dev": "npm run migrate-dev && nodemon",
