@@ -5,7 +5,7 @@ export const baseTemplate = (template: string): string => {
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta name="x-apple-disable-message-reformatting" />
       <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-      <title>100minds</title>
+      <title>expert layer</title>
       <style type="text/css" rel="stylesheet" media="all">
         /* Base Styles */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -18,7 +18,7 @@ export const baseTemplate = (template: string): string => {
           color: #51545E;
         }
         a {
-          color:rgb(112, 232, 204);
+          color: rgb(189, 83, 30);
           text-decoration: none;
         }
         /* Email Container */
@@ -73,7 +73,7 @@ export const baseTemplate = (template: string): string => {
         }
         /* Buttons */
         .button {
-          background-color: #9FE870;
+          background-color: #bd531e;
           border-radius: 20px;
           color: #163300;
           display: block;
@@ -86,8 +86,8 @@ export const baseTemplate = (template: string): string => {
           max-width: 600px;
           font-weight: bold;
         }
-        .button--green {
-          background-color: #22BC66;
+        .button--orange {
+          background-color: #bd531e;
         }
         .button--red {
           background-color: #FF6136;
@@ -114,7 +114,7 @@ export const baseTemplate = (template: string): string => {
             <table class="email-content" cellpadding="0" cellspacing="0">
               <tr>
                 <td class="email-masthead">
-                  <img src="https://res.cloudinary.com/dnhu3eqn5/image/upload/v1741486702/100minds_r7zz76.jpg" 
+                  <img src="https://res.cloudinary.com/dnhu3eqn5/image/upload/v1745082143/Screenshot_2025-04-19_180017_zjtdpf.png" 
                        alt="100minds logo" 
                        width="100" 
                        height="auto" 
@@ -143,12 +143,12 @@ export const baseTemplate = (template: string): string => {
                     <tr>
                       <td class="content-cell-footer">
                         <p>
-                          This email was sent to you by 100minds. By using our services, you agree to our
+                          This email was sent to you by Expert layer. By using our services, you agree to our
                         </p>
                         <p>
                           <a href="https://helpcenter.com">customer agreements</a>.
                         </p>
-                        <p>&copy; 100minds ${new Date().getFullYear()}. All rights reserved.</p>
+                        <p>&copy; expertlayer ${new Date().getFullYear()}. All rights reserved.</p>
                       </td>
                     </tr>
                   </table>

@@ -1,11 +1,18 @@
-import { EmailJobData, LoginEmailData, ResetPasswordData, ForgotPasswordData } from '@/common/interfaces';
+import {
+	EmailJobData,
+	LoginEmailData,
+	ResetPasswordData,
+	ForgotPasswordData,
+	WelcomeEmailData,
+	SignUpEmailData,
+} from '@/common/interfaces';
 import { logger } from '@/common/utils';
 import nodemailer from 'nodemailer';
 import { ENVIRONMENT } from 'src/common/config';
-import { forgotPasswordEmail, loginEmail, resetPasswordEmail } from '../templates';
+import { forgotPasswordEmail, loginEmail, resetPasswordEmail, signUpEmail, welcomeEmail } from '../templates';
 
 const transporter = nodemailer.createTransport({
-	service: 'smtp.zeptomail.com',
+	service: 'gmail',
 	port: 587,
 	auth: {
 		user: ENVIRONMENT.EMAIL.GMAIL_USER,
@@ -20,6 +27,14 @@ export const sendEmail = async (job: EmailJobData) => {
 	let subject: string;
 
 	switch (type) {
+		case 'signUpEmail':
+			htmlContent = signUpEmail(data as SignUpEmailData);
+			subject = 'Verify your email to get started with Expert Layer';
+			break;
+		case 'welcomeEmail':
+			htmlContent = welcomeEmail(data as WelcomeEmailData);
+			subject = 'Welcome to Expert Layer';
+			break;
 		case 'loginEmail':
 			htmlContent = loginEmail(data as LoginEmailData);
 			subject = 'Login Alert';

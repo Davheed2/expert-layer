@@ -3,7 +3,14 @@ import { randomBytes, randomInt } from 'crypto';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { encode } from 'hi-base32';
 import { ENVIRONMENT } from '../config';
-import { ForgotPasswordData, IHashData, LoginEmailData, ResetPasswordData } from '../interfaces';
+import {
+	ForgotPasswordData,
+	IHashData,
+	LoginEmailData,
+	ResetPasswordData,
+	SignUpEmailData,
+	WelcomeEmailData,
+} from '../interfaces';
 import type { Response, Request } from 'express';
 import { promisify } from 'util';
 import otpGenerator from 'otp-generator';
@@ -291,12 +298,39 @@ const generateOtp = () => {
 	});
 };
 
-const sendLoginEmail = async (email: string, name: string, otp: string): Promise<void> => {
+const sendSignUpEmail = async (email: string, name: string, verificationUrl: string): Promise<void> => {
+	const emailData: SignUpEmailData = {
+		to: email,
+		priority: 'high',
+		name,
+		verificationUrl,
+	};
+
+	addEmailToQueue({
+		type: 'signUpEmail',
+		data: emailData,
+	});
+};
+
+const sendWelcomeEmail = async (email: string, name: string): Promise<void> => {
+	const emailData: WelcomeEmailData = {
+		to: email,
+		priority: 'high',
+		name,
+	};
+
+	addEmailToQueue({
+		type: 'welcomeEmail',
+		data: emailData,
+	});
+};
+
+const sendLoginEmail = async (email: string, name: string, time: string): Promise<void> => {
 	const emailData: LoginEmailData = {
 		to: email,
 		priority: 'high',
 		name,
-		otp,
+		time,
 	};
 
 	addEmailToQueue({
@@ -353,6 +387,8 @@ export {
 	parseTimeSpent,
 	formatDuration,
 	generateOtp,
+	sendSignUpEmail,
+	sendWelcomeEmail,
 	sendLoginEmail,
 	sendResetPasswordEmail,
 	sendForgotPasswordEmail,

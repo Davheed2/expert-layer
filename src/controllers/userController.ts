@@ -23,7 +23,7 @@ export class UserController {
 
 	updateProfile = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
-		const allowedUpdates = ['fullName', 'email'];
+		const allowedUpdates = ['firstName', 'lastName', 'email'];
 		const updates = Object.keys(req.body);
 
 		if (!user) {

@@ -15,6 +15,8 @@ import {
 	sendForgotPasswordEmail,
 	sendLoginEmail,
 	sendResetPasswordEmail,
+	sendSignUpEmail,
+	sendWelcomeEmail,
 	setCookie,
 	toJSON,
 	verifyToken,
@@ -50,8 +52,7 @@ class AuthController {
 		console.log(hashedVerificationToken);
 
 		const verificationUrl = `${getDomainReferer(req)}/auth?verify=${hashedVerificationToken}`;
-		//console.log(verificationUrl);
-		//await sendSignUpEmail(email, firstName, verificationUrl);
+		await sendSignUpEmail(email, firstName, verificationUrl);
 
 		const [user] = await userRepository.create({
 			email,
@@ -101,7 +102,7 @@ class AuthController {
 			isEmailVerified: true,
 		});
 
-		//await sendWelcomeEmail(extinguishUser.email, extinguishUser.firstName);
+		await sendWelcomeEmail(extinguishUser.email, extinguishUser.firstName);
 		await Notification.add({
 			userId: updatedUser[0].id,
 			sysNotificationId: 1,
@@ -166,7 +167,8 @@ class AuthController {
 		});
 
 		//login email
-		//await sendLoginEmail(user.email, user.firstName, '5757');
+		const loginTime = DateTime.now().toFormat("cccc, LLLL d, yyyy 'at' t");
+		await sendLoginEmail(user.email, user.firstName, loginTime);
 		return AppResponse(res, 200, toJSON([user]), 'User logged in successfully');
 	});
 

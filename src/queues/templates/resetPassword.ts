@@ -16,7 +16,7 @@ export const resetPasswordEmail = (data: { name: string }) => {
                     <table border="0" cellspacing="0" cellpadding="0">
                         <tr>
                             <td>
-                                <a href="https://100minds.com/login" class="button" style="background-color: rgb(112, 232, 224); border-radius: 20px; color: #163300; display: inline-block; text-decoration: none; padding: 12px 30px; font-size: 16px;">
+                                <a href="https://expert-layer.com/login" class="button" style="background-color: rgb(189, 83, 30); border-radius: 20px; color: #bd531e; display: inline-block; text-decoration: none; padding: 12px 30px; font-size: 16px;">
                                     Log In
                                 </a>
                             </td>
@@ -30,9 +30,9 @@ export const resetPasswordEmail = (data: { name: string }) => {
         </table>
 
         <p>
-            If you did not reset your password, please <a href="https://100minds.com/support" style="color:rgb(112, 232, 204); text-decoration: none;">contact our support team</a> immediately.
+            If you did not reset your password, please <a href="https://expert-layer.com/support" style="color:rgb(112, 232, 204); text-decoration: none;">contact our support team</a> immediately.
         </p>
 
-        <p>Thanks,<br />The 100minds Team</p>`
+        <p>Thanks,<br />The Expert Layer Team</p>`
 	);
 };
