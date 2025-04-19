@@ -1,46 +1,6 @@
 import { ENVIRONMENT } from '@/common/config';
 import { AppError, logger } from '@/common/utils';
-import express, { Express, NextFunction, Request, Response } from 'express';
-import { CastError, Error as MongooseError } from 'mongoose';
-import { CustomError } from 'ts-custom-error';
-
-interface CustomErrorr extends CustomError {
-	statusCode?: number;
-	status?: string;
-	data?: any;
-	code?: number;
-	keyValue?: any;
-	timeout?: boolean;
-}
-
-// Error handling functions
-const handleMongooseCastError = (err: CastError) => {
-	const message = `Invalid ${err.path} value "${err.value}".`;
-	return new AppError(message, 400);
-};
-
-const handleMongooseValidationError = (err: MongooseError.ValidationError) => {
-	const errors = Object.values(err.errors).map((el) => el.message);
-	const message = `Invalid input data. ${errors.join('. ')}`;
-	return new AppError(message, 400);
-};
-
-const handleMongooseDuplicateFieldsError = (err, next: NextFunction) => {
-	// Extract value from the error message if it matches a pattern
-	if (err.code === 11000) {
-		const field = Object.keys(err.keyValue)[0]
-			.replace(/([a-z])([A-Z])/g, '$1 $2')
-			.split(/(?=[A-Z])/)
-			.map((word, index) => (index === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : word.toLowerCase()))
-			.join('');
-
-		const value = err.keyValue[field];
-		const message = `${field} "${value}" has already been used!.`;
-		return new AppError(message, 409);
-	} else {
-		next(err);
-	}
-};
+import { Response, Request, NextFunction } from 'express';
 
 const handleJWTError = () => {
 	return new AppError('Invalid token. Please log in again!', 401);
@@ -52,6 +12,10 @@ const handleJWTExpiredError = () => {
 
 const handleTimeoutError = () => {
 	return new AppError('Request timeout', 408);
+};
+
+const handleInvalidUUIDError = () => {
+	return new AppError('Invalid UUID format provided', 400);
 };
 
 const sendErrorDev = (err: AppError, res: Response) => {
@@ -80,23 +44,18 @@ const sendErrorProd = (err: AppError, res: Response) => {
 	});
 };
 
-export const errorHandler = (err: AppError, req: Request, res: Response, next: NextFunction) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const errorHandler = (err, req: Request, res: Response, next: NextFunction) => {
 	err.statusCode = err?.statusCode || 500;
 	err.status = err?.status || 'Error';
 	let error = err;
 
 	switch (ENVIRONMENT.APP.ENV) {
 		case 'development':
-			//logger.error(`${err.statusCode} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+			logger.error(`${err.statusCode} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
 			return sendErrorDev(err, res);
 		case 'production':
 			switch (true) {
-				case err instanceof MongooseError.CastError:
-					error = handleMongooseCastError(err);
-					break;
-				case err instanceof MongooseError.ValidationError:
-					error = handleMongooseValidationError(err);
-					break;
 				case 'timeout' in err && err.timeout:
 					error = handleTimeoutError();
 					break;
@@ -105,6 +64,9 @@ export const errorHandler = (err: AppError, req: Request, res: Response, next: N
 					break;
 				case err.name === 'TokenExpiredError':
 					error = handleJWTExpiredError();
+					break;
+				case err.code === '22P02':
+					error = handleInvalidUUIDError();
 					break;
 				default:
 					break;

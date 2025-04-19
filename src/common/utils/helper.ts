@@ -102,7 +102,7 @@ const parseTokenDuration = (duration: string): number => {
 };
 
 const isMobile = (req: Request): 'mobile' | 'browser' => {
-	const customHeader = req.headers['100minds'];
+	const customHeader = req.headers['expertlayer'];
 	if (customHeader) {
 		return 'mobile';
 	}

@@ -3,7 +3,6 @@ import { AppError, AppResponse, toJSON, uploadPictureFile } from '@/common/utils
 import { catchAsync } from '@/middlewares';
 import { userRepository } from '@/repository';
 import { IUser } from '@/common/interfaces';
-import { Role } from '@/common/constants';
 
 export class UserController {
 	getProfile = catchAsync(async (req: Request, res: Response) => {

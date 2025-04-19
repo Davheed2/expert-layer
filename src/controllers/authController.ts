@@ -6,7 +6,6 @@ import {
 	comparePassword,
 	createToken,
 	generateAccessToken,
-	generateOtp,
 	generateRandomString,
 	generateRefreshToken,
 	getDomainReferer,

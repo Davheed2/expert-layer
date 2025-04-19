@@ -1,6 +1,6 @@
 import { knexDb } from '@/common/config';
 import { NotificationSource } from '@/common/constants';
-import { AddNotificationPayload, INotification, IUser, NotifyOptions } from '@/common/interfaces';
+import { AddNotificationPayload, INotification, NotifyOptions } from '@/common/interfaces';
 import { AppError } from '@/common/utils';
 import { sysNotificationRepository, notificationSettingsRepository } from '@/repository';
 
@@ -81,7 +81,7 @@ class NotificationService {
 					sysNotificationId: Number(sysNotification.id),
 					title: finalTitle,
 					message: finalMessage,
-					source: sysNotification.source as NotificationSource,
+					source: finalSource as NotificationSource,
 				});
 			}
 		}
