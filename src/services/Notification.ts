@@ -4,8 +4,6 @@ import { AddNotificationPayload, INotification, NotifyOptions } from '@/common/i
 import { AppError } from '@/common/utils';
 import { sysNotificationRepository, notificationSettingsRepository } from '@/repository';
 
-
-
 class NotificationService {
 	async add(payload: AddNotificationPayload): Promise<INotification> {
 		const { userId, fromUserId = null, sysNotificationId = null, title, message, source } = payload;
