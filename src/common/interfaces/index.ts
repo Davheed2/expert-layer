@@ -10,3 +10,4 @@ export * from './tasks';
 export * from './services';
 export * from './transaction';
 export * from './wallet';
+export * from './team';
