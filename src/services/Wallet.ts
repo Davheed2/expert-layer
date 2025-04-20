@@ -5,7 +5,7 @@ import { ITransaction } from '@/common/interfaces';
 import { ENVIRONMENT } from '@/common/config';
 import { Notification } from './Notification';
 
-const stripe = new Stripe(ENVIRONMENT.STRIPE_SECRET_KEY, {
+const stripe = new Stripe(ENVIRONMENT.STRIPE_SECRET_KEY as string, {
 	apiVersion: '2025-03-31.basil',
 });
 
