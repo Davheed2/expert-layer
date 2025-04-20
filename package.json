@@ -51,6 +51,7 @@
 		"otp-generator": "^4.0.1",
 		"pg": "^8.14.1",
 		"sharp": "^0.33.5",
+		"stripe": "^18.0.0",
 		"swagger-jsdoc": "^6.2.8",
 		"swagger-ui-express": "^5.0.1",
 		"ts-custom-error": "^3.3.1",

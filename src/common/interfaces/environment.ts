@@ -40,4 +40,5 @@ export interface IEnvironment {
 		PORT: number;
 		PASSWORD: string;
 	};
+	STRIPE_SECRET_KEY: string;
 }

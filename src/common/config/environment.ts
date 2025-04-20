@@ -42,4 +42,5 @@ export const ENVIRONMENT: IEnvironment = {
 		PASSWORD: process.env.QUEUE_REDIS_PASSWORD!,
 		PORT: parseInt(process.env.QUEUE_REDIS_PORT!),
 	},
+	STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY!,
 };

@@ -8,3 +8,5 @@ export * from './emailQueue';
 export * from './notification';
 export * from './tasks';
 export * from './services';
+export * from './transaction';
+export * from './wallet';
