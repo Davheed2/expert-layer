@@ -201,17 +201,6 @@ export class WalletService {
 				updated_at: new Date(),
 			});
 
-			console.log('userid', user_id);
-			console.log('serviceid', service_id);
-			console.log('walletamountused', walletAmountUsed);
-			console.log('taskprice', taskPrice);
-			console.log('excessamount', excessAmount);
-			console.log('newbalance', newBalance);
-			console.log('paymentintentid', paymentIntentId);
-			console.log('amountpaid', amountPaid);
-			console.log('walletbalance', wallet.balance);
-			console.log('walletbalanceafter', newBalance);
-
 			// Record transaction
 			await trx('transactions').insert({
 				userId: user_id,
