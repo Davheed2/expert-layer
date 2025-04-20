@@ -46,6 +46,8 @@ const app: Express = express();
 const port = ENVIRONMENT.APP.PORT;
 const appName = ENVIRONMENT.APP.NAME;
 
+//webhook
+app.use('/api/v1/webhooks', express.raw({ type: 'application/json' }), webhookRouter);
 /**
  * Express configuration
  */
@@ -164,7 +166,6 @@ app.use('/api/v1/notification', notificationRouter);
 app.use('/api/v1/tasks', tasksRouter);
 app.use('/api/v1/service', serviceRouter);
 app.use('/api/v1/wallet', walletRouter);
-app.use('/api/v1/webhooks', express.raw({ type: 'application/json' }), webhookRouter);
 
 // Swagger documentation
 app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
