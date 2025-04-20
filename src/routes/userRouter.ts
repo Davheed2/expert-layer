@@ -434,7 +434,7 @@ router.post('/suspend-user', userController.suspendUser);
  *     summary: Change user role
  *     description: Allows an admin user to change the role of another user. The endpoint validates the user’s login status, admin role, ensures the admin is not modifying their own account, and checks if the target user exists before updating their role in the database.
  *     tags:
- *       - Users
+ *       - User
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -566,7 +566,211 @@ router.post('/suspend-user', userController.suspendUser);
  *                   example: "Failed to change user role"
  */
 router.post('/change-role', userController.makeAdmin);
+/**
+ * @openapi
+ * /user/clients:
+ *   get:
+ *     summary: Retrieve all client role users
+ *     description: Allows an admin user to retrieve a list of all users with the 'client' role. The endpoint validates the user’s login status and admin role, then fetches all client role users from the database.
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Users fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         format: uuid
+ *                         example: "d171a5f8-3ec0-486a-a148-0d3c2dc07289"
+ *                       firstName:
+ *                         type: string
+ *                         example: "Dave"
+ *                       lastName:
+ *                         type: string
+ *                         example: "David"
+ *                       email:
+ *                         type: string
+ *                         format: email
+ *                         example: "daviscarlos2404@gmail.com"
+ *                       photo:
+ *                         type: string
+ *                         nullable: true
+ *                         example: "https://pub-b3c115b60ec04ceaae8ac7360bf42530.r2.dev/profile-picture/1745083559873-GK5kZ7xXMAEltG9.png"
+ *                       role:
+ *                         type: string
+ *                         example: "client"
+ *                       isSuspended:
+ *                         type: boolean
+ *                         example: true
+ *                       isDeleted:
+ *                         type: boolean
+ *                         example: false
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-04-19T17:14:26.071Z"
+ *                       stripe_customer_id:
+ *                         type: string
+ *                         nullable: true
+ *                         example: null
+ *                 message:
+ *                   type: string
+ *                   example: "Users fetched successfully"
+ *       401:
+ *         description: Unauthorized - User not logged in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Please log in again"
+ *       403:
+ *         description: Forbidden - User is not an admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Only admins can view all users"
+ *       500:
+ *         description: Internal Server Error - Failed to fetch users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Failed to fetch users"
+ */
 router.get('/clients', userController.fetchAllClientRoleUsers);
+/**
+ * @openapi
+ * /user/staffs:
+ *   get:
+ *     summary: Retrieve all non-client role users
+ *     description: Allows an admin user to retrieve a list of all users with roles other than 'client'. The endpoint validates the user’s login status and admin role, then fetches all non-client role users from the database.
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Users fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         format: uuid
+ *                         example: "52179bc8-dc7e-49f8-8f14-c9cd7f8d7513"
+ *                       firstName:
+ *                         type: string
+ *                         example: "David"
+ *                       lastName:
+ *                         type: string
+ *                         example: "David"
+ *                       email:
+ *                         type: string
+ *                         format: email
+ *                         example: "davheeduchenna@gmail.com"
+ *                       photo:
+ *                         type: string
+ *                         nullable: true
+ *                         example: null
+ *                       role:
+ *                         type: string
+ *                         example: "admin"
+ *                       isSuspended:
+ *                         type: boolean
+ *                         example: false
+ *                       isDeleted:
+ *                         type: boolean
+ *                         example: false
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-04-20T18:07:36.844Z"
+ *                 message:
+ *                   type: string
+ *                   example: "Users fetched successfully"
+ *       401:
+ *         description: Unauthorized - User not logged in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Please log in again"
+ *       403:
+ *         description: Forbidden - User is not an admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Only admins can view all users"
+ *       500:
+ *         description: Internal Server Error - Failed to fetch users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Failed to fetch users"
+ */
 router.get('/staffs', userController.fetchAllNonClientRoleUsers);
 
 export { router as userRouter };

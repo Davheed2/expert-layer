@@ -67,6 +67,7 @@ const toJSON = <T extends object>(obj: T | T[], excludeFields: (keyof T)[] = [])
 		'verificationTokenExpires',
 		'tokenIsUsed',
 		'isEmailVerified',
+		'stripe_customer_id'
 	] as (keyof T)[];
 
 	// Use provided exclusions or default ones

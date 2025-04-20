@@ -124,7 +124,7 @@ router.post('/create', multerUpload.single('taskImage'), tasksController.createT
  *     summary: Create new task details
  *     description: Allows an admin user to create new task details for a specific task. The endpoint validates the user’s login status, admin role, and ensures all required fields (task ID, title, description, amount) are provided. It also checks if the user and task exist before creating the task details in the database.
  *     tags:
- *       - Task Details
+ *       - Tasks
  *     security:
  *       - bearerAuth: []
  *     requestBody:

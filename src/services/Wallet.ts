@@ -135,7 +135,7 @@ export class WalletService {
 				.insert({
 					userId: userId,
 					serviceId,
-					status: 'completed',
+					status: 'success',
 					type: 'task_payment',
 					amount: -service.taskPrice,
 					walletBalanceBefore: wallet.balance,
@@ -201,24 +201,13 @@ export class WalletService {
 				updated_at: new Date(),
 			});
 
-			console.log('userid', user_id);
-			console.log('serviceid', service_id);
-			console.log('walletamountused', walletAmountUsed);
-			console.log('taskprice', taskPrice);
-			console.log('excessamount', excessAmount);
-			console.log('newbalance', newBalance);
-			console.log('paymentintentid', paymentIntentId);
-			console.log('amountpaid', amountPaid);
-			console.log('walletbalance', wallet.balance);
-			console.log('walletbalanceafter', newBalance);
-
 			// Record transaction
 			await trx('transactions').insert({
 				userId: user_id,
 				serviceId: service_id,
 				type: 'task_payment',
 				amount: -taskPrice,
-				status: 'completed',
+				status: 'success',
 				walletBalanceBefore: wallet.balance,
 				walletBalanceAfter: newBalance,
 				stripePaymentIntentId: paymentIntentId,
@@ -236,7 +225,7 @@ export class WalletService {
 					userId: user_id,
 					type: 'wallet_credit',
 					amount: excessAmount,
-					status: 'completed',
+					status: 'success',
 					walletBalanceBefore: newBalance - excessAmount,
 					walletBalanceAfter: newBalance,
 					stripePaymentIntentId: paymentIntentId,
@@ -297,7 +286,7 @@ export class WalletService {
 					userId,
 					type: 'deposit',
 					amount,
-					status: 'completed',
+					status: 'success',
 					walletBalanceBefore: 0,
 					walletBalanceAfter: amount,
 					stripePaymentIntentId: paymentIntentId,
@@ -315,7 +304,7 @@ export class WalletService {
 					userId,
 					type: 'deposit',
 					amount,
-					status: 'completed',
+					status: 'success',
 					walletBalanceBefore: wallet.balance,
 					walletBalanceAfter: newBalance,
 					stripePaymentIntentId: paymentIntentId,
@@ -474,7 +463,7 @@ export class WalletService {
 	// 			amount: refundAmount,
 	// 			walletBalanceBefore: wallet.balance,
 	// 			walletBalanceAfter: newBalance,
-	// 			status: 'completed',
+	// 			status: 'success',
 	// 			stripePaymentIntentId: paymentIntentId,
 	// 			metadata: {
 	// 				refund_id: charge.refunds.data[0].id,
