@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { WalletService } from '@/services/Wallet';
 import { knexDb as db, ENVIRONMENT } from '@/common/config';
 
-const stripe = new Stripe(ENVIRONMENT.STRIPE_SECRET_KEY as string, {
+const stripe = new Stripe(ENVIRONMENT.STRIPE_WEBHOOK_SECRET as string, {
 	apiVersion: '2025-03-31.basil',
 });
 
@@ -13,7 +13,7 @@ export class StripeWebhookController {
 		const sig = req.headers['stripe-signature'] as string;
 
 		try {
-			const event = stripe.webhooks.constructEvent(req.body, sig, ENVIRONMENT.STRIPE_SECRET_KEY as string);
+			const event = stripe.webhooks.constructEvent(req.body, sig, ENVIRONMENT.STRIPE_WEBHOOK_SECRET as string);
 
 			// Handle different event types
 			switch (event.type) {

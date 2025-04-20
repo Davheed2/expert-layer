@@ -41,4 +41,5 @@ export interface IEnvironment {
 		PASSWORD: string;
 	};
 	STRIPE_SECRET_KEY: string;
+	STRIPE_WEBHOOK_SECRET: string;
 }
