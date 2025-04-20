@@ -9,7 +9,7 @@ router.use(protect);
 
 /**
  * @openapi
- * /services/create:
+ * /service/create:
  *   post:
  *     summary: Create a new service
  *     description: Allows a logged-in user to create a new service with associated task details and images. The endpoint validates the user’s login status, ensures all required fields and a service image are provided, uploads the service image to cloud storage, and creates the service in the database. Optionally, a reference document can be uploaded and updated asynchronously.
@@ -208,7 +208,7 @@ router.post(
 );
 /**
  * @openapi
- * /services/all:
+ * /service/all:
  *   get:
  *     summary: Retrieve all services
  *     description: Allows an admin user to retrieve a list of all services. The endpoint validates the user’s login status and admin role, then fetches all services from the database that are not marked as deleted.
