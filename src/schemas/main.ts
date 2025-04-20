@@ -1,4 +1,4 @@
-import { Role } from '@/common/constants';
+import { Role, ServiceType } from '@/common/constants';
 import { z } from 'zod';
 
 const passwordRegexMessage =
@@ -52,9 +52,12 @@ export const mainSchema = z.object({
 	suspend: z.boolean(),
 	enabled: z.boolean(),
 	makeAdmin: z.boolean(),
+	isActive: z.boolean(),
 	userId: z.string().uuid(),
 	notificationId: z.string().uuid(),
+	serviceId: z.string().uuid(),
 	sysNotificationId: z.number(),
+	serviceType: z.enum([ServiceType.ONE_TIME, ServiceType.SUBSCRIPTION]),
 	// hideMyDetails: z.boolean().default(false),
 	message: z.string().min(10),
 	oldPassword: z.string().min(8),

@@ -31,3 +31,8 @@ export enum ServiceStatus {
 	CANCELLED = 'cancelled',
 	PAID = 'paid',
 }
+
+export enum ServiceType {
+	ONE_TIME = 'onetime',
+	SUBSCRIPTION = 'subscription',
+}

@@ -208,7 +208,7 @@ router.post(
 );
 /**
  * @openapi
- * /services:
+ * /services/all:
  *   get:
  *     summary: Retrieve all services
  *     description: Allows an admin user to retrieve a list of all services. The endpoint validates the user’s login status and admin role, then fetches all services from the database that are not marked as deleted.
@@ -459,5 +459,158 @@ router.get('/all', servicesController.findAllServices);
  *                   example: "Service not found"
  */
 router.get('/id', servicesController.findServiceById);
+/**
+ * @openapi
+ * /service/update:
+ *   post:
+ *     summary: Update a service
+ *     description: Allows an admin user to update the active status of a specific service by its ID. The endpoint validates the user’s login status, admin role, ensures a service ID and valid boolean isActive status are provided, and updates the service in the database.
+ *     tags:
+ *       - Services
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - serviceId
+ *               - isActive
+ *             properties:
+ *               serviceId:
+ *                 type: string
+ *                 format: uuid
+ *                 example: "1bcc34b7-0070-449a-a12c-7beb843eb001"
+ *                 description: The ID of the service to update
+ *               isActive:
+ *                 type: boolean
+ *                 example: false
+ *                 description: The active status of the service
+ *     responses:
+ *       200:
+ *         description: Service updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         format: uuid
+ *                         example: "1bcc34b7-0070-449a-a12c-7beb843eb001"
+ *                       name:
+ *                         type: string
+ *                         example: "First Service"
+ *                       description:
+ *                         type: string
+ *                         example: "A test"
+ *                       serviceImage:
+ *                         type: string
+ *                         example: "https://pub-b3c115b60ec04ceaae8ac7360bf42530.r2.dev/services-image/1745096094535-100minds.jpg"
+ *                       taskName:
+ *                         type: string
+ *                         example: "Software development"
+ *                       taskTitle:
+ *                         type: string
+ *                         example: "Vigo web"
+ *                       taskDescription:
+ *                         type: string
+ *                         example: "Fintech app"
+ *                       taskPrice:
+ *                         type: string
+ *                         example: "1000.00"
+ *                       taskDetails:
+ *                         type: string
+ *                         example: "I want to build a fintech product"
+ *                       reference:
+ *                         type: string
+ *                         nullable: true
+ *                         example: null
+ *                       duration:
+ *                         type: string
+ *                         example: "2 - 3 days"
+ *                       status:
+ *                         type: string
+ *                         example: "pending"
+ *                       userId:
+ *                         type: string
+ *                         format: uuid
+ *                         example: "eb1bde91-941c-4d68-ba88-5887fc7d9255"
+ *                       taskId:
+ *                         type: string
+ *                         format: uuid
+ *                         nullable: true
+ *                         example: null
+ *                       isActive:
+ *                         type: boolean
+ *                         example: false
+ *                       isDeleted:
+ *                         type: boolean
+ *                         example: false
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-04-19T20:54:55.481Z"
+ *                       type:
+ *                         type: string
+ *                         example: "onetime"
+ *                 message:
+ *                   type: string
+ *                   example: "Service updated successfully"
+ *       400:
+ *         description: Bad Request - Missing service ID or invalid isActive status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Please log in again"
+ *                   enum:
+ *                     - Please log in again
+ *                     - Please provide a service ID
+ *                     - Service status must be a boolean
+ *       401:
+ *         description: Unauthorized - User is not an admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "You are not authorized to update this service"
+ *       500:
+ *         description: Internal Server Error - Service update failed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Service update failed"
+ */
+router.post('/update', servicesController.updateService);
 
 export { router as serviceRouter };

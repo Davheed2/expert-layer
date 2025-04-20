@@ -19,6 +19,7 @@ export class ServicesController {
 			taskDetails,
 			reference,
 			duration,
+			type
 		} = req.body;
 
 		if (!user) {
@@ -51,6 +52,9 @@ export class ServicesController {
 		if (!duration) {
 			throw new AppError('Please provide a task duration', 400);
 		}
+		if (!type) {
+			throw new AppError('Please provide a service type', 400);
+		}
 		if (!files) {
 			throw new AppError('Please provide a service image', 400);
 		}
@@ -74,6 +78,7 @@ export class ServicesController {
 			reference,
 			duration,
 			userId: user.id,
+			type,
 		});
 		if (!newService) {
 			throw new AppError('Service creation failed', 500);
@@ -126,6 +131,33 @@ export class ServicesController {
 			throw new AppError('Service not found', 404);
 		}
 		return AppResponse(res, 200, toJSON([service]), 'Service retrieved successfully');
+	});
+
+	updateService = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+		const { serviceId, isActive } = req.body;
+
+		if (!user) {
+			throw new AppError('Please log in again', 400);
+		}
+		if (!serviceId) {
+			throw new AppError('Please provide a service ID', 400);
+		}
+		if (user.role !== 'admin') {
+			throw new AppError('You are not authorized to update this service', 401);
+		}
+		if (typeof isActive !== 'boolean') {
+			throw new AppError('Service status must be a boolean', 400);
+		}
+
+		const updatedService = await servicesRepository.update(serviceId as string, {
+			isActive,
+		});
+		if (!updatedService) {
+			throw new AppError('Service update failed', 500);
+		}
+
+		return AppResponse(res, 200, toJSON(updatedService), 'Service updated successfully');
 	});
 }
 

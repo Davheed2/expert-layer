@@ -1,4 +1,4 @@
-import { ServiceStatus } from '../constants';
+import { ServiceStatus, ServiceType } from '../constants';
 
 export interface IService {
 	id: string;
@@ -16,6 +16,7 @@ export interface IService {
 	duration: string;
 	status: ServiceStatus;
 	isActive: boolean;
+	type: ServiceType;
 	isDeleted: boolean;
 	created_at?: Date;
 	updated_at?: Date;
