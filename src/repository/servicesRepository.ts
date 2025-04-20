@@ -31,7 +31,7 @@ class ServicesRepository {
 	};
 
 	findAll = async (): Promise<IService[]> => {
-		return await knexDb.table('services').where({ isDeleted: false }).orderBy('created_at', 'desc');
+		return await knexDb.table('services').where({ isDeleted: false, status: 'paid' }).orderBy('created_at', 'desc');
 	};
 }
 
