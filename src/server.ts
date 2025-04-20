@@ -85,6 +85,7 @@ app.use(
 			'https://one00-minds.onrender.com',
 			'https://app.100-minds.com',
 			'https://admin-mmyv.onrender.com',
+			'https://expert-layer.vercel.app',
 			'http://localhost:5173',
 			'http://localhost:3000',
 			'http://localhost:3001',
