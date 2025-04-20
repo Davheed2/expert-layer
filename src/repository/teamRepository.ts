@@ -1,5 +1,5 @@
 import { knexDb } from '@/common/config';
-import { ITeam } from '@/common/interfaces';
+import { ITeam, ITeamMember } from '@/common/interfaces';
 import { DateTime } from 'luxon';
 
 class TeamRepository {
@@ -29,6 +29,10 @@ class TeamRepository {
 		return await knexDb.table('teams').where({ ownerId }).andWhere({ isDeleted: false }).select('*');
 	};
 
+	getAllTeams = async (): Promise<ITeam[]> => {
+		return await knexDb.table('teams').where({ isDeleted: false }).select('*');
+	};
+
 	deleteTeam = async (teamId: string) => {
 		return await knexDb.table('teams').where({ id: teamId }).update({ isDeleted: true }).returning('*');
 	};
@@ -40,6 +44,39 @@ class TeamRepository {
 			.update({ ...payload, updated_at: DateTime.now().toJSDate() })
 			.returning('*');
 	};
+
+	updateTeamMembers = async (teamId: string, payload: Partial<ITeam>): Promise<ITeam[]> => {
+		return await knexDb
+			.table('team_members')
+			.where({ teamId })
+			.update({ ...payload, updated_at: DateTime.now().toJSDate() })
+			.returning('*');
+	};
+
+	addTeamMember = async (payload: Partial<ITeamMember>): Promise<ITeamMember[]> => {
+		return await knexDb.table('team_members').insert(payload).returning('*');
+	};
+
+    getAllTeamMembers2 = async (ownerId: string): Promise<ITeamMember[]> => {
+		return await knexDb.table('team_members').where({ ownerId }).select('*');
+	};
+
+    getAllTeamsWithMembers = async (): Promise<(ITeam & { members: ITeamMember[] })[]> => {
+        const teams = await knexDb.table('teams').where({ isDeleted: false }).select('*');
+        const teamIds = teams.map(team => team.id);
+
+        const members = await knexDb.table('team_members').whereIn('teamId', teamIds).select('*');
+
+        return teams.map(team => ({
+            ...team,
+            members: members.filter(member => member.teamId === team.id),
+        }));
+    };
+
+    getTeamMember = async (teamId: string, userId: string): Promise<ITeamMember | null> => {
+        const result = await knexDb.table('team_members').where({ teamId, memberId: userId }).select('*');
+        return result.length ? result[0] : null;
+    }
 }
 
 export const teamRepository = new TeamRepository();

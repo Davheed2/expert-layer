@@ -6,3 +6,4 @@ export * from './taskController';
 export * from './serviceController';
 export * from './walletController';
 export * from './webhookController';
+export * from './teamController';

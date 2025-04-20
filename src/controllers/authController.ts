@@ -25,6 +25,7 @@ import { ENVIRONMENT } from '@/common/config';
 import { DateTime } from 'luxon';
 import { Notification } from '@/services/Notification';
 import { NotificationSource } from '@/common/constants';
+import { Team } from '@/services/Team';
 
 class AuthController {
 	signUp = catchAsync(async (req: Request, res: Response) => {
@@ -110,6 +111,16 @@ class AuthController {
 		AppResponse(res, 200, toJSON(updatedUser), 'Email verified successfully');
 
 		setImmediate(async () => {
+			const team = await Team.add({
+				name: `${updatedUser[0].firstName} ${updatedUser[0].lastName}'s Organization`,
+				ownerId: updatedUser[0].id,
+			});
+			await Team.addMember({
+				teamId: team.id,
+				memberId: updatedUser[0].id,
+				memberType: updatedUser[0].role,
+			});
+
 			const admins = await userRepository.findAllAdmins();
 			for (const admin of admins) {
 				await Notification.add({
