@@ -139,7 +139,7 @@ const router = express.Router();
 router.post('/sign-up', authController.signUp);
 /**
  * @openapi
- * /auth/verify-account:
+ * /auth/verify:
  *   get:
  *     summary: Verify user account
  *     description: Verifies a user's account using a verification token provided in the query string. The endpoint validates the token, checks if the account is already verified, ensures the token is unused and not expired, updates the user's verification status, and sends notifications to admins about the new user registration.
