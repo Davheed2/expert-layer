@@ -203,7 +203,7 @@ export class WalletService {
 
 			// Record transaction
 			await trx('transactions').insert({
-				user_id: user_id,
+				userId: user_id,
 				serviceId: service_id,
 				type: 'task_payment',
 				amount: -taskPrice,
@@ -222,7 +222,7 @@ export class WalletService {
 			// If excess was added to wallet, record a separate transaction for that
 			if (excessAmount > 0) {
 				await trx('transactions').insert({
-					user_id: user_id,
+					userId: user_id,
 					type: 'wallet_credit',
 					amount: excessAmount,
 					status: 'completed',
