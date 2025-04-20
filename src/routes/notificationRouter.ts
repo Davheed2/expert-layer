@@ -816,7 +816,7 @@ router.get('/user-unread', notificationController.fetchUnreadUserNotifications);
 router.post('/mark-read', notificationController.markAsRead);
 /**
  * @openapi
- * /notifications/mark-all-read:
+ * /notification/mark-all-read:
  *   post:
  *     summary: Mark all notifications as read
  *     description: Allows a logged-in user to mark all their unread notifications as read. The endpoint validates the user’s login status, checks for unread notifications, and updates their status to read in the database.
