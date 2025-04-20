@@ -248,7 +248,7 @@ router.post('/sign-up', authController.signUp);
  *                   type: string
  *                   example: "Invalid or expired verification token"
  */
-router.get('/verify-account', authController.verifyAccount);
+router.get('/verify', authController.verifyAccount);
 /**
  * @openapi
  * /auth/sign-in:
