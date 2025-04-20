@@ -42,15 +42,12 @@ export class WalletController {
 			throw new AppError('Please log in again', 400);
 		}
 
-		// Get wallet balance
 		const walletBalance = await this.walletService.getWalletBalance(user.id);
 
 		const service = await servicesRepository.findById(serviceId);
 		if (!service) {
 			throw new AppError('Service not found', 404);
 		}
-
-		console.log(service.taskPrice, 'taskPrice');
 
 		// If wallet has enough balance, process payment from wallet
 		if (walletBalance >= service.taskPrice) {

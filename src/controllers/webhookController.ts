@@ -13,7 +13,7 @@ export class StripeWebhookController {
 		const sig = req.headers['stripe-signature'] as string;
 
 		try {
-			const event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET as string);
+			const event = stripe.webhooks.constructEvent(req.body, sig, ENVIRONMENT.STRIPE_SECRET_KEY);
 
 			// Handle different event types
 			switch (event.type) {
