@@ -480,7 +480,7 @@ router.post('/delete-system', notificationController.deleteSysNotification);
 //User notification
 /**
  * @openapi
- * /notification/user/all:
+ * /notification/user-all:
  *   get:
  *     summary: Retrieve unread user notifications
  *     description: Allows a logged-in user to retrieve a list of their unread notifications. The endpoint validates the user’s login status and fetches all unread notifications associated with the user from the database.
@@ -578,7 +578,7 @@ router.post('/delete-system', notificationController.deleteSysNotification);
 router.get('/user-all', notificationController.fetchAllUserNotifications);
 /**
  * @openapi
- * /notification/user/unread:
+ * /notification/user-unread:
  *   get:
  *     summary: Retrieve unread user notifications
  *     description: Allows a logged-in user to retrieve a list of their unread notifications. The endpoint validates the user’s login status and fetches all unread notifications associated with the user from the database.
