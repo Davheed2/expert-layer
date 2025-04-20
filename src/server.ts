@@ -15,7 +15,16 @@ import '@/common/interfaces/request';
 import { AppError, logger, stream } from '@/common/utils';
 import { errorHandler } from '@/controllers';
 import { timeoutMiddleware, validateDataWithZod } from '@/middlewares';
-import { userRouter, authRouter, notificationRouter, tasksRouter, serviceRouter, walletRouter, webhookRouter } from '@/routes';
+import {
+	userRouter,
+	authRouter,
+	notificationRouter,
+	tasksRouter,
+	serviceRouter,
+	walletRouter,
+	webhookRouter,
+	teamsRouter,
+} from '@/routes';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -166,6 +175,7 @@ app.use('/api/v1/notification', notificationRouter);
 app.use('/api/v1/tasks', tasksRouter);
 app.use('/api/v1/service', serviceRouter);
 app.use('/api/v1/wallet', walletRouter);
+app.use('/api/v1/team', teamsRouter);
 
 // Swagger documentation
 app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

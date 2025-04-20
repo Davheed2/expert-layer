@@ -4,7 +4,6 @@ import { walletController } from '@/controllers';
 
 const router = express.Router();
 
-// Apply authentication middleware to all wallet routes
 router.use(protect);
 
 // Wallet routes

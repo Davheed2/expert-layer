@@ -427,6 +427,8 @@ router.post('/upload-profile-picture', multerUpload.single('photo'), userControl
  *                   example: "Failed to suspend user"
  */
 router.post('/suspend-user', userController.suspendUser);
-// router.post('/make-admin', userController.makeAdmin);
+router.post('/change-role', userController.makeAdmin);
+router.get('/clients', userController.fetchAllClientRoleUsers);
+router.get('/staffs', userController.fetchAllNonClientRoleUsers);
 
 export { router as userRouter };

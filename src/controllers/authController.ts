@@ -118,6 +118,7 @@ class AuthController {
 			await Team.addMember({
 				teamId: team.id,
 				memberId: updatedUser[0].id,
+				ownerId: updatedUser[0].id,
 				memberType: updatedUser[0].role,
 			});
 

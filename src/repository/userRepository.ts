@@ -66,6 +66,14 @@ class UserRepository {
 	findAllAdmins = async (): Promise<IUser[]> => {
 		return knexDb('users').where('role', 'admin').andWhere('isDeleted', false);
 	};
+
+	findAllNonClientRoleUsers = async (): Promise<IUser[]> => {
+		return knexDb('users').whereNotIn('role', ['client']).andWhere('isDeleted', false);
+	};
+
+	findAllClientRoleUsers = async (): Promise<IUser[]> => {
+		return knexDb('users').where('role', 'client').andWhere('isDeleted', false);
+	};
 }
 
 export const userRepository = new UserRepository();

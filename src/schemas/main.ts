@@ -46,6 +46,7 @@ export const mainSchema = z.object({
 	key: z.string(),
 	task: z.string().min(3).trim(),
 	taskId: z.string().uuid(),
+	teamId: z.string().uuid(),
 	amount: z.number().positive(),
 	duration: z.string(),
 	lastWatched: z.string(),

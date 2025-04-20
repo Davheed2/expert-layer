@@ -114,34 +114,70 @@ export class UserController {
 		return AppResponse(res, 200, null, `User ${suspend ? 'suspended' : 'unsuspended'} successfully`);
 	});
 
-	// makeAdmin = catchAsync(async (req: Request, res: Response) => {
-	// 	const { user } = req;
-	// 	const { makeAdmin, userId } = req.body;
+	makeAdmin = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+		const { role, userId } = req.body;
 
-	// 	if (!user) {
-	// 		throw new AppError('Please log in again', 401);
-	// 	}
-	// 	if (user.role === 'user') {
-	// 		throw new AppError('Only admins can assign admin roles', 403);
-	// 	}
-	// 	if (user.id === userId) {
-	// 		throw new AppError('You cant perform this operation on your account', 403);
-	// 	}
+		if (!user) {
+			throw new AppError('Please log in again', 401);
+		}
+		if (user.role !== 'admin') {
+			throw new AppError('Only admins can assign admin roles', 403);
+		}
+		if (user.id === userId) {
+			throw new AppError('You cant perform this operation on your account', 403);
+		}
 
-	// 	const extinguishUser = await userRepository.findById(userId);
-	// 	if (!extinguishUser) {
-	// 		throw new AppError('User not found', 404);
-	// 	}
+		const extinguishUser = await userRepository.findById(userId);
+		if (!extinguishUser) {
+			throw new AppError('User not found', 404);
+		}
 
-	// 	const suspendUser = await userRepository.update(userId, {
-	// 		role: makeAdmin ? Role.Admin : Role.User,
-	// 	});
-	// 	if (!suspendUser) {
-	// 		throw new AppError(`Failed to ${makeAdmin ? 'promote' : 'demote'} user`, 500);
-	// 	}
+		const changeRole = await userRepository.update(userId, {
+			role,
+		});
+		if (!changeRole) {
+			throw new AppError(`Failed to change user role`, 500);
+		}
 
-	// 	return AppResponse(res, 200, null, `User ${makeAdmin ? 'promoted' : 'demoted'} successfully`);
-	// });
+		return AppResponse(res, 200, null, `User role changed successfully`);
+	});
+
+	fetchAllClientRoleUsers = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+
+		if (!user) {
+			throw new AppError('Please log in again', 401);
+		}
+		if (user.role !== 'admin') {
+			throw new AppError('Only admins can view all users', 403);
+		}
+
+		const users = await userRepository.findAllClientRoleUsers();
+		if (!users) {
+			throw new AppError('Failed to fetch users', 500);
+		}
+
+		return AppResponse(res, 200, toJSON(users), 'Users fetched successfully');
+	});
+
+	fetchAllNonClientRoleUsers = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+
+		if (!user) {
+			throw new AppError('Please log in again', 401);
+		}
+		if (user.role !== 'admin') {
+			throw new AppError('Only admins can view all users', 403);
+		}
+
+		const users = await userRepository.findAllNonClientRoleUsers();
+		if (!users) {
+			throw new AppError('Failed to fetch users', 500);
+		}
+
+		return AppResponse(res, 200, toJSON(users), 'Users fetched successfully');
+	});
 }
 
 export const userController = new UserController();

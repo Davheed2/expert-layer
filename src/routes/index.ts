@@ -5,3 +5,4 @@ export * from './tasksRouter';
 export * from './serviceRouter';
 export * from './walletRouter';
 export * from './webhookRouter';
+export * from './teamRouter';
