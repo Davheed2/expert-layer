@@ -10,6 +10,7 @@ export interface ITransaction {
 	stripePaymentIntentId: string;
 	metadata?: Record<string, string | number | boolean>;
 	amount: number;
+	serviceId: string;
 	currency: CurrencyType;
 	status: TransactionStatus;
 	created_at?: Date;
