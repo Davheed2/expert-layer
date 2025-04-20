@@ -140,7 +140,7 @@ export class UserController {
 			throw new AppError(`Failed to change user role`, 500);
 		}
 
-		return AppResponse(res, 200, null, `User role changed successfully`);
+		return AppResponse(res, 200, toJSON(changeRole), `User role changed successfully`);
 	});
 
 	fetchAllClientRoleUsers = catchAsync(async (req: Request, res: Response) => {

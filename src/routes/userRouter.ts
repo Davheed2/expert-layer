@@ -427,6 +427,144 @@ router.post('/upload-profile-picture', multerUpload.single('photo'), userControl
  *                   example: "Failed to suspend user"
  */
 router.post('/suspend-user', userController.suspendUser);
+/**
+ * @openapi
+ * /user/change-role:
+ *   post:
+ *     summary: Change user role
+ *     description: Allows an admin user to change the role of another user. The endpoint validates the user’s login status, admin role, ensures the admin is not modifying their own account, and checks if the target user exists before updating their role in the database.
+ *     tags:
+ *       - Users
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - role
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 format: uuid
+ *                 example: "eb1bde91-941c-4d68-ba88-5887fc7d9255"
+ *                 description: The ID of the user whose role will be changed
+ *               role:
+ *                 type: string
+ *                 example: "accountmanager"
+ *                 description: The new role to assign to the user
+ *     responses:
+ *       200:
+ *         description: User role changed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         format: uuid
+ *                         example: "eb1bde91-941c-4d68-ba88-5887fc7d9255"
+ *                       firstName:
+ *                         type: string
+ *                         example: "Davii"
+ *                       lastName:
+ *                         type: string
+ *                         example: "Davii"
+ *                       email:
+ *                         type: string
+ *                         format: email
+ *                         example: "uchennadavid2404@gmail.com"
+ *                       photo:
+ *                         type: string
+ *                         nullable: true
+ *                         example: null
+ *                       role:
+ *                         type: string
+ *                         example: "accountmanager"
+ *                       isSuspended:
+ *                         type: boolean
+ *                         example: false
+ *                       isDeleted:
+ *                         type: boolean
+ *                         example: false
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-04-15T22:34:11.478Z"
+ *                       stripe_customer_id:
+ *                         type: string
+ *                         example: "cus_SA9NOX2NskV2PH"
+ *                 message:
+ *                   type: string
+ *                   example: "User role changed successfully"
+ *       401:
+ *         description: Unauthorized - User not logged in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Please log in again"
+ *       403:
+ *         description: Forbidden - Non-admin user or attempting to modify own account
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Only admins can assign admin roles"
+ *                   enum:
+ *                     - Only admins can assign admin roles
+ *                     - You cant perform this operation on your account
+ *       404:
+ *         description: Not Found - User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       500:
+ *         description: Internal Server Error - Failed to change user role
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Failed to change user role"
+ */
 router.post('/change-role', userController.makeAdmin);
 router.get('/clients', userController.fetchAllClientRoleUsers);
 router.get('/staffs', userController.fetchAllNonClientRoleUsers);
