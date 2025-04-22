@@ -43,12 +43,12 @@ export const sendEmail = async (job: EmailJobData) => {
 			htmlContent = welcomeEmail(data as WelcomeEmailData);
 			subject = 'Welcome to Expert Layer';
 			break;
-		case 'loginEmail':
-			htmlContent = loginEmail(data as LoginEmailData);
-			subject = 'Verify your email to continue with Expert Layer';
-			break;
 		case 'magicEmail':
 			htmlContent = magicLinkEmail(data as MagicEmailData);
+			subject = 'Verify your email to continue with Expert Layer';
+			break;
+		case 'loginEmail':
+			htmlContent = loginEmail(data as LoginEmailData);
 			subject = 'Login Alert';
 			break;
 		case 'forgotPassword':
