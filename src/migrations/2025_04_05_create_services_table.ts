@@ -15,7 +15,7 @@ export async function up(knex: Knex): Promise<void> {
 		table.enum('pricingDetails', Object.values(ServicePricing)).notNullable();
 		table.string('purchaseLimit').nullable();
 		table.enum('allocation', Object.values(ServiceRequestAllocation)).nullable();
-		table.integer('maxRequest').notNullable();
+		table.integer('maxRequest').nullable();
 		table.boolean('isDefault').notNullable().defaultTo(false);
 		table.uuid('userId').notNullable().references('id').inTable('users').onDelete('CASCADE');
 		table.boolean('isDeleted').notNullable().defaultTo(false);

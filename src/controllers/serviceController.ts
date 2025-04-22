@@ -7,7 +7,7 @@ import { IService } from '@/common/interfaces';
 export class ServicesController {
 	createService = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
-		const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+		const { file } = req;
 
 		const {
 			name,
@@ -86,11 +86,11 @@ export class ServicesController {
 		AppResponse(res, 201, newService, 'Service created successfully');
 
 		setImmediate(async () => {
-			if (files && files.serviceImage && files.serviceImage.length > 0) {
+			if (file) {
 				const { secureUrl } = await uploadPictureFile({
-					fileName: `services-image/${Date.now()}-${files.serviceImage[0].originalname}`,
-					buffer: files.serviceImage[0].buffer,
-					mimetype: files.serviceImage[0].mimetype,
+					fileName: `services-image/${Date.now()}-${file.originalname}`,
+					buffer: file.buffer,
+					mimetype: file.mimetype,
 				});
 				await servicesRepository.update(newService[0].id, { serviceImage: secureUrl });
 			}
@@ -111,6 +111,7 @@ export class ServicesController {
 		if (!services) {
 			throw new AppError('No services found', 404);
 		}
+
 		return AppResponse(res, 200, toJSON(services), 'Services retrieved successfully');
 	});
 
@@ -125,6 +126,7 @@ export class ServicesController {
 		if (!services) {
 			throw new AppError('No services found', 404);
 		}
+
 		return AppResponse(res, 200, toJSON(services), 'Services retrieved successfully');
 	});
 
@@ -148,7 +150,7 @@ export class ServicesController {
 
 	updateService = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
-		const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+		const { file } = req;
 		const {
 			name,
 			description,
@@ -218,23 +220,21 @@ export class ServicesController {
 			updatePayload.maxRequest = maxRequest;
 		}
 
+		if (file) {
+			const { secureUrl } = await uploadPictureFile({
+				fileName: `services-image/${Date.now()}-${file.originalname}`,
+				buffer: file.buffer,
+				mimetype: file.mimetype,
+			});
+			updatePayload.serviceImage = secureUrl;
+		}
+
 		const updatedService = await servicesRepository.update(serviceId, updatePayload);
 		if (!updatedService) {
 			throw new AppError('Service update failed', 500);
 		}
 
-		AppResponse(res, 200, null, 'Service updated successfully');
-
-		setImmediate(async () => {
-			if (files && files.serviceImage && files.serviceImage.length > 0) {
-				const { secureUrl } = await uploadPictureFile({
-					fileName: `services-image/${Date.now()}-${files.serviceImage[0].originalname}`,
-					buffer: files.serviceImage[0].buffer,
-					mimetype: files.serviceImage[0].mimetype,
-				});
-				await servicesRepository.update(serviceId, { serviceImage: secureUrl });
-			}
-		});
+		return AppResponse(res, 200, toJSON(updatedService), 'Service updated successfully');
 	});
 }
 

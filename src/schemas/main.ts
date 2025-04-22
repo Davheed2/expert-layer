@@ -45,6 +45,7 @@ export const mainSchema = z.object({
 	allocation: z.enum([ServiceRequestAllocation.FIXEDAMOUNT, ServiceRequestAllocation.TOTALCREDITS]),
 	maxRequest: z.number().positive(),
 	isDefault: z.boolean(),
+	serviceImage: z.string(),
 	type: z.enum([ServiceType.ONE_OFF, ServiceType.RECURRING]),
 	taskName: z.string().min(3).trim(),
 	taskTitle: z.string().min(3).trim(),

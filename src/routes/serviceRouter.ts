@@ -12,7 +12,7 @@ router.use(protect);
  * /service/create:
  *   post:
  *     summary: Create a new service
- *     description: Allows a logged-in user to create a new service with associated task details and images. The endpoint validates the user’s login status, ensures all required fields and a service image are provided, uploads the service image to cloud storage, and creates the service in the database. Optionally, a reference document can be uploaded and updated asynchronously.
+ *     description: Allows an admin user to create a new service with optional image upload. The endpoint validates the user’s login status, admin role, and required fields (name, description, price, type, pricing details, max request, and default status). It also ensures specific fields are provided based on pricing details (credits or hours, allocation) and handles image upload asynchronously after service creation.
  *     tags:
  *       - Services
  *     security:
@@ -24,65 +24,65 @@ router.use(protect);
  *           schema:
  *             type: object
  *             required:
- *               - serviceImage
  *               - name
  *               - description
- *               - taskName
- *               - taskTitle
- *               - taskDescription
- *               - taskPrice
- *               - taskDetails
- *               - duration
+ *               - price
+ *               - type
+ *               - pricingDetails
+ *               - isDefault
  *             properties:
- *               serviceImage:
- *                 type: string
- *                 format: binary
- *                 description: The image file for the service
- *               resources:
- *                 type: string
- *                 format: binary
- *                 description: Optional reference image for the service
  *               name:
  *                 type: string
- *                 example: "First Service"
+ *                 example: "Web development"
  *                 description: The name of the service
  *               description:
  *                 type: string
- *                 example: "A test"
+ *                 example: "Web development description"
  *                 description: The description of the service
- *               taskId:
- *                 type: string
- *                 format: uuid
- *                 example: null
- *                 description: The ID of the associated task (optional)
- *               taskName:
- *                 type: string
- *                 example: "Software development"
- *                 description: The name of the task
- *               taskTitle:
- *                 type: string
- *                 example: "Vigo web"
- *                 description: The title of the task
- *               taskDescription:
- *                 type: string
- *                 example: "Fintech app"
- *                 description: The description of the task
- *               taskPrice:
+ *               price:
  *                 type: string
  *                 example: "1000.00"
- *                 description: The price of the task
- *               taskDetails:
- *                 type: string
- *                 example: "I want to build a fintech product"
- *                 description: Additional details about the task
- *               reference:
- *                 type: string
+ *                 description: The price of the service
+ *               credits:
+ *                 type: number
+ *                 nullable: true
  *                 example: null
- *                 description: Optional reference information for the service
- *               duration:
+ *                 description: The number of credits for the service (required if pricingDetails is 'credits')
+ *               hours:
+ *                 type: number
+ *                 nullable: true
+ *                 example: null
+ *                 description: The number of hours for the service (required if pricingDetails is 'timebased')
+ *               pricingDetails:
  *                 type: string
- *                 example: "2 - 3 days"
- *                 description: The duration required to complete the task
+ *                 example: "standard"
+ *                 description: The pricing model of the service (e.g., standard, credits, timebased)
+ *               purchaseLimit:
+ *                 type: number
+ *                 nullable: true
+ *                 example: null
+ *                 description: The purchase limit for the service (optional)
+ *               allocation:
+ *                 type: string
+ *                 nullable: true
+ *                 example: null
+ *                 description: The allocation type for credits or requests (required if pricingDetails is 'credits' or 'timebased')
+ *               maxRequest:
+ *                 type: number
+ *                 example: 1
+ *                 description: The maximum number of requests allowed for the service, can also be null
+ *               isDefault:
+ *                 type: boolean
+ *                 example: true
+ *                 description: Indicates if the service is set as default
+ *               type:
+ *                 type: string
+ *                 example: "one off"
+ *                 description: The type of service (e.g., one off, subscription)
+ *               serviceImage:
+ *                 type: string
+ *                 format: binary
+ *                 description: The image file for the service (optional)
  *     responses:
  *       201:
  *         description: Service created successfully
@@ -102,65 +102,71 @@ router.use(protect);
  *                       id:
  *                         type: string
  *                         format: uuid
- *                         example: "1bcc34b7-0070-449a-a12c-7beb843eb001"
+ *                         example: "f6c3067e-9057-412a-91b1-c93a5dae46f4"
  *                       name:
  *                         type: string
- *                         example: "First Service"
+ *                         example: "Web development"
  *                       description:
  *                         type: string
- *                         example: "A test"
+ *                         example: "Web development description"
  *                       serviceImage:
- *                         type: string
- *                         example: "https://pub-b3c115b60ec04ceaae8ac7360bf42530.r2.dev/services-image/1745096094535-100minds.jpg"
- *                       taskName:
- *                         type: string
- *                         example: "Software development"
- *                       taskTitle:
- *                         type: string
- *                         example: "Vigo web"
- *                       taskDescription:
- *                         type: string
- *                         example: "Fintech app"
- *                       taskPrice:
- *                         type: string
- *                         example: "1000.00"
- *                       taskDetails:
- *                         type: string
- *                         example: "I want to build a fintech product"
- *                       reference:
  *                         type: string
  *                         nullable: true
  *                         example: null
- *                       duration:
+ *                       price:
  *                         type: string
- *                         example: "2 - 3 days"
+ *                         example: "1000.00"
+ *                       hours:
+ *                         type: number
+ *                         nullable: true
+ *                         example: null
+ *                       credits:
+ *                         type: number
+ *                         nullable: true
+ *                         example: null
  *                       status:
  *                         type: string
- *                         example: "pending"
+ *                         example: "draft"
+ *                       type:
+ *                         type: string
+ *                         example: "one off"
+ *                       pricingDetails:
+ *                         type: string
+ *                         example: "standard"
+ *                       purchaseLimit:
+ *                         type: number
+ *                         nullable: true
+ *                         example: null
+ *                       allocation:
+ *                         type: string
+ *                         nullable: true
+ *                         example: null
+ *                       maxRequest:
+ *                         type: number
+ *                         example: 1
+ *                       isDefault:
+ *                         type: boolean
+ *                         example: true
  *                       userId:
  *                         type: string
  *                         format: uuid
- *                         example: "eb1bde91-941c-4d68-ba88-5887fc7d9255"
- *                       taskId:
- *                         type: string
- *                         format: uuid
- *                         nullable: true
- *                         example: null
- *                       isActive:
- *                         type: boolean
- *                         example: true
+ *                         example: "48574aea-82ea-41f5-b8d9-5ae9b4712fe9"
  *                       isDeleted:
  *                         type: boolean
  *                         example: false
  *                       created_at:
  *                         type: string
  *                         format: date-time
- *                         example: "2025-04-19T20:54:55.481Z"
+ *                         example: "2025-04-22T21:58:38.468Z"
+ *                       updated_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-04-22T21:58:38.468Z"
  *                 message:
  *                   type: string
  *                   example: "Service created successfully"
  *       400:
- *         description: Bad Request - Missing required fields or invalid user
+ *         description: Bad Request - Missing or invalid required fields
  *         content:
  *           application/json:
  *             schema:
@@ -171,21 +177,35 @@ router.use(protect);
  *                   example: error
  *                 message:
  *                   type: string
- *                   example: "Please log in again"
+ *                   example: "Please provide a service name"
  *                   enum:
  *                     - Please log in again
- *                     - service image is required
  *                     - Please provide a service name
  *                     - Please provide a service description
- *                     - Please provide a task name
- *                     - Please provide a task title
- *                     - Please provide a task description
- *                     - Please provide a task price
- *                     - Please provide task details
- *                     - Please provide a task duration
- *                     - Please provide a service image
+ *                     - Please provide a service type
+ *                     - Please provide a service price
+ *                     - Please provide service pricing details
+ *                     - Please provide credits
+ *                     - Please provide hours
+ *                     - Please provide credits allocation
+ *                     - Please provide requests allocation
+ *                     - Service default status must be a boolean
+ *                     - Service max request must be a number
+ *       401:
+ *         description: Unauthorized - User is not an admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "You are not authorized to create a service"
  *       500:
- *         description: Internal Server Error - Failed to create service
+ *         description: Internal Server Error - Service creation failed
  *         content:
  *           application/json:
  *             schema:
@@ -201,10 +221,10 @@ router.use(protect);
 router.post('/create', multerUpload.single('serviceImage'), servicesController.createService);
 /**
  * @openapi
- * /service/all:
+ * /service/admin-all:
  *   get:
  *     summary: Retrieve all services
- *     description: Allows an admin user to retrieve a list of all services. The endpoint validates the user’s login status and admin role, then fetches all services from the database that are not marked as deleted.
+ *     description: Allows an admin user to retrieve a list of all services. The endpoint validates the user’s login status and admin role, then fetches all services from the database that are not marked as deleted and also have a status of draft.
  *     tags:
  *       - Services
  *     security:
@@ -228,60 +248,63 @@ router.post('/create', multerUpload.single('serviceImage'), servicesController.c
  *                       id:
  *                         type: string
  *                         format: uuid
- *                         example: "1bcc34b7-0070-449a-a12c-7beb843eb001"
+ *                         example: "6450618d-04b6-470f-96ba-652a77ad719c"
  *                       name:
  *                         type: string
- *                         example: "First Service"
+ *                         example: "Web development 3"
  *                       description:
  *                         type: string
- *                         example: "A test"
+ *                         example: "Web development description 3"
  *                       serviceImage:
- *                         type: string
- *                         example: "https://pub-b3c115b60ec04ceaae8ac7360bf42530.r2.dev/services-image/1745096094535-100minds.jpg"
- *                       taskName:
- *                         type: string
- *                         example: "Software development"
- *                       taskTitle:
- *                         type: string
- *                         example: "Vigo web"
- *                       taskDescription:
- *                         type: string
- *                         example: "Fintech app"
- *                       taskPrice:
- *                         type: string
- *                         example: "1000.00"
- *                       taskDetails:
- *                         type: string
- *                         example: "I want to build a fintech product"
- *                       reference:
  *                         type: string
  *                         nullable: true
  *                         example: null
- *                       duration:
+ *                       price:
  *                         type: string
- *                         example: "2 - 3 days"
+ *                         example: "1000.00"
+ *                       hours:
+ *                         type: number
+ *                         nullable: true
+ *                         example: null
+ *                       credits:
+ *                         type: number
+ *                         nullable: true
+ *                         example: 200
  *                       status:
  *                         type: string
- *                         example: "pending"
+ *                         example: "draft"
+ *                       type:
+ *                         type: string
+ *                         example: "one off"
+ *                       pricingDetails:
+ *                         type: string
+ *                         example: "credits"
+ *                       purchaseLimit:
+ *                         type: number
+ *                         nullable: true
+ *                         example: null
+ *                       allocation:
+ *                         type: string
+ *                         nullable: true
+ *                         example: "requests based on total credits"
+ *                       maxRequest:
+ *                         type: number
+ *                         nullable: true
+ *                         example: 1
+ *                       isDefault:
+ *                         type: boolean
+ *                         example: true
  *                       userId:
  *                         type: string
  *                         format: uuid
- *                         example: "eb1bde91-941c-4d68-ba88-5887fc7d9255"
- *                       taskId:
- *                         type: string
- *                         format: uuid
- *                         nullable: true
- *                         example: null
- *                       isActive:
- *                         type: boolean
- *                         example: true
+ *                         example: "48574aea-82ea-41f5-b8d9-5ae9b4712fe9"
  *                       isDeleted:
  *                         type: boolean
  *                         example: false
  *                       created_at:
  *                         type: string
  *                         format: date-time
- *                         example: "2025-04-19T20:54:55.481Z"
+ *                         example: "2025-04-22T22:12:13.971Z"
  *                 message:
  *                   type: string
  *                   example: "Services retrieved successfully"
@@ -326,13 +349,129 @@ router.post('/create', multerUpload.single('serviceImage'), servicesController.c
  *                   example: "No services found"
  */
 router.get('/admin-all', servicesController.findAllServices);
+/**
+ * @openapi
+ * /service/client-all:
+ *   get:
+ *     summary: Retrieve all active services for clients
+ *     description: Allows a logged-in user to retrieve a list of all active services. The endpoint validates the user’s login status and fetches all services with an active status from the database that are not marked as deleted.
+ *     tags:
+ *       - Services
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Services retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         format: uuid
+ *                         example: "bdf8349e-3c76-4c79-95b7-6ef960dd2b36"
+ *                       name:
+ *                         type: string
+ *                         example: "Web development 3"
+ *                       description:
+ *                         type: string
+ *                         example: "Web development description 3"
+ *                       serviceImage:
+ *                         type: string
+ *                         nullable: true
+ *                         example: null
+ *                       price:
+ *                         type: string
+ *                         example: "1000.00"
+ *                       hours:
+ *                         type: number
+ *                         nullable: true
+ *                         example: null
+ *                       credits:
+ *                         type: number
+ *                         nullable: true
+ *                         example: 200
+ *                       status:
+ *                         type: string
+ *                         example: "active"
+ *                       type:
+ *                         type: string
+ *                         example: "one off"
+ *                       pricingDetails:
+ *                         type: string
+ *                         example: "standard"
+ *                       purchaseLimit:
+ *                         type: number
+ *                         nullable: true
+ *                         example: null
+ *                       allocation:
+ *                         type: string
+ *                         nullable: true
+ *                         example: null
+ *                       maxRequest:
+ *                         type: number
+ *                         nullable: true
+ *                         example: null
+ *                       isDefault:
+ *                         type: boolean
+ *                         example: false
+ *                       userId:
+ *                         type: string
+ *                         format: uuid
+ *                         example: "48574aea-82ea-41f5-b8d9-5ae9b4712fe9"
+ *                       isDeleted:
+ *                         type: boolean
+ *                         example: false
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-04-22T22:10:35.077Z"
+ *                 message:
+ *                   type: string
+ *                   example: "Services retrieved successfully"
+ *       400:
+ *         description: Bad Request - User not logged in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Please log in again"
+ *       404:
+ *         description: Not Found - No services found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "No services found"
+ */
 router.get('/client-all', servicesController.findClientServices);
 /**
  * @openapi
- * /service/id:
+ * /service/find:
  *   get:
  *     summary: Retrieve a service by ID
- *     description: Allows a logged-in user to retrieve a specific service by its ID. The endpoint validates the user’s login status, ensures a service ID is provided, and fetches the service from the database if it is not marked as deleted.
+ *     description: Allows a logged-in user to retrieve a specific service by its ID. The endpoint validates the user’s login status, ensures a service ID is provided, and fetches the service from the database if it exists and is not marked as deleted.
  *     tags:
  *       - Services
  *     security:
@@ -344,7 +483,7 @@ router.get('/client-all', servicesController.findClientServices);
  *         schema:
  *           type: string
  *           format: uuid
- *           example: "1bcc34b7-0070-449a-a12c-7beb843eb001"
+ *           example: "bdf8349e-3c76-4c79-95b7-6ef960dd2b36"
  *         description: The ID of the service to retrieve
  *     responses:
  *       200:
@@ -365,65 +504,68 @@ router.get('/client-all', servicesController.findClientServices);
  *                       id:
  *                         type: string
  *                         format: uuid
- *                         example: "1bcc34b7-0070-449a-a12c-7beb843eb001"
+ *                         example: "bdf8349e-3c76-4c79-95b7-6ef960dd2b36"
  *                       name:
  *                         type: string
- *                         example: "First Service"
+ *                         example: "Web development 3"
  *                       description:
  *                         type: string
- *                         example: "A test"
+ *                         example: "Web development description 3"
  *                       serviceImage:
- *                         type: string
- *                         example: "https://pub-b3c115b60ec04ceaae8ac7360bf42530.r2.dev/services-image/1745096094535-100minds.jpg"
- *                       taskName:
- *                         type: string
- *                         example: "Software development"
- *                       taskTitle:
- *                         type: string
- *                         example: "Vigo web"
- *                       taskDescription:
- *                         type: string
- *                         example: "Fintech app"
- *                       taskPrice:
- *                         type: string
- *                         example: "1000.00"
- *                       taskDetails:
- *                         type: string
- *                         example: "I want to build a fintech product"
- *                       reference:
  *                         type: string
  *                         nullable: true
  *                         example: null
- *                       duration:
+ *                       price:
  *                         type: string
- *                         example: "2 - 3 days"
+ *                         example: "1000.00"
+ *                       hours:
+ *                         type: number
+ *                         nullable: true
+ *                         example: null
+ *                       credits:
+ *                         type: number
+ *                         nullable: true
+ *                         example: 200
  *                       status:
  *                         type: string
- *                         example: "pending"
+ *                         example: "active"
+ *                       type:
+ *                         type: string
+ *                         example: "one off"
+ *                       pricingDetails:
+ *                         type: string
+ *                         example: "standard"
+ *                       purchaseLimit:
+ *                         type: number
+ *                         nullable: true
+ *                         example: null
+ *                       allocation:
+ *                         type: string
+ *                         nullable: true
+ *                         example: null
+ *                       maxRequest:
+ *                         type: number
+ *                         nullable: true
+ *                         example: null
+ *                       isDefault:
+ *                         type: boolean
+ *                         example: false
  *                       userId:
  *                         type: string
  *                         format: uuid
- *                         example: "eb1bde91-941c-4d68-ba88-5887fc7d9255"
- *                       taskId:
- *                         type: string
- *                         format: uuid
- *                         nullable: true
- *                         example: null
- *                       isActive:
- *                         type: boolean
- *                         example: true
+ *                         example: "48574aea-82ea-41f5-b8d9-5ae9b4712fe9"
  *                       isDeleted:
  *                         type: boolean
  *                         example: false
  *                       created_at:
  *                         type: string
  *                         format: date-time
- *                         example: "2025-04-19T20:54:55.481Z"
+ *                         example: "2025-04-22T22:10:35.077Z"
  *                 message:
  *                   type: string
  *                   example: "Service retrieved successfully"
  *       400:
- *         description: Bad Request - User not logged in or service ID not provided
+ *         description: Bad Request - User not logged in or missing service ID
  *         content:
  *           application/json:
  *             schema:
@@ -452,13 +594,13 @@ router.get('/client-all', servicesController.findClientServices);
  *                   type: string
  *                   example: "Service not found"
  */
-router.get('/id', servicesController.findServiceById);
+router.get('/find', servicesController.findServiceById);
 /**
  * @openapi
  * /service/update:
  *   post:
  *     summary: Update a service
- *     description: Allows an admin user to update the active status of a specific service by its ID. The endpoint validates the user’s login status, admin role, ensures a service ID and valid boolean isActive status are provided, and updates the service in the database.
+ *     description: Allows an admin user to update an existing service with optional image upload. The endpoint validates the user’s login status, admin role, and ensures the service exists. It supports partial updates for fields like name, description, price, type, pricing details, and more, with conditional validation for credits, hours, allocation, and max request based on pricing details.
  *     tags:
  *       - Services
  *     security:
@@ -466,22 +608,70 @@ router.get('/id', servicesController.findServiceById);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
  *               - serviceId
- *               - isActive
  *             properties:
  *               serviceId:
  *                 type: string
  *                 format: uuid
- *                 example: "1bcc34b7-0070-449a-a12c-7beb843eb001"
+ *                 example: "bdf8349e-3c76-4c79-95b7-6ef960dd2b36"
  *                 description: The ID of the service to update
- *               isActive:
+ *               name:
+ *                 type: string
+ *                 example: "Web development"
+ *                 description: The updated name of the service (optional)
+ *               description:
+ *                 type: string
+ *                 example: "Web development description 3"
+ *                 description: The updated description of the service (optional)
+ *               price:
+ *                 type: string
+ *                 example: "1000.00"
+ *                 description: The updated price of the service (optional)
+ *               credits:
+ *                 type: number
+ *                 nullable: true
+ *                 example: 200
+ *                 description: The updated number of credits for the service (required if pricingDetails is 'credits')
+ *               hours:
+ *                 type: number
+ *                 nullable: true
+ *                 example: null
+ *                 description: The updated number of hours for the service (required if pricingDetails is 'timebased')
+ *               pricingDetails:
+ *                 type: string
+ *                 example: "standard"
+ *                 description: The updated pricing model of the service (e.g., standard, credits, timebased) (optional)
+ *               purchaseLimit:
+ *                 type: number
+ *                 nullable: true
+ *                 example: null
+ *                 description: The updated purchase limit for the service (optional)
+ *               allocation:
+ *                 type: string
+ *                 nullable: true
+ *                 example: null
+ *                 description: The updated allocation type for credits or requests (required if pricingDetails is 'credits' or 'timebased') (optional)
+ *               maxRequest:
+ *                 type: number
+ *                 nullable: true
+ *                 example: null
+ *                 description: The updated maximum number of requests allowed for the service (required as a number if allocation is 'fixed amount') (optional)
+ *               isDefault:
  *                 type: boolean
  *                 example: false
- *                 description: The active status of the service
+ *                 description: The updated default status of the service (optional)
+ *               type:
+ *                 type: string
+ *                 example: "one off"
+ *                 description: The updated type of service (e.g., one off, subscription) (optional)
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: The updated image file for the service (optional)
  *     responses:
  *       200:
  *         description: Service updated successfully
@@ -501,68 +691,68 @@ router.get('/id', servicesController.findServiceById);
  *                       id:
  *                         type: string
  *                         format: uuid
- *                         example: "1bcc34b7-0070-449a-a12c-7beb843eb001"
+ *                         example: "bdf8349e-3c76-4c79-95b7-6ef960dd2b36"
  *                       name:
  *                         type: string
- *                         example: "First Service"
+ *                         example: "Web development"
  *                       description:
  *                         type: string
- *                         example: "A test"
+ *                         example: "Web development description 3"
  *                       serviceImage:
  *                         type: string
- *                         example: "https://pub-b3c115b60ec04ceaae8ac7360bf42530.r2.dev/services-image/1745096094535-100minds.jpg"
- *                       taskName:
- *                         type: string
- *                         example: "Software development"
- *                       taskTitle:
- *                         type: string
- *                         example: "Vigo web"
- *                       taskDescription:
- *                         type: string
- *                         example: "Fintech app"
- *                       taskPrice:
+ *                         nullable: true
+ *                         example: "https://pub-b3c115b60ec04ceaae8ac7360bf42530.r2.dev/services-image/1745361583838-100minds.jpg"
+ *                       price:
  *                         type: string
  *                         example: "1000.00"
- *                       taskDetails:
+ *                       hours:
+ *                         type: number
+ *                         nullable: true
+ *                         example: null
+ *                       credits:
+ *                         type: number
+ *                         nullable: true
+ *                         example: 200
+ *                       status:
  *                         type: string
- *                         example: "I want to build a fintech product"
- *                       reference:
+ *                         example: "active"
+ *                       type:
+ *                         type: string
+ *                         example: "one off"
+ *                       pricingDetails:
+ *                         type: string
+ *                         example: "standard"
+ *                       purchaseLimit:
+ *                         type: number
+ *                         nullable: true
+ *                         example: null
+ *                       allocation:
  *                         type: string
  *                         nullable: true
  *                         example: null
- *                       duration:
- *                         type: string
- *                         example: "2 - 3 days"
- *                       status:
- *                         type: string
- *                         example: "pending"
+ *                       maxRequest:
+ *                         type: number
+ *                         nullable: true
+ *                         example: null
+ *                       isDefault:
+ *                         type: boolean
+ *                         example: false
  *                       userId:
  *                         type: string
  *                         format: uuid
- *                         example: "eb1bde91-941c-4d68-ba88-5887fc7d9255"
- *                       taskId:
- *                         type: string
- *                         format: uuid
- *                         nullable: true
- *                         example: null
- *                       isActive:
- *                         type: boolean
- *                         example: false
+ *                         example: "48574aea-82ea-41f5-b8d9-5ae9b4712fe9"
  *                       isDeleted:
  *                         type: boolean
  *                         example: false
  *                       created_at:
  *                         type: string
  *                         format: date-time
- *                         example: "2025-04-19T20:54:55.481Z"
- *                       type:
- *                         type: string
- *                         example: "onetime"
+ *                         example: "2025-04-22T22:10:35.077Z"
  *                 message:
  *                   type: string
  *                   example: "Service updated successfully"
  *       400:
- *         description: Bad Request - Missing service ID or invalid isActive status
+ *         description: Bad Request - Missing or invalid required fields
  *         content:
  *           application/json:
  *             schema:
@@ -576,8 +766,12 @@ router.get('/id', servicesController.findServiceById);
  *                   example: "Please log in again"
  *                   enum:
  *                     - Please log in again
- *                     - Please provide a service ID
- *                     - Service status must be a boolean
+ *                     - Please provide credits
+ *                     - Please provide hours
+ *                     - Please provide credits allocation
+ *                     - Please provide requests allocation
+ *                     - Service default status must be a boolean
+ *                     - Service max request must be a number
  *       401:
  *         description: Unauthorized - User is not an admin
  *         content:
@@ -591,6 +785,19 @@ router.get('/id', servicesController.findServiceById);
  *                 message:
  *                   type: string
  *                   example: "You are not authorized to update this service"
+ *       404:
+ *         description: Not Found - Service not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Service not found"
  *       500:
  *         description: Internal Server Error - Service update failed
  *         content:
