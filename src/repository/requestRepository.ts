@@ -35,7 +35,20 @@ class RequestsRepository {
 
 		const requestsWithFiles = await Promise.all(
 			requests.map(async (request) => {
-				const files = await knexDb.table('request_files').where({ requestId: request.id });
+				const files = await knexDb.table('request_files').where({ requestId: request.id, isDeleted: false });
+				return { ...request, files };
+			})
+		);
+
+		return requestsWithFiles;
+	};
+
+	findRequestById = async (id: string): Promise<(IRequests & { files: IRequestFiles[] })[]> => {
+		const requests: IRequests[] = await knexDb.table('requests').where({ id, isDeleted: false });
+
+		const requestsWithFiles = await Promise.all(
+			requests.map(async (request) => {
+				const files = await knexDb.table('request_files').where({ requestId: request.id, isDeleted: false });
 				return { ...request, files };
 			})
 		);

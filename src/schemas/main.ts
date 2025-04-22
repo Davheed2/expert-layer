@@ -57,6 +57,7 @@ export const mainSchema = z.object({
 	title: z.string().min(3).trim(),
 	description: z.string().min(3).trim(),
 	popular: z.boolean(),
+	requestFileId: z.string().uuid(),
 	role: z.enum([Role.ACCOUNTMANAGER, Role.ADMIN, Role.CLIENT, Role.TALENT]),
 	key: z.string(),
 	status: z.enum([

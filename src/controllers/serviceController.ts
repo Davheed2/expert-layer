@@ -112,7 +112,7 @@ export class ServicesController {
 			throw new AppError('No services found', 404);
 		}
 
-		return AppResponse(res, 200, toJSON(services), 'Services retrieved successfully');
+		return AppResponse(res, 200, services, 'Services retrieved successfully');
 	});
 
 	findClientServices = catchAsync(async (req: Request, res: Response) => {

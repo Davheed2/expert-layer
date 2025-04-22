@@ -14,8 +14,7 @@ import { IRequests } from '@/common/interfaces';
 
 export class RequestsController {
 	createRequest = catchAsync(async (req: Request, res: Response) => {
-		const { user } = req;
-		const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+		const { user, file } = req;
 		const { serviceId, taskName, taskTitle, taskDescription, taskPrice, taskDetails, duration } = req.body;
 
 		if (!user) {
@@ -58,18 +57,14 @@ export class RequestsController {
 		const serviceMaxRequest = service.maxRequest;
 		if (serviceMaxRequest !== null && serviceMaxRequest <= 1) {
 			const existingRequestNumber = await requestsRepository.findByUserIdAndServiceId(user.id, serviceId);
-			if (
-				existingRequestNumber[0].status !== RequestStatus.FAILED &&
-				existingRequestNumber[0].status !== RequestStatus.PROCESSING
-			) {
-				if (existingRequestNumber.length >= serviceMaxRequest) {
+			if (existingRequestNumber.length >= serviceMaxRequest) {
+				if (existingRequestNumber[0].status !== RequestStatus.FAILED) {
 					throw new AppError('You have reached the maximum number of requests for this service', 400);
 				}
 			}
 		}
 
 		const transactionId = referenceGenerator();
-		console.log(transactionId);
 		const requestPayload = {
 			userId: user.id,
 			serviceId,
@@ -89,14 +84,14 @@ export class RequestsController {
 			throw new AppError('Request creation failed', 500);
 		}
 
-		AppResponse(res, 201, null, 'Request created successfully');
+		AppResponse(res, 201, toJSON(newRequest), 'Request created successfully');
 
 		setImmediate(async () => {
-			if (files && files.file && files.file.length > 0) {
+			if (file) {
 				const { secureUrl } = await uploadDocumentFile({
-					fileName: `requests-file/${Date.now()}-${files.file[0].originalname}`,
-					buffer: files.file[0].buffer,
-					mimetype: files.file[0].mimetype,
+					fileName: `requests-file/${Date.now()}-${file.originalname}`,
+					buffer: file.buffer,
+					mimetype: file.mimetype,
 				});
 				await requestsRepository.createRequestFile({
 					requestId: newRequest[0].id,
@@ -117,6 +112,7 @@ export class RequestsController {
 		if (!requests) {
 			throw new AppError('No request found', 404);
 		}
+
 		return AppResponse(res, 200, toJSON(requests), 'Requests retrieved successfully');
 	});
 
@@ -131,17 +127,17 @@ export class RequestsController {
 			throw new AppError('Please provide a request ID', 400);
 		}
 
-		const request = await requestsRepository.findById(requestId as string);
+		const request = await requestsRepository.findRequestById(requestId as string);
 		if (!request) {
 			throw new AppError('Request not found', 404);
 		}
-		return AppResponse(res, 200, toJSON([request]), 'Request retrieved successfully');
+
+		return AppResponse(res, 200, toJSON(request), 'Request retrieved successfully');
 	});
 
 	updateRequest = catchAsync(async (req: Request, res: Response) => {
-		const { user } = req;
+		const { user, file } = req;
 		const { credits, status, priority, dueDate, requestId } = req.body;
-		const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
 
 		if (!user) {
 			throw new AppError('Please log in again', 400);
@@ -183,11 +179,11 @@ export class RequestsController {
 			updatePayload.dueDate = parsedDate;
 		}
 
-		if (files && files.file && files.file.length > 0) {
+		if (file) {
 			const { secureUrl } = await uploadDocumentFile({
-				fileName: `requests-file/${Date.now()}-${files.file[0].originalname}`,
-				buffer: files.file[0].buffer,
-				mimetype: files.file[0].mimetype,
+				fileName: `requests-file/${Date.now()}-${file.originalname}`,
+				buffer: file.buffer,
+				mimetype: file.mimetype,
 			});
 			await requestsRepository.createRequestFile({
 				requestId: requestId,
@@ -200,7 +196,7 @@ export class RequestsController {
 			throw new AppError('Request update failed', 500);
 		}
 
-		return AppResponse(res, 200, null, 'Request updated successfully');
+		return AppResponse(res, 200, toJSON(updatedRequest), 'Request updated successfully');
 	});
 
 	deleteRequestFile = catchAsync(async (req: Request, res: Response) => {
