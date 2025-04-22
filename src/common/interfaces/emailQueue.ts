@@ -17,6 +17,11 @@ export interface LoginEmailData extends CommonDataFields {
 	time: string;
 }
 
+export interface MagicEmailData extends CommonDataFields {
+	name: string;
+	magicLink: string;
+}
+
 export interface ForgotPasswordData extends CommonDataFields {
 	resetLink: string;
 	name: string;
@@ -30,5 +35,6 @@ export type EmailJobData =
 	| { type: 'signUpEmail'; data: SignUpEmailData }
 	| { type: 'welcomeEmail'; data: WelcomeEmailData }
 	| { type: 'loginEmail'; data: LoginEmailData }
+	| { type: 'magicEmail'; data: MagicEmailData }
 	| { type: 'forgotPassword'; data: ForgotPasswordData }
 	| { type: 'resetPassword'; data: ResetPasswordData };

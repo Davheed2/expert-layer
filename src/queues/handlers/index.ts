@@ -5,11 +5,19 @@ import {
 	ForgotPasswordData,
 	WelcomeEmailData,
 	SignUpEmailData,
+	MagicEmailData,
 } from '@/common/interfaces';
 import { logger } from '@/common/utils';
 import nodemailer from 'nodemailer';
 import { ENVIRONMENT } from 'src/common/config';
-import { forgotPasswordEmail, loginEmail, resetPasswordEmail, signUpEmail, welcomeEmail } from '../templates';
+import {
+	forgotPasswordEmail,
+	loginEmail,
+	magicLinkEmail,
+	resetPasswordEmail,
+	signUpEmail,
+	welcomeEmail,
+} from '../templates';
 
 const transporter = nodemailer.createTransport({
 	service: 'gmail',
@@ -37,6 +45,10 @@ export const sendEmail = async (job: EmailJobData) => {
 			break;
 		case 'loginEmail':
 			htmlContent = loginEmail(data as LoginEmailData);
+			subject = 'Verify your email to continue with Expert Layer';
+			break;
+		case 'magicEmail':
+			htmlContent = magicLinkEmail(data as MagicEmailData);
 			subject = 'Login Alert';
 			break;
 		case 'forgotPassword':

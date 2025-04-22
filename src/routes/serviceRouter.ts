@@ -198,14 +198,7 @@ router.use(protect);
  *                   type: string
  *                   example: "Service creation failed"
  */
-router.post(
-	'/create',
-	multerUpload.fields([
-		{ name: 'serviceImage', maxCount: 1 },
-		{ name: 'resources', maxCount: 1 },
-	]),
-	servicesController.createService
-);
+router.post('/create', multerUpload.single('serviceImage'), servicesController.createService);
 /**
  * @openapi
  * /service/all:
@@ -332,7 +325,8 @@ router.post(
  *                   type: string
  *                   example: "No services found"
  */
-router.get('/all', servicesController.findAllServices);
+router.get('/admin-all', servicesController.findAllServices);
+router.get('/client-all', servicesController.findClientServices);
 /**
  * @openapi
  * /service/id:
@@ -611,6 +605,6 @@ router.get('/id', servicesController.findServiceById);
  *                   type: string
  *                   example: "Service update failed"
  */
-router.post('/update', servicesController.updateService);
+router.post('/update', multerUpload.single('serviceImage'), servicesController.updateService);
 
 export { router as serviceRouter };

@@ -3,7 +3,7 @@ import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
 	await knex.schema.createTable('wallets', (table) => {
-		table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+		table.uuid('id').primary().defaultTo(knex.fn.uuid());
 		table.uuid('userId').references('id').inTable('users').onDelete('CASCADE');
 		table.integer('balance').notNullable().defaultTo(0);
 		table.enum('currency', Object.values(CurrencyType)).notNullable().defaultTo(CurrencyType.USD);

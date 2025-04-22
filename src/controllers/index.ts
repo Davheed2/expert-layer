@@ -7,3 +7,4 @@ export * from './serviceController';
 export * from './walletController';
 export * from './webhookController';
 export * from './teamController';
+export * from './requestController';

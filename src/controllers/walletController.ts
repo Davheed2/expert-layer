@@ -5,7 +5,7 @@ import { Request, Response } from 'express';
 import { AppResponse } from '@/common/utils';
 import { toJSON } from '@/common/utils';
 import { knexDb as db } from '@/common/config';
-import { servicesRepository } from '@/repository';
+import { requestsRepository } from '@/repository';
 
 export class WalletController {
 	constructor(private walletService = new WalletService(db)) {}
@@ -34,9 +34,9 @@ export class WalletController {
 		return AppResponse(res, 200, { balance }, 'Wallet balance retrieved successfully');
 	});
 
-	createServicePayment = catchAsync(async (req: Request, res: Response) => {
+	createRequestPayment = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
-		const { serviceId } = req.body;
+		const { requestId } = req.body;
 
 		if (!user) {
 			throw new AppError('Please log in again', 400);
@@ -44,19 +44,19 @@ export class WalletController {
 
 		const walletBalance = await this.walletService.getWalletBalance(user.id);
 
-		const service = await servicesRepository.findById(serviceId);
-		if (!service) {
-			throw new AppError('Service not found', 404);
+		const request = await requestsRepository.findById(requestId);
+		if (!request) {
+			throw new AppError('Request not found', 404);
 		}
 
 		// If wallet has enough balance, process payment from wallet
-		if (walletBalance >= service.taskPrice) {
-			const transaction = await this.walletService.processWalletPayment(user.id, serviceId);
+		if (walletBalance >= request.taskPrice) {
+			const transaction = await this.walletService.processWalletPayment(user.id, requestId);
 			return AppResponse(res, 200, toJSON(transaction), 'Payment processed successfully from wallet');
 		}
 
 		// Otherwise create payment intent for remaining amount
-		const paymentIntent = await this.walletService.createServicePaymentIntent(user.id, serviceId);
+		const paymentIntent = await this.walletService.createRequestPaymentIntent(user.id, requestId);
 
 		return AppResponse(
 			res,

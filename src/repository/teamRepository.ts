@@ -57,26 +57,27 @@ class TeamRepository {
 		return await knexDb.table('team_members').insert(payload).returning('*');
 	};
 
-    getAllTeamMembers2 = async (ownerId: string): Promise<ITeamMember[]> => {
-		return await knexDb.table('team_members').where({ ownerId }).select('*');
+	isUserMemberOfTeam = async (teamId: string, userId: string): Promise<boolean> => {
+		const result = await knexDb.table('team_members').where({ teamId, memberId: userId }).select('*');
+		return result.length > 0;
 	};
 
-    getAllTeamsWithMembers = async (): Promise<(ITeam & { members: ITeamMember[] })[]> => {
-        const teams = await knexDb.table('teams').where({ isDeleted: false }).select('*');
-        const teamIds = teams.map(team => team.id);
+	getAllTeamsWithMembers = async (): Promise<(ITeam & { members: ITeamMember[] })[]> => {
+		const teams = await knexDb.table('teams').where({ isDeleted: false }).select('*');
+		const teamIds = teams.map((team) => team.id);
 
-        const members = await knexDb.table('team_members').whereIn('teamId', teamIds).select('*');
+		const members = await knexDb.table('team_members').whereIn('teamId', teamIds).select('*');
 
-        return teams.map(team => ({
-            ...team,
-            members: members.filter(member => member.teamId === team.id),
-        }));
-    };
+		return teams.map((team) => ({
+			...team,
+			members: members.filter((member) => member.teamId === team.id),
+		}));
+	};
 
-    getTeamMember = async (teamId: string, userId: string): Promise<ITeamMember | null> => {
-        const result = await knexDb.table('team_members').where({ teamId, memberId: userId }).select('*');
-        return result.length ? result[0] : null;
-    }
+	getTeamMember = async (teamId: string, userId: string): Promise<ITeamMember | null> => {
+		const result = await knexDb.table('team_members').where({ teamId, memberId: userId }).select('*');
+		return result.length ? result[0] : null;
+	};
 }
 
 export const teamRepository = new TeamRepository();

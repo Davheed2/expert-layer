@@ -8,8 +8,8 @@ const router = express.Router();
  * @openapi
  * /auth/sign-up:
  *   post:
- *     summary: User sign up
- *     description: Allows a new user to sign up by providing their email, password, first name, last name, and role. The endpoint validates the input data, checks for existing users with the same email, hashes the password, generates a verification token, and creates a new user in the database. A verification link is prepared to be sent to the user's email for account verification.
+ *     summary: Sign up a new user
+ *     description: Allows a new user to sign up by providing their email, first name, last name, and role. The endpoint validates the input data, checks if the email is already in use, generates a verification token, sends a verification email, and creates a user record with a pending verification status.
  *     tags:
  *       - Authentication
  *     requestBody:
@@ -20,7 +20,6 @@ const router = express.Router();
  *             type: object
  *             required:
  *               - email
- *               - password
  *               - firstName
  *               - lastName
  *               - role
@@ -28,27 +27,23 @@ const router = express.Router();
  *               email:
  *                 type: string
  *                 format: email
- *                 example: "uchennadavid@gmail.com"
- *                 description: The user's email address
- *               password:
- *                 type: string
- *                 example: "password123"
- *                 description: The user's password
+ *                 example: "uchennadavid2404@gmail.com"
+ *                 description: The email address of the new user
  *               firstName:
  *                 type: string
- *                 example: "Dshfjfk"
- *                 description: The user's first name
+ *                 example: "David"
+ *                 description: The first name of the new user
  *               lastName:
  *                 type: string
- *                 example: "Gjrjrngj"
- *                 description: The user's last name
+ *                 example: "David"
+ *                 description: The last name of the new user
  *               role:
  *                 type: string
- *                 example: "talent"
- *                 description: The user's role
+ *                 example: "admin"
+ *                 description: The role to assign to the new user
  *     responses:
  *       201:
- *         description: User created successfully, verification link sent
+ *         description: Verification link sent successfully
  *         content:
  *           application/json:
  *             schema:
@@ -65,24 +60,33 @@ const router = express.Router();
  *                       id:
  *                         type: string
  *                         format: uuid
- *                         example: "5bfc14e3-df7a-48fc-8c32-9624ea18291b"
+ *                         example: "bbeb8a73-8a81-4041-824f-e039c20e4b5c"
  *                       firstName:
  *                         type: string
- *                         example: "Dshfjfk"
+ *                         example: "David"
  *                       lastName:
  *                         type: string
- *                         example: "Gjrjrngj"
+ *                         example: "David"
  *                       email:
  *                         type: string
  *                         format: email
- *                         example: "uchennadavid@gmail.com"
+ *                         example: "uchennadavid2404@gmail.com"
  *                       photo:
  *                         type: string
  *                         nullable: true
  *                         example: null
  *                       role:
  *                         type: string
- *                         example: "talent"
+ *                         example: "admin"
+ *                       loginToken:
+ *                         type: string
+ *                         nullable: true
+ *                         example: null
+ *                       loginTokenExpires:
+ *                         type: string
+ *                         format: date-time
+ *                         nullable: true
+ *                         example: null
  *                       isSuspended:
  *                         type: boolean
  *                         example: false
@@ -92,10 +96,10 @@ const router = express.Router();
  *                       created_at:
  *                         type: string
  *                         format: date-time
- *                         example: "2025-04-19T12:59:55.868Z"
+ *                         example: "2025-04-22T16:54:57.397Z"
  *                 message:
  *                   type: string
- *                   example: "Verification link sent to uchennadavid@gmail.com"
+ *                   example: "Verification link sent to uchennadavid2404@gmail.com"
  *       400:
  *         description: Bad Request - Incomplete signup data
  *         content:
@@ -142,7 +146,7 @@ router.post('/sign-up', authController.signUp);
  * /auth/verify-account:
  *   get:
  *     summary: Verify user account
- *     description: Verifies a user's account using a verification token provided in the query string. The endpoint validates the token, checks if the account is already verified, ensures the token is unused and not expired, updates the user's verification status, and sends notifications to admins about the new user registration.
+ *     description: Verifies a user’s account using a verification token provided in the query. The endpoint validates the token, checks if the user exists, ensures the account is not already verified, confirms the token is unused and unexpired, updates the user’s verification status, sends a welcome email, creates a notification, and automatically creates a team for the user. It also notifies admins of the new user registration.
  *     tags:
  *       - Authentication
  *     parameters:
@@ -151,8 +155,8 @@ router.post('/sign-up', authController.signUp);
  *         required: true
  *         schema:
  *           type: string
- *           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *         description: The verification token sent to the user's email
+ *           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbiI6InJhbmRvbVRva2VuIiwiaWF0IjoxNzI5NjQyNzI3LCJleHAiOjE3MzIyMzQ3Mjd9.2bX8..."
+ *         description: The verification token sent to the user’s email
  *     responses:
  *       200:
  *         description: Email verified successfully
@@ -172,24 +176,33 @@ router.post('/sign-up', authController.signUp);
  *                       id:
  *                         type: string
  *                         format: uuid
- *                         example: "5bfc14e3-df7a-48fc-8c32-9624ea18291b"
+ *                         example: "bbeb8a73-8a81-4041-824f-e039c20e4b5c"
  *                       firstName:
  *                         type: string
- *                         example: "Dshfjfk"
+ *                         example: "David"
  *                       lastName:
  *                         type: string
- *                         example: "Gjrjrngj"
+ *                         example: "David"
  *                       email:
  *                         type: string
  *                         format: email
- *                         example: "uchennadavid@gmail.com"
+ *                         example: "uchennadavid2404@gmail.com"
  *                       photo:
  *                         type: string
  *                         nullable: true
  *                         example: null
  *                       role:
  *                         type: string
- *                         example: "talent"
+ *                         example: "admin"
+ *                       loginToken:
+ *                         type: string
+ *                         nullable: true
+ *                         example: "421aee9c5a7ad75e9d050c46605e1acbe80c21023544b2a6dd028ef6fdddb7d6"
+ *                       loginTokenExpires:
+ *                         type: string
+ *                         format: date-time
+ *                         nullable: true
+ *                         example: "2025-04-22T19:56:33.659Z"
  *                       isSuspended:
  *                         type: boolean
  *                         example: false
@@ -199,12 +212,12 @@ router.post('/sign-up', authController.signUp);
  *                       created_at:
  *                         type: string
  *                         format: date-time
- *                         example: "2025-04-19T12:59:55.868Z"
+ *                         example: "2025-04-22T16:54:57.397Z"
  *                 message:
  *                   type: string
  *                   example: "Email verified successfully"
  *       400:
- *         description: Bad Request - Invalid or missing token, already verified, used, or expired
+ *         description: Bad Request - Missing, invalid, already used, or expired token
  *         content:
  *           application/json:
  *             schema:
@@ -253,8 +266,8 @@ router.get('/verify-account', authController.verifyAccount);
  * @openapi
  * /auth/sign-in:
  *   post:
- *     summary: User login
- *     description: Allows a user to log in by providing their email and password. The endpoint validates the credentials, checks for email verification and account suspension, manages login retry limits, and issues access and refresh tokens upon successful login. Tokens are set as cookies in the response.
+ *     summary: Sign in a user
+ *     description: Allows a user to sign in by requesting a magic link sent to their email. The endpoint validates the provided email, checks if the user exists, verifies their account status (email verification and suspension), ensures no recent login attempts within the last minute, generates a login token, and sends a magic link to the user’s email.
  *     tags:
  *       - Authentication
  *     requestBody:
@@ -265,17 +278,90 @@ router.get('/verify-account', authController.verifyAccount);
  *             type: object
  *             required:
  *               - email
- *               - password
  *             properties:
  *               email:
  *                 type: string
  *                 format: email
  *                 example: "uchennadavid2404@gmail.com"
- *                 description: The user's email address
- *               password:
- *                 type: string
- *                 example: "password123"
- *                 description: The user's password
+ *                 description: The email address of the user attempting to sign in
+ *     responses:
+ *       200:
+ *         description: Login link sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: null
+ *                   example: null
+ *                 message:
+ *                   type: string
+ *                   example: "Login link sent to your email"
+ *       401:
+ *         description: Unauthorized - Incomplete data, unverified account, or suspended account
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Incomplete login data"
+ *                   enum:
+ *                     - Incomplete login data
+ *                     - Your account is not yet verified
+ *                     - Your account is currently suspended
+ *       404:
+ *         description: Not Found - User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ *       429:
+ *         description: Too Many Requests - Login request sent too recently
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Please wait before requesting another login link"
+ */
+router.post('/sign-in', authController.signIn);
+/**
+ * @openapi
+ * /auth/verify-login:
+ *   get:
+ *     summary: Verify user login
+ *     description: Verifies a user’s login attempt using a login token provided in the query. The endpoint validates the token, checks if the user exists, ensures the token is valid and unexpired, generates access and refresh tokens, sets them as cookies, clears the login token, updates the last login time, sends a login confirmation email, and returns the user data.
+ *     tags:
+ *       - Authentication
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbiI6InJhbmRvbVRva2VuIiwiaWF0IjoxNzI5NjQyNzI3LCJleHAiOjE3Mjk2NDM2Mjd9.3cY8..."
+ *         description: The login token sent to the user’s email
  *     responses:
  *       200:
  *         description: User logged in successfully
@@ -295,13 +381,13 @@ router.get('/verify-account', authController.verifyAccount);
  *                       id:
  *                         type: string
  *                         format: uuid
- *                         example: "eb1bde91-941c-4d68-ba88-5887fc7d9255"
+ *                         example: "bbeb8a73-8a81-4041-824f-e039c20e4b5c"
  *                       firstName:
  *                         type: string
- *                         example: "Davii"
+ *                         example: "David"
  *                       lastName:
  *                         type: string
- *                         example: "Davii"
+ *                         example: "David"
  *                       email:
  *                         type: string
  *                         format: email
@@ -313,6 +399,15 @@ router.get('/verify-account', authController.verifyAccount);
  *                       role:
  *                         type: string
  *                         example: "admin"
+ *                       loginToken:
+ *                         type: string
+ *                         nullable: true
+ *                         example: "21f943b11abfe5d3f20e8abe73595d61d2950ea1f5ba2c9f356243e7a1596f30"
+ *                       loginTokenExpires:
+ *                         type: string
+ *                         format: date-time
+ *                         nullable: true
+ *                         example: "2025-04-22T20:28:35.282Z"
  *                       isSuspended:
  *                         type: boolean
  *                         example: false
@@ -322,18 +417,12 @@ router.get('/verify-account', authController.verifyAccount);
  *                       created_at:
  *                         type: string
  *                         format: date-time
- *                         example: "2025-04-15T22:34:11.478Z"
+ *                         example: "2025-04-22T16:54:57.397Z"
  *                 message:
  *                   type: string
  *                   example: "User logged in successfully"
- *         headers:
- *           Set-Cookie:
- *             schema:
- *               type: string
- *               example: "accessToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; Path=/; HttpOnly"
- *             description: Sets accessToken and refreshToken as cookies
- *       401:
- *         description: Unauthorized - Invalid credentials or account issues
+ *       400:
+ *         description: Bad Request - Missing or expired login token
  *         content:
  *           application/json:
  *             schema:
@@ -344,13 +433,23 @@ router.get('/verify-account', authController.verifyAccount);
  *                   example: error
  *                 message:
  *                   type: string
- *                   example: "Invalid credentials"
+ *                   example: "Login token is required"
  *                   enum:
- *                     - Incomplete login data
- *                     - Invalid credentials
- *                     - Your account is not yet verified
- *                     - Your account is currently suspended
- *                     - login retries exceeded!
+ *                     - Login token is required
+ *                     - Login token has expired
+ *       401:
+ *         description: Unauthorized - Invalid login token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid login token"
  *       404:
  *         description: Not Found - User not found
  *         content:
@@ -365,169 +464,7 @@ router.get('/verify-account', authController.verifyAccount);
  *                   type: string
  *                   example: "User not found"
  */
-router.post('/sign-in', authController.signIn);
-/**
- * @openapi
- * /auth/password/forgot:
- *   post:
- *     summary: Request password reset
- *     description: Allows a user to request a password reset by providing their email. The endpoint validates the email, checks if the user exists, ensures the password reset retry limit is not exceeded, generates a reset token, and sends a password reset link to the user's email. If retries are exceeded, the account is suspended.
- *     tags:
- *       - Authentication
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: "uchennadavid@gmail.com"
- *                 description: The user's email address
- *     responses:
- *       200:
- *         description: Password reset link sent successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: success
- *                 data:
- *                   type: null
- *                   example: null
- *                 message:
- *                   type: string
- *                   example: "Password reset link sent to uchennadavid@gmail.com"
- *       400:
- *         description: Bad Request - Email is required
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: error
- *                 message:
- *                   type: string
- *                   example: "Email is required"
- *       401:
- *         description: Unauthorized - Password reset retries exceeded
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: error
- *                 message:
- *                   type: string
- *                   example: "Password reset retries exceeded! and account suspended"
- *       404:
- *         description: Not Found - No user found with provided email
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: error
- *                 message:
- *                   type: string
- *                   example: "No user found with provided email"
- */
-router.post('/password/forgot', authController.forgotPassword);
-/**
- * @openapi
- * /auth/password/reset:
- *   post:
- *     summary: Reset user password
- *     description: Allows a user to reset their password using a valid password reset token. The endpoint validates the token, checks if the new password matches the confirmation, ensures the new password is different from the old one, updates the user's password, and sends a confirmation email. Notifications are also added for the user.
- *     tags:
- *       - Authentication
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - token
- *               - password
- *               - confirmPassword
- *             properties:
- *               token:
- *                 type: string
- *                 example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *                 description: The password reset token sent to the user's email
- *               password:
- *                 type: string
- *                 example: "newPassword123"
- *                 description: The new password
- *               confirmPassword:
- *                 type: string
- *                 example: "newPassword123"
- *                 description: Confirmation of the new password
- *     responses:
- *       200:
- *         description: Password reset successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: success
- *                 data:
- *                   type: null
- *                   example: null
- *                 message:
- *                   type: string
- *                   example: "Password reset successfully"
- *       400:
- *         description: Bad Request - Missing fields, passwords mismatch, same as old password, or invalid/expired token
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: error
- *                 message:
- *                   type: string
- *                   example: "All fields are required"
- *                   enum:
- *                     - All fields are required
- *                     - Passwords do not match
- *                     - New password cannot be the same as the old password
- *                     - Password reset token is invalid or has expired
- *                     - Password reset failed
- *       401:
- *         description: Unauthorized - Invalid token
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: error
- *                 message:
- *                   type: string
- *                   example: "Invalid token"
- */
-router.post('/password/reset', authController.resetPassword);
+router.get('/verify-login', authController.verifyLogin);
 router.get('/health', authController.appHealth);
 
 //protect all routes after this middleware

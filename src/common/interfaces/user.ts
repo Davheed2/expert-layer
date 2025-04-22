@@ -5,7 +5,7 @@ export interface IUser {
 	firstName: string;
 	lastName: string;
 	email: string;
-	password: string;
+	password: string | null;
 	ipAddress: string;
 	photo: string;
 	role: Role;
@@ -17,9 +17,12 @@ export interface IUser {
 	lastLogin: Date;
 	isSuspended: boolean;
 	isEmailVerified: boolean;
-	verificationToken: string;
-	verificationTokenExpires: Date;
+	verificationToken: string | null;
+	verificationTokenExpires: Date | null;
 	tokenIsUsed: boolean;
+	loginToken: string | null;
+	loginTokenExpires: Date | null;
+	
 	isDeleted: boolean;
 	created_at?: Date;
 	updated_at?: Date;

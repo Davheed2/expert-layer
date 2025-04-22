@@ -22,7 +22,6 @@ export class WalletService {
 		if (!user) {
 			throw new Error('User not found');
 		}
-
 		if (user.stripe_customer_id) {
 			return user.stripe_customer_id;
 		}
@@ -61,27 +60,27 @@ export class WalletService {
 		return wallet.balance;
 	}
 
-	async createServicePaymentIntent(userId: string, serviceId: string): Promise<Stripe.PaymentIntent> {
-		const [user, service, wallet] = await Promise.all([
+	async createRequestPaymentIntent(userId: string, requestId: string): Promise<Stripe.PaymentIntent> {
+		const [user, request, wallet] = await Promise.all([
 			this.db('users').where({ id: userId }).first(),
-			this.db('services').where({ id: serviceId }).first(),
+			this.db('requests').where({ id: requestId }).first(),
 			this.db('wallets').where({ userId }).first(),
 		]);
 
-		if (!user || !service) {
-			throw new AppError('User or service not found', 404);
+		if (!user || !request) {
+			throw new AppError('User or request not found', 404);
 		}
 
 		const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
 		const walletBalance = wallet?.balance || 0;
 
 		// If wallet balance covers the full cost, no need for payment intent
-		if (walletBalance >= service.taskPrice) {
+		if (walletBalance >= request.taskPrice) {
 			throw new AppError('Wallet balance is sufficient for this task, use processWalletPayment instead');
 		}
 
 		// Amount to charge via Stripe (task price minus wallet balance)
-		const amountToCharge = Math.max(0, service.taskPrice - walletBalance);
+		const amountToCharge = Math.max(0, request.taskPrice - walletBalance);
 
 		// Create a payment intent for the remaining amount
 		const paymentIntent = await stripe.paymentIntents.create({
@@ -90,10 +89,11 @@ export class WalletService {
 			customer: stripeCustomerId,
 			metadata: {
 				user_id: userId,
-				service_id: serviceId,
+				requesr_id: requestId,
 				wallet_amount_used: walletBalance.toString(),
-				service_price: service.taskPrice.toString(),
-				service_name: service.name,
+				request_price: request.taskPrice.toString(),
+				request_name: request.taskName,
+				transaction_id: request.transactionId,
 			},
 		});
 
@@ -101,32 +101,32 @@ export class WalletService {
 	}
 
 	// Process payment when wallet balance is sufficient
-	async processWalletPayment(userId: string, serviceId: string): Promise<ITransaction> {
+	async processWalletPayment(userId: string, requestId: string): Promise<ITransaction> {
 		// Use transaction to ensure data consistency
 		return await this.db.transaction(async (trx) => {
-			const [service, wallet] = await Promise.all([
-				trx('services').where({ id: serviceId }).first(),
+			const [request, wallet] = await Promise.all([
+				trx('requests').where({ id: requestId }).first(),
 				trx('wallets').where({ userId }).first(),
 			]);
 
-			if (!service || !wallet) {
+			if (!request || !wallet) {
 				throw new Error('Task or wallet not found');
 			}
 
-			if (wallet.balance < service.taskPrice) {
+			if (wallet.balance < request.taskPrice) {
 				throw new AppError('Insufficient wallet balance');
 			}
 
 			// Update wallet balance
-			const newBalance = wallet.balance - service.taskPrice;
+			const newBalance = wallet.balance - request.taskPrice;
 			await trx('wallets').where({ id: wallet.id }).update({
 				balance: newBalance,
 				updated_at: new Date(),
 			});
 
 			// Update task status
-			await trx('services').where({ id: serviceId }).update({
-				status: 'paid',
+			await trx('requests').where({ transactionId: request.transactionId }).update({
+				status: 'submitted',
 				updated_at: new Date(),
 			});
 
@@ -134,14 +134,14 @@ export class WalletService {
 			const [transaction] = await trx('transactions')
 				.insert({
 					userId: userId,
-					serviceId,
+					requestId,
 					status: 'success',
 					type: 'task_payment',
-					amount: -service.taskPrice,
+					amount: -request.taskPrice,
 					walletBalanceBefore: wallet.balance,
 					walletBalanceAfter: newBalance,
 					metadata: {
-						task_name: service.name,
+						task_name: request.taskName,
 						payment_method: 'wallet',
 					},
 				})
@@ -154,23 +154,23 @@ export class WalletService {
 	// Handle successful payment and wallet updates
 	async handleSuccessfulPayment(paymentIntentId: string): Promise<void> {
 		const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-		const { user_id, service_id, wallet_amount_used } = paymentIntent.metadata;
+		const { user_id, request_id, wallet_amount_used } = paymentIntent.metadata;
 
 		// Use transaction for data consistency
 		await this.db.transaction(async (trx) => {
-			const [user, service, wallet] = await Promise.all([
+			const [user, request, wallet] = await Promise.all([
 				trx('users').where({ id: user_id }).first(),
-				trx('services').where({ id: service_id }).first(),
+				trx('requests').where({ id: request_id }).first(),
 				trx('wallets').where({ userId: user_id }).first(),
 			]);
 
-			if (!user || !service || !wallet) {
-				throw new Error('User, service, or wallet not found');
+			if (!user || !request || !wallet) {
+				throw new Error('User, request, or wallet not found');
 			}
 
 			const amountPaid = paymentIntent.amount;
 			const walletAmountUsed = parseInt(wallet_amount_used || '0');
-			const taskPrice = service.taskPrice;
+			const taskPrice = request.taskPrice;
 
 			// Calculate if there's excess payment to add to wallet
 			const totalPayment = amountPaid + walletAmountUsed;
@@ -196,15 +196,15 @@ export class WalletService {
 			});
 
 			// Update task status
-			await trx('services').where({ id: service_id }).update({
-				status: 'paid',
+			await trx('requests').where({ transactionId: request.transactionId }).update({
+				status: 'submitted',
 				updated_at: new Date(),
 			});
 
 			// Record transaction
 			await trx('transactions').insert({
 				userId: user_id,
-				serviceId: service_id,
+				requestId: request_id,
 				type: 'task_payment',
 				amount: -taskPrice,
 				status: 'success',
@@ -231,7 +231,7 @@ export class WalletService {
 					stripePaymentIntentId: paymentIntentId,
 					metadata: {
 						source: 'excess_payment',
-						service_id: service_id,
+						request_id,
 					},
 				});
 			}
@@ -315,13 +315,13 @@ export class WalletService {
 
 	async handleFailedPayment(paymentIntentId: string): Promise<void> {
 		const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-		const { user_id, service_id, transaction_type } = paymentIntent.metadata;
+		const { user_id, request_id, transaction_type } = paymentIntent.metadata;
 
 		await this.db.transaction(async (trx) => {
 			// Record the failed transaction
 			await trx('transactions').insert({
 				userId: user_id,
-				serviceId: service_id || null,
+				requestId: request_id || null,
 				type: transaction_type === 'wallet_topup' ? 'refund' : 'refund',
 				amount: 0,
 				status: 'failed',
@@ -333,9 +333,9 @@ export class WalletService {
 			});
 
 			// If this was a service payment, update the service status
-			if (service_id) {
-				await trx('services').where({ id: service_id }).update({
-					status: 'cancelled',
+			if (request_id) {
+				await trx('requests').where({ id: request_id }).update({
+					status: 'failed',
 					updated_at: new Date(),
 				});
 			}
@@ -353,12 +353,12 @@ export class WalletService {
 
 	async handleProcessingPayment(paymentIntentId: string): Promise<void> {
 		const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-		const { user_id, service_id, transaction_type } = paymentIntent.metadata;
+		const { user_id, request_id, transaction_type } = paymentIntent.metadata;
 
 		await this.db.transaction(async (trx) => {
 			await trx('transactions').insert({
 				userId: user_id,
-				serviceId: service_id || null,
+				requestId: request_id || null,
 				type: transaction_type === 'wallet_topup' ? 'wallet_credit' : 'task_payment',
 				amount: 0,
 				status: 'processing',
@@ -368,10 +368,10 @@ export class WalletService {
 				},
 			});
 
-			// If this was a service payment, update the service status
-			if (service_id) {
-				await trx('services').where({ id: service_id }).update({
-					status: 'cancelled',
+			// If this was a service payment, update the request status
+			if (request_id) {
+				await trx('requests').where({ id: request_id }).update({
+					status: 'processing',
 					updated_at: new Date(),
 				});
 			}
@@ -390,17 +390,17 @@ export class WalletService {
 
 	async handleCanceledPayment(paymentIntentId: string): Promise<void> {
 		const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-		const { user_id, service_id, transaction_type } = paymentIntent.metadata;
+		const { user_id, request_id, transaction_type } = paymentIntent.metadata;
 
 		await this.db.transaction(async (trx) => {
 			// Record the canceled transaction
 			await trx('transactions').insert({
 				userId: user_id,
-				serviceId: service_id || null,
+				requestId: request_id || null,
 				//USE FAILED INSTEAD
 				type: transaction_type === 'wallet_topup' ? 'wallet_credit' : 'wallet_credit',
 				amount: 0, // No money moved
-				status: 'cancelled',
+				status: 'failed',
 				stripePaymentIntentId: paymentIntentId,
 				metadata: {
 					cancelled_amount: paymentIntent.amount,
@@ -409,9 +409,9 @@ export class WalletService {
 			});
 
 			// If this was a service payment, update the service status
-			if (service_id) {
-				await trx('services').where({ id: service_id }).update({
-					status: 'cancelled',
+			if (request_id) {
+				await trx('requests').where({ id: request_id }).update({
+					status: 'failed',
 					updated_at: new Date(),
 				});
 			}

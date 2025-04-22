@@ -6,3 +6,5 @@ export * from './taskDetailsRepository';
 export * from './tasksRepository';
 export * from './servicesRepository';
 export * from './teamRepository';
+export * from './messageRepository';
+export * from './requestRepository';

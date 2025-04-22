@@ -7,6 +7,7 @@ import {
 	ForgotPasswordData,
 	IHashData,
 	LoginEmailData,
+	MagicEmailData,
 	ResetPasswordData,
 	SignUpEmailData,
 	WelcomeEmailData,
@@ -67,7 +68,7 @@ const toJSON = <T extends object>(obj: T | T[], excludeFields: (keyof T)[] = [])
 		'verificationTokenExpires',
 		'tokenIsUsed',
 		'isEmailVerified',
-		'stripe_customer_id'
+		'stripe_customer_id',
 	] as (keyof T)[];
 
 	// Use provided exclusions or default ones
@@ -299,6 +300,18 @@ const generateOtp = () => {
 	});
 };
 
+const referenceGenerator = () => {
+	const date = new Date();
+	const year = date.getFullYear().toString().slice(-2); // Get last two digits of the year
+	const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Month is 0-indexed
+	const day = date.getDate().toString().padStart(2, '0');
+	const randomNum = Math.floor(Math.random() * 10000)
+		.toString()
+		.padStart(4, '0'); // Random number between 0000 and 9999
+
+	return `${year}${month}${day}${randomNum}`;
+};
+
 const sendSignUpEmail = async (email: string, name: string, verificationUrl: string): Promise<void> => {
 	const emailData: SignUpEmailData = {
 		to: email,
@@ -336,6 +349,20 @@ const sendLoginEmail = async (email: string, name: string, time: string): Promis
 
 	addEmailToQueue({
 		type: 'loginEmail',
+		data: emailData,
+	});
+};
+
+const sendMagicLinkEmail = async (email: string, name: string, magicLink: string): Promise<void> => {
+	const emailData: MagicEmailData = {
+		to: email,
+		priority: 'high',
+		name,
+		magicLink,
+	};
+
+	addEmailToQueue({
+		type: 'magicEmail',
 		data: emailData,
 	});
 };
@@ -388,9 +415,11 @@ export {
 	parseTimeSpent,
 	formatDuration,
 	generateOtp,
+	referenceGenerator,
 	sendSignUpEmail,
 	sendWelcomeEmail,
 	sendLoginEmail,
+	sendMagicLinkEmail,
 	sendResetPasswordEmail,
 	sendForgotPasswordEmail,
 };

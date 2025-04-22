@@ -1,22 +1,21 @@
-import { ServiceStatus, ServiceType } from '../constants';
+import { ServicePricing, ServiceRequestAllocation, ServiceStatus, ServiceType } from '../constants';
 
 export interface IService {
 	id: string;
-    userId: string;
+	userId: string;
 	name: string;
-	description: string;
 	serviceImage: string;
-    taskId?: string;
-	taskName: string;
-	taskTitle: string;
-	taskDescription: string;
-	taskPrice: number;
-	taskDetails: string;
-	reference?: string;
-	duration: string;
+	description: string;
+	price: number;
+	credits: number;
 	status: ServiceStatus;
-	isActive: boolean;
+	hours: string;
 	type: ServiceType;
+	pricingDetails: ServicePricing;
+	purchaseLimit: string;
+	allocation: ServiceRequestAllocation;
+	maxRequest: number;
+	isDefault: boolean;
 	isDeleted: boolean;
 	created_at?: Date;
 	updated_at?: Date;

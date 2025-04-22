@@ -3,17 +3,14 @@ import { Request, Response } from 'express';
 import {
 	AppError,
 	AppResponse,
-	comparePassword,
 	createToken,
 	generateAccessToken,
 	generateRandomString,
 	generateRefreshToken,
 	getDomainReferer,
-	hashPassword,
 	parseTokenDuration,
-	sendForgotPasswordEmail,
 	sendLoginEmail,
-	sendResetPasswordEmail,
+	sendMagicLinkEmail,
 	sendSignUpEmail,
 	sendWelcomeEmail,
 	setCookie,
@@ -29,9 +26,9 @@ import { Team } from '@/services/Team';
 
 class AuthController {
 	signUp = catchAsync(async (req: Request, res: Response) => {
-		const { email, password, firstName, lastName, role } = req.body;
+		const { email, firstName, lastName, role } = req.body;
 
-		if (!firstName || !lastName || !email || !password || !role) {
+		if (!firstName || !lastName || !email || !role) {
 			throw new AppError('Incomplete signup data', 400);
 		}
 
@@ -40,8 +37,6 @@ class AuthController {
 			if (existingUser.email === email) throw new AppError('User with this email already exists', 409);
 		}
 
-		const hashedPassword = await hashPassword(password);
-
 		const verificationToken = await generateRandomString();
 		const hashedVerificationToken = createToken(
 			{
@@ -49,6 +44,7 @@ class AuthController {
 			},
 			{ expiresIn: '30d' }
 		);
+		
 		console.log(hashedVerificationToken);
 
 		const verificationUrl = `${getDomainReferer(req)}/auth/verify?token=${hashedVerificationToken}`;
@@ -56,7 +52,7 @@ class AuthController {
 
 		const [user] = await userRepository.create({
 			email,
-			password: hashedPassword,
+			password: null,
 			firstName,
 			lastName,
 			ipAddress: req.ip,
@@ -93,7 +89,10 @@ class AuthController {
 		if (extinguishUser.tokenIsUsed) {
 			throw new AppError('Verification token has already been used', 400);
 		}
-		if (extinguishUser.verificationTokenExpires < DateTime.now().toJSDate()) {
+		if (
+			!extinguishUser.verificationTokenExpires ||
+			extinguishUser.verificationTokenExpires < DateTime.now().toJSDate()
+		) {
 			throw new AppError('Verification token has expired', 400);
 		}
 
@@ -135,28 +134,15 @@ class AuthController {
 	});
 
 	signIn = catchAsync(async (req: Request, res: Response) => {
-		const { email, password } = req.body;
+		const { email } = req.body;
 
-		if (!email || !password) {
+		if (!email) {
 			throw new AppError('Incomplete login data', 401);
 		}
 
 		const user = await userRepository.findByEmail(email);
 		if (!user) {
 			throw new AppError('User not found', 404);
-		}
-
-		const currentRequestTime = DateTime.now();
-		const lastLoginRetry = currentRequestTime.diff(DateTime.fromISO(user.lastLogin.toISOString()), 'hours');
-
-		if (user.loginRetries >= 5 && Math.round(lastLoginRetry.hours) < 12) {
-			throw new AppError('login retries exceeded!', 401);
-		}
-
-		const isPasswordValid = await comparePassword(password, user.password);
-		if (!isPasswordValid) {
-			await userRepository.update(user.id, { loginRetries: user.loginRetries + 1 });
-			throw new AppError('Invalid credentials', 401);
 		}
 
 		if (!user.isEmailVerified) {
@@ -166,6 +152,60 @@ class AuthController {
 			throw new AppError('Your account is currently suspended', 401);
 		}
 
+		const currentRequestTime = DateTime.now();
+		const lastLoginRequest = currentRequestTime.diff(DateTime.fromISO(user.lastLogin.toISOString()), 'minutes');
+
+		if (user.lastLogin && Math.round(lastLoginRequest.minutes) < 1) {
+			throw new AppError('Please wait before requesting another login link', 429);
+		}
+
+		const loginToken = await generateRandomString();
+		const hashedLoginToken = createToken(
+			{
+				token: loginToken,
+			},
+			{ expiresIn: '15m' }
+		);
+
+		console.log(hashedLoginToken)
+
+		const loginUrl = `${getDomainReferer(req)}/auth/login?token=${hashedLoginToken}`;
+		await userRepository.update(user.id, {
+			loginToken,
+			loginTokenExpires: DateTime.now().plus({ minutes: 15 }).toJSDate(),
+			lastLogin: currentRequestTime.toJSDate(),
+		});
+
+		await sendMagicLinkEmail(user.email, user.firstName, loginUrl);
+
+		return AppResponse(res, 200, null, 'Login link sent to your email');
+	});
+
+	verifyLogin = catchAsync(async (req: Request, res: Response) => {
+		const { token } = req.query;
+
+		if (!token) {
+			throw new AppError('Login token is required', 400);
+		}
+
+		const decodedToken = await verifyToken(token as string);
+		if (!decodedToken.token) {
+			throw new AppError('Invalid login token', 401);
+		}
+
+		const user = await userRepository.findByLoginToken(decodedToken.token);
+		if (!user) {
+			throw new AppError('User not found', 404);
+		}
+
+		if (user.loginToken !== decodedToken.token) {
+			throw new AppError('Invalid login token', 401);
+		}
+
+		if (!user.loginTokenExpires || user.loginTokenExpires < DateTime.now().toJSDate()) {
+			throw new AppError('Login token has expired', 400);
+		}
+
 		const accessToken = generateAccessToken(user.id);
 		const refreshToken = generateRefreshToken(user.id);
 
@@ -173,13 +213,14 @@ class AuthController {
 		setCookie(req, res, 'refreshToken', refreshToken, parseTokenDuration(ENVIRONMENT.JWT_EXPIRES_IN.REFRESH));
 
 		await userRepository.update(user.id, {
-			loginRetries: 0,
-			lastLogin: currentRequestTime.toJSDate(),
+			loginToken: null,
+			loginTokenExpires: null,
+			lastLogin: DateTime.now().toJSDate(),
 		});
 
-		//login email
 		const loginTime = DateTime.now().toFormat("cccc, LLLL d, yyyy 'at' t");
 		await sendLoginEmail(user.email, user.firstName, loginTime);
+
 		return AppResponse(res, 200, toJSON([user]), 'User logged in successfully');
 	});
 
@@ -194,96 +235,6 @@ class AuthController {
 		setCookie(req, res, 'refreshToken', 'expired', -1);
 
 		AppResponse(res, 200, null, 'Logout successful');
-	});
-
-	forgotPassword = catchAsync(async (req: Request, res: Response) => {
-		const { email } = req.body;
-
-		if (!email) {
-			throw new AppError('Email is required', 400);
-		}
-
-		const user = await userRepository.findByEmail(email);
-		if (!user) {
-			throw new AppError('No user found with provided email', 404);
-		}
-
-		if (user.passwordResetRetries >= 6) {
-			await userRepository.update(user.id, {
-				isSuspended: true,
-			});
-
-			throw new AppError('Password reset retries exceeded! and account suspended', 401);
-		}
-
-		const passwordResetToken = await generateRandomString();
-		const hashedPasswordResetToken = createToken(
-			{
-				token: passwordResetToken,
-			},
-			{ expiresIn: '15m' }
-		);
-
-		console.log(hashedPasswordResetToken);
-
-		const passwordResetUrl = `${getDomainReferer(req)}/reset-password?token=${hashedPasswordResetToken}`;
-
-		await userRepository.update(user.id, {
-			passwordResetToken: passwordResetToken,
-			passwordResetExpires: DateTime.now().plus({ minutes: 15 }).toJSDate(),
-			passwordResetRetries: user.passwordResetRetries + 1,
-		});
-
-		await sendForgotPasswordEmail(user.email, user.firstName, passwordResetUrl);
-
-		return AppResponse(res, 200, null, `Password reset link sent to ${email}`);
-	});
-
-	resetPassword = catchAsync(async (req: Request, res: Response) => {
-		const { token, password, confirmPassword } = req.body;
-
-		if (!token || !password || !confirmPassword) {
-			throw new AppError('All fields are required', 403);
-		}
-		if (password !== confirmPassword) {
-			throw new AppError('Passwords do not match', 403);
-		}
-
-		const decodedToken = await verifyToken(token);
-		if (!decodedToken.token) {
-			throw new AppError('Invalid token', 401);
-		}
-
-		const user = await userRepository.findByPasswordResetToken(decodedToken.token);
-		if (!user) {
-			throw new AppError('Password reset token is invalid or has expired', 400);
-		}
-
-		const isSamePassword = await comparePassword(password, user.password);
-		if (isSamePassword) {
-			throw new AppError('New password cannot be the same as the old password', 400);
-		}
-
-		const hashedPassword = await hashPassword(password);
-
-		const updatedUser = await userRepository.update(user.id, {
-			password: hashedPassword,
-			passwordResetRetries: 0,
-			passwordChangedAt: DateTime.now().toJSDate(),
-			passwordResetToken: '',
-			passwordResetExpires: DateTime.now().toJSDate(),
-		});
-		if (!updatedUser) {
-			throw new AppError('Password reset failed', 400);
-		}
-
-		await sendResetPasswordEmail(user.email, user.firstName);
-		await Notification.add({
-			userId: updatedUser[0].id,
-			sysNotificationId: 2,
-		});
-
-		return AppResponse(res, 200, null, 'Password reset successfully');
 	});
 
 	appHealth = catchAsync(async (req: Request, res: Response) => {

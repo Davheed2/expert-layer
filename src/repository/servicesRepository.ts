@@ -11,14 +11,6 @@ class ServicesRepository {
 		return await knexDb.table('services').where({ id }).first();
 	};
 
-	findByTaskId = async (taskId: string): Promise<IService | null> => {
-		return await knexDb.table('services').where({ taskId }).first();
-	};
-
-	findByUserId = async (userId: string): Promise<IService | null> => {
-		return await knexDb.table('services').where({ userId, isDeleted: false }).first();
-	};
-
 	update = async (id: string, payload: Partial<IService>) => {
 		return await knexDb('services')
 			.where({ id })
@@ -31,7 +23,11 @@ class ServicesRepository {
 	};
 
 	findAll = async (): Promise<IService[]> => {
-		return await knexDb.table('services').where({ isDeleted: false, status: 'paid' }).orderBy('created_at', 'desc');
+		return await knexDb.table('services').where({ isDeleted: false }).orderBy('created_at', 'desc');
+	};
+
+	findAllActive = async (): Promise<IService[]> => {
+		return await knexDb.table('services').where({ isDeleted: false, isActive: true }).orderBy('created_at', 'desc');
 	};
 }
 

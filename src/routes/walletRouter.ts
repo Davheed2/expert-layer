@@ -190,7 +190,7 @@ router.get('/balance', walletController.getWalletBalance);
  *                   type: string
  *                   example: "Service not found"
  */
-router.post('/service-payment', walletController.createServicePayment);
+router.post('/service-payment', walletController.createRequestPayment);
 /**
  * @openapi
  * /wallet/topup:

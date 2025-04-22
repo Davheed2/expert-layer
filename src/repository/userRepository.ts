@@ -40,6 +40,14 @@ class UserRepository {
 			.first();
 	};
 
+	findByLoginToken = async (loginToken: string): Promise<IUser | null> => {
+		return await knexDb
+			.table('users')
+			.where({ loginToken })
+			.where('loginTokenExpires', '>', DateTime.now().toJSDate())
+			.first();
+	};
+
 	update = async (id: string, payload: Partial<IUser>): Promise<IUser[]> => {
 		return await knexDb('users')
 			.where({ id })

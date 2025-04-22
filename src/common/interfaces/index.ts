@@ -11,3 +11,6 @@ export * from './services';
 export * from './transaction';
 export * from './wallet';
 export * from './team';
+export * from './message';
+export * from './chatRooms';
+export * from './requests';

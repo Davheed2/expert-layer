@@ -24,6 +24,7 @@ import {
 	walletRouter,
 	webhookRouter,
 	teamsRouter,
+	requestRouter,
 } from '@/routes';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
@@ -37,7 +38,11 @@ import http from 'http';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './swagger';
+import { Server as SocketIOServer } from 'socket.io';
 import { startAllQueuesAndWorkers, stopAllQueuesAndWorkers } from './queues';
+import { socketAuthMiddleware } from '@/middlewares/socketAuthMiddleware';
+import { initSocketHandlers } from '@/sockets';
+import path from 'path';
 
 dotenv.config();
 /**
@@ -64,6 +69,7 @@ app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']); // Enable trus
 app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.static(path.join(__dirname, '../public')));
 
 /**
  * Compression Middleware
@@ -177,6 +183,7 @@ app.use('/api/v1/tasks', tasksRouter);
 app.use('/api/v1/service', serviceRouter);
 app.use('/api/v1/wallet', walletRouter);
 app.use('/api/v1/team', teamsRouter);
+app.use('/api/v1/request', requestRouter);
 
 // Swagger documentation
 app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -198,6 +205,29 @@ app.all('/{*splat}', async (req, res) => {
 // to ensure all the express middlewares are set up before starting the socket server
 // including security headers and other middlewares
 const server = http.createServer(app);
+
+const io = new SocketIOServer(server, {
+	cors: {
+		origin: [
+			'https://one00-minds.onrender.com',
+			'https://app.100-minds.com',
+			'https://admin-mmyv.onrender.com',
+			'https://expert-layer.vercel.app',
+			'http://localhost:5173',
+			'http://localhost:3000',
+			'http://localhost:3001',
+		],
+		credentials: true,
+	},
+});
+
+// Apply socket middleware for authentication
+io.use(socketAuthMiddleware);
+// Initialize socket handlers
+initSocketHandlers(io);
+// Make io available throughout the application
+global.io = io;
+app.set('io', io);
 
 const appServer = server.listen(port, async () => {
 	await connectDb();

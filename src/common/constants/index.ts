@@ -25,21 +25,48 @@ export enum NotificationSource {
 }
 
 export enum ServiceStatus {
-	PENDING = 'pending',
-	COMPLETED = 'completed',
-	INPROGRESS = 'inprogress',
-	CANCELLED = 'cancelled',
-	PAID = 'paid',
+	DRAFT = 'draft',
+	ACTIVE = 'active',
 }
 
 export enum ServiceType {
-	ONE_TIME = 'onetime',
-	SUBSCRIPTION = 'subscription',
+	ONE_OFF = 'one off',
+	RECURRING = 'recurring',
+}
+
+export enum ServicePricing {
+	STANDARD = 'standard',
+	TIMEBASED = 'timebased',
+	CREDITS = 'credits',
+}
+
+export enum ServiceRequestAllocation {
+	FIXEDAMOUNT = 'fixed amount',
+	TOTALCREDITS = 'requests based on total credits',
+}
+
+export enum RequestStatus {
+	COMPLETED = 'completed',
+	SUBMITTED = 'submitted',
+	IN_PROGRESS = 'in progress',
+	PENDING_RESPONSE = 'pending response',
+	CLOSED = 'closed',
+	ON_HOLD = 'on hold',
+	QUEUED = 'queued',
+	FAILED = 'failed',
+	PROCESSING = 'processing',
+}
+
+export enum RequestPriority {
+	LOW = 'low',
+	MEDIUM = 'medium',
+	HIGH = 'high',
+	NONE = 'none',
 }
 
 export enum CurrencyType {
 	USD = 'USD',
-	NGN = 'NGN'
+	NGN = 'NGN',
 }
 
 export enum TransactionType {
@@ -48,7 +75,6 @@ export enum TransactionType {
 	REFUND = 'refund',
 	TASK_PAYMENT = 'task_payment',
 	WALLET_CREDIT = 'wallet_credit',
-
 
 	FAILED = 'failed',
 	CHARGEBACK = 'chargeback',
@@ -60,4 +86,44 @@ export enum TransactionStatus {
 	FAILED = 'failed',
 	CANCELLED = 'cancelled',
 	PROCESSING = 'processing',
+}
+
+export enum SocketEvents {
+	// Connection events
+	CONNECT = 'connect',
+	DISCONNECT = 'disconnect',
+
+	// Authentication events
+	AUTH_ERROR = 'auth_error',
+
+	// Presence events
+	USER_ONLINE = 'user_online',
+	USER_OFFLINE = 'user_offline',
+	USER_TYPING = 'user_typing',
+	USER_STOP_TYPING = 'user_stop_typing',
+
+	// Message events
+	SEND_MESSAGE = 'send_message',
+	MESSAGE_RECEIVED = 'message_received',
+	MESSAGE_READ = 'message_read',
+
+	// Room events
+	JOIN_ROOM = 'join_room',
+	LEAVE_ROOM = 'leave_room',
+
+	// Team events
+	TEAM_UPDATE = 'team_update',
+	TEAM_MESSAGE = 'team_message',
+}
+
+export enum RoomTypes {
+	DIRECT = 'direct', // 1-to-1 conversations
+	TEAM = 'team', // Team conversations
+	GROUP = 'group', // Group conversations (not tied to teams)
+}
+
+export enum MessageStatus {
+	SENT = 'sent',
+	DELIVERED = 'delivered',
+	READ = 'read',
 }
