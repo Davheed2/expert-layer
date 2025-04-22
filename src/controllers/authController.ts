@@ -44,8 +44,6 @@ class AuthController {
 			},
 			{ expiresIn: '30d' }
 		);
-		
-		console.log(hashedVerificationToken);
 
 		const verificationUrl = `${getDomainReferer(req)}/auth/verify?token=${hashedVerificationToken}`;
 		await sendSignUpEmail(email, firstName, verificationUrl);
@@ -166,8 +164,6 @@ class AuthController {
 			},
 			{ expiresIn: '15m' }
 		);
-
-		console.log(hashedLoginToken)
 
 		const loginUrl = `${getDomainReferer(req)}/auth/login?token=${hashedLoginToken}`;
 		await userRepository.update(user.id, {
