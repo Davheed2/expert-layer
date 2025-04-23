@@ -45,7 +45,7 @@ class AuthController {
 			{ expiresIn: '30d' }
 		);
 
-		const verificationUrl = `${getDomainReferer(req)}/auth/verify?token=${hashedVerificationToken}`;
+		const verificationUrl = `${getDomainReferer(req)}/auth/verify?verificationToken=${hashedVerificationToken}`;
 		await sendSignUpEmail(email, firstName, verificationUrl);
 
 		const [user] = await userRepository.create({
