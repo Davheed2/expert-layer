@@ -12,7 +12,7 @@ router.use(protect);
  * /request/create:
  *   post:
  *     summary: Create a new request
- *     description: Allows a logged-in user to create a new request for a service with optional file upload. The endpoint validates the user’s login status, required fields, service existence, and service status. It checks if the maximum request limit for the service has been reached and creates a transaction ID for the request. File uploads are processed asynchronously.
+ *     description: Allows a logged-in user to create a new request for a service with optional file upload. The endpoint validates the user’s login status, required fields, service existence, and service status. It checks if the maximum request limit for the service has been reached, generates a transaction ID, and creates the request. File uploads are processed asynchronously.
  *     tags:
  *       - Request
  *     security:
@@ -25,42 +25,42 @@ router.use(protect);
  *             type: object
  *             required:
  *               - serviceId
- *               - taskName
- *               - taskTitle
- *               - taskDescription
- *               - taskPrice
- *               - taskDetails
+ *               - serviceName
+ *               - serviceCategory
+ *               - serviceDescription
+ *               - servicePrice
+ *               - details
  *               - duration
  *             properties:
  *               serviceId:
  *                 type: string
  *                 format: uuid
- *                 example: "bdf8349e-3c76-4c79-95b7-6ef960dd2b36"
+ *                 example: "f5a93e18-8815-4a7c-8875-5cbb74fdbc78"
  *                 description: The ID of the service for the request
- *               taskName:
+ *               serviceName:
  *                 type: string
- *                 example: "Web development 3 testing"
- *                 description: The name of the task
- *               taskTitle:
+ *                 example: "Service Name"
+ *                 description: The name of the service
+ *               serviceCategory:
  *                 type: string
- *                 example: "Web development 3"
- *                 description: The title of the task
- *               taskDescription:
+ *                 example: "development"
+ *                 description: The category of the service
+ *               serviceDescription:
  *                 type: string
- *                 example: "Web development description 3"
- *                 description: The description of the task
- *               taskPrice:
+ *                 example: "Service description"
+ *                 description: The description of the service
+ *               servicePrice:
  *                 type: string
  *                 example: "1000"
- *                 description: The price of the task
- *               taskDetails:
+ *                 description: The price of the service
+ *               details:
  *                 type: string
- *                 example: "requests based on total credits detailing"
- *                 description: Additional details about the task
+ *                 example: "This is the service details"
+ *                 description: Additional details about the request
  *               duration:
  *                 type: string
- *                 example: "2 to 3 days"
- *                 description: The expected duration of the task
+ *                 example: "2 days"
+ *                 description: The expected duration of the request
  *               file:
  *                 type: string
  *                 format: binary
@@ -84,39 +84,41 @@ router.use(protect);
  *                       id:
  *                         type: string
  *                         format: uuid
- *                         example: "cfd4af4c-46ff-419d-9b81-54641280f78c"
- *                       taskName:
+ *                         example: "84d8b376-3465-44ac-8697-362c8795591c"
+ *                       serviceName:
  *                         type: string
- *                         example: "Web development 3 testing"
- *                       taskTitle:
+ *                         example: "Service Name"
+ *                       serviceDescription:
  *                         type: string
- *                         example: "Web development 3"
- *                       taskDescription:
+ *                         example: "Service description"
+ *                       details:
  *                         type: string
- *                         example: "Web development description 3"
- *                       taskDetails:
- *                         type: string
- *                         example: "requests based on total credits detailing"
- *                       taskPrice:
+ *                         example: "This is the service details"
+ *                       servicePrice:
  *                         type: string
  *                         example: "1000"
  *                       transactionId:
  *                         type: string
- *                         example: "TX 250423000000956"
+ *                         example: "TX25042400000000007102"
  *                       duration:
  *                         type: string
- *                         example: "2 to 3 days"
+ *                         example: "2 days"
  *                       hours:
  *                         type: number
  *                         nullable: true
  *                         example: null
  *                       credits:
- *                         type: string
- *                         example: "200"
- *                       dueDate:
- *                         type: string
+ *                         type: number
  *                         nullable: true
  *                         example: null
+ *                       dueDate:
+ *                         type: string
+ *                         format: date-time
+ *                         nullable: true
+ *                         example: null
+ *                       serviceCategory:
+ *                         type: string
+ *                         example: "development"
  *                       status:
  *                         type: string
  *                         example: "processing"
@@ -126,7 +128,7 @@ router.use(protect);
  *                       serviceId:
  *                         type: string
  *                         format: uuid
- *                         example: "bdf8349e-3c76-4c79-95b7-6ef960dd2b36"
+ *                         example: "f5a93e18-8815-4a7c-8875-5cbb74fdbc78"
  *                       userId:
  *                         type: string
  *                         format: uuid
@@ -137,7 +139,7 @@ router.use(protect);
  *                       created_at:
  *                         type: string
  *                         format: date-time
- *                         example: "2025-04-22T23:01:18.748Z"
+ *                         example: "2025-04-23T23:51:40.067Z"
  *                 message:
  *                   type: string
  *                   example: "Request created successfully"
@@ -157,12 +159,12 @@ router.use(protect);
  *                   enum:
  *                     - Please log in again
  *                     - Please provide a service ID
- *                     - Please provide a task name
- *                     - Please provide a task title
- *                     - Please provide a task description
- *                     - Please provide a task price
- *                     - Please provide task details
- *                     - Please provide a task duration
+ *                     - Please provide a service name
+ *                     - Please provide a service category
+ *                     - Please provide a service description
+ *                     - Please provide a service price
+ *                     - Please provide request details
+ *                     - Please provide a request duration
  *                     - Service is not active
  *                     - You have reached the maximum number of requests for this service
  *       404:

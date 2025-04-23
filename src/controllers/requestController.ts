@@ -39,7 +39,7 @@ export class RequestsController {
 			throw new AppError('Please provide request details', 400);
 		}
 		if (!duration) {
-			throw new AppError('Please provide a task duration', 400);
+			throw new AppError('Please provide a request duration', 400);
 		}
 
 		const service = await servicesRepository.findById(serviceId);
