@@ -15,7 +15,7 @@ import { IRequests } from '@/common/interfaces';
 export class RequestsController {
 	createRequest = catchAsync(async (req: Request, res: Response) => {
 		const { user, file } = req;
-		const { serviceId, taskName, taskTitle, taskDescription, taskPrice, taskDetails, duration } = req.body;
+		const { serviceId, serviceName, serviceCategory, serviceDescription, servicePrice, details, duration } = req.body;
 
 		if (!user) {
 			throw new AppError('Please log in again', 400);
@@ -23,20 +23,20 @@ export class RequestsController {
 		if (!serviceId) {
 			throw new AppError('Please provide a service ID', 400);
 		}
-		if (!taskName) {
-			throw new AppError('Please provide a task name', 400);
+		if (!serviceName) {
+			throw new AppError('Please provide a service name', 400);
 		}
-		if (!taskTitle) {
-			throw new AppError('Please provide a task title', 400);
+		if (!serviceCategory) {
+			throw new AppError('Please provide a service category', 400);
 		}
-		if (!taskDescription) {
-			throw new AppError('Please provide a task description', 400);
+		if (!serviceDescription) {
+			throw new AppError('Please provide a service description', 400);
 		}
-		if (!taskPrice) {
-			throw new AppError('Please provide a task price', 400);
+		if (!servicePrice) {
+			throw new AppError('Please provide a service price', 400);
 		}
-		if (!taskDetails) {
-			throw new AppError('Please provide task details', 400);
+		if (!details) {
+			throw new AppError('Please provide request details', 400);
 		}
 		if (!duration) {
 			throw new AppError('Please provide a task duration', 400);
@@ -68,11 +68,11 @@ export class RequestsController {
 		const requestPayload = {
 			userId: user.id,
 			serviceId,
-			taskName,
-			taskTitle,
-			taskDescription,
-			taskPrice,
-			taskDetails,
+			serviceName,
+			serviceCategory,
+			serviceDescription,
+			servicePrice,
+			details,
 			duration,
 			transactionId,
 			hours: service.hours,

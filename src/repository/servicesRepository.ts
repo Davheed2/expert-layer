@@ -29,6 +29,15 @@ class ServicesRepository {
 	findAllActive = async (): Promise<IService[]> => {
 		return await knexDb.table('services').where({ isDeleted: false, status: 'active' }).orderBy('created_at', 'desc');
 	};
+
+	getPaginatedServices = async (offset: number, limit: number): Promise<IService[]> => {
+		return await knexDb
+			.table('services')
+			.where({ isDeleted: false })
+			.orderBy('created_at', 'desc')
+			.limit(limit)
+			.offset(offset);
+	};
 }
 
 export const servicesRepository = new ServicesRepository();

@@ -29,8 +29,15 @@ export enum ServiceStatus {
 	ACTIVE = 'active',
 }
 
+export enum ServiceCategory {
+	DESIGN = 'design',
+	DEVELOPMENT = 'development',
+	CONTENT = 'content',
+	GROWTH = 'growth'
+}
+
 export enum ServiceType {
-	ONE_OFF = 'one off',
+	ONE_OFF = 'one_off',
 	RECURRING = 'recurring',
 }
 
@@ -41,15 +48,15 @@ export enum ServicePricing {
 }
 
 export enum ServiceRequestAllocation {
-	FIXEDAMOUNT = 'fixed amount',
-	TOTALCREDITS = 'requests based on total credits',
+	FIXEDAMOUNT = 'fixed_amount',
+	TOTALCREDITS = 'requests_based_on_total_credits',
 }
 
 export enum RequestStatus {
 	COMPLETED = 'completed',
 	SUBMITTED = 'submitted',
 	IN_PROGRESS = 'in progress',
-	PENDING_RESPONSE = 'pending response',
+	PENDING_RESPONSE = 'pending_response',
 	CLOSED = 'closed',
 	ON_HOLD = 'on hold',
 	QUEUED = 'queued',
@@ -75,7 +82,6 @@ export enum TransactionType {
 	REFUND = 'refund',
 	TASK_PAYMENT = 'task_payment',
 	WALLET_CREDIT = 'wallet_credit',
-
 	FAILED = 'failed',
 	CHARGEBACK = 'chargeback',
 }

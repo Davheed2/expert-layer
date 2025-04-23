@@ -14,6 +14,7 @@ export interface IService {
 	pricingDetails: ServicePricing;
 	purchaseLimit: string;
 	allocation: ServiceRequestAllocation;
+	category: string;
 	maxRequest: number;
 	isDefault: boolean;
 	isDeleted: boolean;

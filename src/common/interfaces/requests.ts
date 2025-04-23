@@ -9,11 +9,11 @@ export interface IRequests {
 	dueDate: Date;
 	credits: number;
 	hours: string;
-	taskName: string;
-	taskTitle: string;
-	taskDescription: string;
-	taskPrice: number;
-	taskDetails: string;
+	serviceName: string;
+	serviceCategory: string;
+	serviceDescription: string;
+	servicePrice: number;
+	details: string;
 	transactionId: string;
 	isDeleted: boolean;
 	duration: string;

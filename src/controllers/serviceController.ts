@@ -20,6 +20,7 @@ export class ServicesController {
 			allocation,
 			maxRequest,
 			isDefault,
+			category,
 			type,
 		} = req.body;
 
@@ -40,6 +41,9 @@ export class ServicesController {
 		}
 		if (!price) {
 			throw new AppError('Please provide a service price', 400);
+		}
+		if (!category) {
+			throw new AppError('Please provide a service category', 400);
 		}
 		if (!pricingDetails) {
 			throw new AppError('Please provide service pricing details', 400);
@@ -77,6 +81,7 @@ export class ServicesController {
 			maxRequest,
 			isDefault,
 			type,
+			category,
 			userId: user.id,
 		});
 		if (!newService) {
@@ -95,6 +100,28 @@ export class ServicesController {
 				await servicesRepository.update(newService[0].id, { serviceImage: secureUrl });
 			}
 		});
+	});
+
+	getPaginatedServices = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+		const { perPage, page } = req.query;
+
+		if (!user) {
+			throw new AppError('Please log in again', 400);
+		}
+
+		const pageSize = parseInt(perPage as string, 10) || 10;
+		const pageNum = parseInt(page as string, 10) || 1;
+
+		const offset = (pageNum - 1) * pageSize;
+		const limit = pageSize;
+
+		const services = await servicesRepository.getPaginatedServices(offset, limit);
+		if (!services) {
+			throw new AppError('No service found', 404);
+		}
+
+		return AppResponse(res, 200, services, 'Paginated Services retrieved successfully');
 	});
 
 	findAllServices = catchAsync(async (req: Request, res: Response) => {

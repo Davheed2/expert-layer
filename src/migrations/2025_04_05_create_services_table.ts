@@ -1,4 +1,10 @@
-import { ServiceStatus, ServiceType, ServicePricing, ServiceRequestAllocation } from '../common/constants';
+import {
+	ServiceStatus,
+	ServiceType,
+	ServicePricing,
+	ServiceRequestAllocation,
+	ServiceCategory,
+} from '../common/constants';
 import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
@@ -15,6 +21,7 @@ export async function up(knex: Knex): Promise<void> {
 		table.enum('pricingDetails', Object.values(ServicePricing)).notNullable();
 		table.string('purchaseLimit').nullable();
 		table.enum('allocation', Object.values(ServiceRequestAllocation)).nullable();
+		table.enum('category', Object.values(ServiceCategory)).notNullable();
 		table.integer('maxRequest').nullable();
 		table.boolean('isDefault').notNullable().defaultTo(false);
 		table.uuid('userId').notNullable().references('id').inTable('users').onDelete('CASCADE');

@@ -50,7 +50,7 @@ export class WalletController {
 		}
 
 		// If wallet has enough balance, process payment from wallet
-		if (walletBalance >= request.taskPrice) {
+		if (walletBalance >= request.servicePrice) {
 			const transaction = await this.walletService.processWalletPayment(user.id, requestId);
 			return AppResponse(res, 200, toJSON(transaction), 'Payment processed successfully from wallet');
 		}
