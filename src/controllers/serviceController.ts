@@ -58,7 +58,7 @@ export class ServicesController {
 				throw new AppError('Please provide requests allocation', 400);
 			}
 		}
-		if (typeof isDefault !== 'boolean') {
+		if (isDefault !== 'true' && isDefault !== 'false') {
 			throw new AppError('Service default status must be a boolean', 400);
 		}
 		if (allocation === 'fixed amount' && typeof maxRequest !== 'number') {
@@ -203,7 +203,7 @@ export class ServicesController {
 		}
 
 		if (typeof isDefault !== 'undefined') {
-			if (typeof isDefault !== 'boolean') {
+			if ((isDefault !== 'true' && isDefault !== 'false')) {
 				throw new AppError('Service default status must be a boolean', 400);
 			}
 			updatePayload.isDefault = isDefault;
