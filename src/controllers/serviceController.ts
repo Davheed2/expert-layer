@@ -203,7 +203,7 @@ export class ServicesController {
 		}
 
 		if (typeof isDefault !== 'undefined') {
-			if ((isDefault !== 'true' && isDefault !== 'false')) {
+			if (isDefault !== 'true' && isDefault !== 'false') {
 				throw new AppError('Service default status must be a boolean', 400);
 			}
 			updatePayload.isDefault = isDefault;
