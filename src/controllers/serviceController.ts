@@ -104,10 +104,13 @@ export class ServicesController {
 
 	getPaginatedServices = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
-		const { perPage, page } = req.query;
+		const { perPage, page, category } = req.query;
 
 		if (!user) {
 			throw new AppError('Please log in again', 400);
+		}
+		if (!category) {
+			throw new AppError('Please include a category', 400);
 		}
 
 		const pageSize = parseInt(perPage as string, 10) || 10;
@@ -116,7 +119,7 @@ export class ServicesController {
 		const offset = (pageNum - 1) * pageSize;
 		const limit = pageSize;
 
-		const services = await servicesRepository.getPaginatedServices(offset, limit);
+		const services = await servicesRepository.getPaginatedServices(offset, limit, category as string);
 		if (!services) {
 			throw new AppError('No service found', 404);
 		}
@@ -191,6 +194,7 @@ export class ServicesController {
 			isDefault,
 			type,
 			serviceId,
+			status,
 		} = req.body;
 
 		if (!user) {
@@ -211,6 +215,7 @@ export class ServicesController {
 		if (description) updatePayload.description = description;
 		if (type) updatePayload.type = type;
 		if (price) updatePayload.price = price;
+		if (status) updatePayload.price = status;
 		if (pricingDetails) {
 			updatePayload.pricingDetails = pricingDetails;
 
