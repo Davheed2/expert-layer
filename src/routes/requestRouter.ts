@@ -194,7 +194,7 @@ router.use(protect);
  *                   type: string
  *                   example: "Request creation failed"
  */
-router.post('/create', requestsController.createRequest);
+router.post('/create', multerUpload.single('requestFile'), requestsController.createRequest);
 /**
  * @openapi
  * /request/user:
