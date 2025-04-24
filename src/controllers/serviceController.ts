@@ -215,7 +215,7 @@ export class ServicesController {
 		if (description) updatePayload.description = description;
 		if (type) updatePayload.type = type;
 		if (price) updatePayload.price = price;
-		if (status) updatePayload.price = status;
+		if (status) updatePayload.status = status;
 		if (pricingDetails) {
 			updatePayload.pricingDetails = pricingDetails;
 
