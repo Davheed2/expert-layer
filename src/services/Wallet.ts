@@ -75,12 +75,12 @@ export class WalletService {
 		const walletBalance = wallet?.balance || 0;
 
 		// If wallet balance covers the full cost, no need for payment intent
-		if (walletBalance >= request.taskPrice) {
+		if (walletBalance >= request.servicePrice) {
 			throw new AppError('Wallet balance is sufficient for this task, use processWalletPayment instead');
 		}
 
 		// Amount to charge via Stripe (task price minus wallet balance)
-		const amountToCharge = Math.max(0, request.taskPrice - walletBalance);
+		const amountToCharge = Math.max(0, request.servicePrice - walletBalance);
 
 		// Create a payment intent for the remaining amount
 		const paymentIntent = await stripe.paymentIntents.create({
@@ -89,9 +89,9 @@ export class WalletService {
 			customer: stripeCustomerId,
 			metadata: {
 				user_id: userId,
-				requesr_id: requestId,
-				wallet_amount_used: walletBalance.toString(),
-				request_price: request.taskPrice.toString(),
+				request_id: requestId,
+				wallet_amount_used: walletBalance,
+				request_price: request.servicePrice,
 				request_name: request.taskName,
 				transaction_id: request.transactionId,
 			},
@@ -113,12 +113,12 @@ export class WalletService {
 				throw new Error('Task or wallet not found');
 			}
 
-			if (wallet.balance < request.taskPrice) {
+			if (wallet.balance < request.servicePrice) {
 				throw new AppError('Insufficient wallet balance');
 			}
 
 			// Update wallet balance
-			const newBalance = wallet.balance - request.taskPrice;
+			const newBalance = wallet.balance - request.servicePrice;
 			await trx('wallets').where({ id: wallet.id }).update({
 				balance: newBalance,
 				updated_at: new Date(),
@@ -137,7 +137,7 @@ export class WalletService {
 					requestId,
 					status: 'success',
 					type: 'task_payment',
-					amount: -request.taskPrice,
+					amount: -request.servicePrice,
 					walletBalanceBefore: wallet.balance,
 					walletBalanceAfter: newBalance,
 					metadata: {
@@ -170,7 +170,7 @@ export class WalletService {
 
 			const amountPaid = paymentIntent.amount;
 			const walletAmountUsed = parseInt(wallet_amount_used || '0');
-			const taskPrice = request.taskPrice;
+			const taskPrice = request.servicePrice;
 
 			// Calculate if there's excess payment to add to wallet
 			const totalPayment = amountPaid + walletAmountUsed;
