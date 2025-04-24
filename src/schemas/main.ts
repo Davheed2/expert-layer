@@ -1,10 +1,10 @@
 import {
 	RequestPriority,
-	RequestStatus,
 	Role,
 	ServiceCategory,
 	ServicePricing,
 	ServiceRequestAllocation,
+	ServiceStatus,
 	ServiceType,
 } from '@/common/constants';
 import { z } from 'zod';
@@ -68,15 +68,8 @@ export const mainSchema = z.object({
 		ServiceCategory.GROWTH,
 	]),
 	status: z.enum([
-		RequestStatus.COMPLETED,
-		RequestStatus.SUBMITTED,
-		RequestStatus.IN_PROGRESS,
-		RequestStatus.CLOSED,
-		RequestStatus.PENDING_RESPONSE,
-		RequestStatus.ON_HOLD,
-		RequestStatus.QUEUED,
-		RequestStatus.FAILED,
-		RequestStatus.PROCESSING,
+		ServiceStatus.ACTIVE,
+		ServiceStatus.DRAFT
 	]),
 	priority: z.enum([RequestPriority.LOW, RequestPriority.MEDIUM, RequestPriority.HIGH, RequestPriority.NONE]),
 	dueDate: z.string().datetime(),
