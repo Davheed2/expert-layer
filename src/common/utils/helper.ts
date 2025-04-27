@@ -138,6 +138,15 @@ const setCookie = (
 	}
 };
 
+const clearCookie = (res: Response, name: string) => {
+	res.clearCookie(name, {
+		httpOnly: true,
+		secure: ENVIRONMENT.APP.ENV === 'production',
+		sameSite: ENVIRONMENT.APP.ENV === 'production' ? 'none' : 'lax',
+		path: '/',
+	});
+};
+
 const dateFromString = async (value: string) => {
 	const date = new Date(value);
 
@@ -417,6 +426,7 @@ export {
 	parseTimeSpent,
 	formatDuration,
 	generateOtp,
+	clearCookie,
 	referenceGenerator,
 	sendSignUpEmail,
 	sendWelcomeEmail,

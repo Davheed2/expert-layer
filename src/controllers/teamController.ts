@@ -16,7 +16,7 @@ export class TeamController {
 		}
 
 		const teams = await teamRepository.getAllTeams();
-		return AppResponse(res, 200, toJSON(teams), 'Teams retrieved successfully');
+		return AppResponse(res, 200, toJSON(teams), 'Teams retrieved successfully', req);
 	});
 
 	addTeamMember = catchAsync(async (req: Request, res: Response) => {
@@ -26,9 +26,9 @@ export class TeamController {
 		if (!user) {
 			throw new AppError('Please log in again', 400);
 		}
-        if (!teamId || !userId) {
-            throw new AppError('Team ID and User ID are required', 400);
-        }
+		if (!teamId || !userId) {
+			throw new AppError('Team ID and User ID are required', 400);
+		}
 
 		const team = await teamRepository.getTeam(teamId);
 		if (!team) {
@@ -51,7 +51,7 @@ export class TeamController {
 
 		const newTeamMember = await Team.addMember({
 			teamId,
-            ownerId: team.ownerId,
+			ownerId: team.ownerId,
 			memberId: userId,
 			memberType: addedUser.role,
 		});
@@ -59,7 +59,7 @@ export class TeamController {
 			throw new AppError('Failed to add team member', 500);
 		}
 
-		return AppResponse(res, 201, toJSON([newTeamMember]), 'Team member added successfully');
+		return AppResponse(res, 201, toJSON([newTeamMember]), 'Team member added successfully', req);
 	});
 
 	fetchTeamsWithMembers = catchAsync(async (req: Request, res: Response) => {
@@ -68,12 +68,12 @@ export class TeamController {
 		if (!user) {
 			throw new AppError('Please log in again', 400);
 		}
-        if (user.role !== 'admin') {
-            throw new AppError('You do not have permission to access this resource', 403);
-        }
+		if (user.role !== 'admin') {
+			throw new AppError('You do not have permission to access this resource', 403);
+		}
 
 		const teams = await teamRepository.getAllTeamsWithMembers();
-		return AppResponse(res, 200, toJSON(teams), 'Teams with members retrieved successfully');
+		return AppResponse(res, 200, toJSON(teams), 'Teams with members retrieved successfully', req);
 	});
 }
 

@@ -88,7 +88,7 @@ export class ServicesController {
 			throw new AppError('Service creation failed', 500);
 		}
 
-		AppResponse(res, 201, newService, 'Service created successfully');
+		AppResponse(res, 201, newService, 'Service created successfully', req);
 
 		setImmediate(async () => {
 			if (file) {
@@ -124,7 +124,7 @@ export class ServicesController {
 			throw new AppError('No service found', 404);
 		}
 
-		return AppResponse(res, 200, services, 'Paginated Services retrieved successfully');
+		return AppResponse(res, 200, services, 'Paginated Services retrieved successfully', req);
 	});
 
 	findAllServices = catchAsync(async (req: Request, res: Response) => {
@@ -142,7 +142,7 @@ export class ServicesController {
 			throw new AppError('No services found', 404);
 		}
 
-		return AppResponse(res, 200, services, 'Services retrieved successfully');
+		return AppResponse(res, 200, services, 'Services retrieved successfully', req);
 	});
 
 	findClientServices = catchAsync(async (req: Request, res: Response) => {
@@ -157,7 +157,7 @@ export class ServicesController {
 			throw new AppError('No services found', 404);
 		}
 
-		return AppResponse(res, 200, toJSON(services), 'Services retrieved successfully');
+		return AppResponse(res, 200, toJSON(services), 'Services retrieved successfully', req);
 	});
 
 	findServiceById = catchAsync(async (req: Request, res: Response) => {
@@ -175,7 +175,7 @@ export class ServicesController {
 		if (!service) {
 			throw new AppError('Service not found', 404);
 		}
-		return AppResponse(res, 200, toJSON([service]), 'Service retrieved successfully');
+		return AppResponse(res, 200, toJSON([service]), 'Service retrieved successfully', req);
 	});
 
 	updateService = catchAsync(async (req: Request, res: Response) => {
@@ -266,7 +266,7 @@ export class ServicesController {
 			throw new AppError('Service update failed', 500);
 		}
 
-		return AppResponse(res, 200, toJSON(updatedService), 'Service updated successfully');
+		return AppResponse(res, 200, toJSON(updatedService), 'Service updated successfully', req);
 	});
 }
 

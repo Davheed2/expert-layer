@@ -1,10 +1,11 @@
-import { Response } from 'express';
+import { Response, Request } from 'express';
 
 export const AppResponse = (
 	res: Response,
 	statusCode: number = 200,
 	data: Record<string, string[]> | unknown | string | null,
-	message: string
+	message: string,
+	req?: Request
 ) => {
 	const newTokens: { newAccessToken?: string; newRefreshToken?: string } = {};
 
@@ -20,5 +21,6 @@ export const AppResponse = (
 		data: data ?? null,
 		...(newTokens?.newAccessToken && newTokens),
 		message: message ?? 'Success',
+		isImpersonating: req?.isImpersonating || false,
 	});
 };

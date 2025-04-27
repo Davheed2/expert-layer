@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AppError, AppResponse, toJSON, uploadPictureFile } from '@/common/utils';
+import { AppError, AppResponse, clearCookie, setCookie, toJSON, uploadPictureFile } from '@/common/utils';
 import { catchAsync } from '@/middlewares';
 import { userRepository } from '@/repository';
 import { IUser } from '@/common/interfaces';
@@ -17,7 +17,7 @@ export class UserController {
 			throw new AppError('User not found', 404);
 		}
 
-		return AppResponse(res, 200, toJSON([extinguishUser]), 'Profile retrieved successfully');
+		return AppResponse(res, 200, toJSON([extinguishUser]), 'Profile retrieved successfully', req);
 	});
 
 	updateProfile = catchAsync(async (req: Request, res: Response) => {
@@ -50,7 +50,7 @@ export class UserController {
 			throw new AppError('Failed to update profile', 500);
 		}
 
-		return AppResponse(res, 200, toJSON(updateProfile), 'Profile updated successfully');
+		return AppResponse(res, 200, toJSON(updateProfile), 'Profile updated successfully', req);
 	});
 
 	uploadProfilePicture = catchAsync(async (req: Request, res: Response) => {
@@ -82,7 +82,7 @@ export class UserController {
 			throw new AppError('Failed to update profile picture', 500);
 		}
 
-		return AppResponse(res, 200, toJSON(updateProfile), 'Profile picture updated successfully');
+		return AppResponse(res, 200, toJSON(updateProfile), 'Profile picture updated successfully', req);
 	});
 
 	suspendUser = catchAsync(async (req: Request, res: Response) => {
@@ -111,7 +111,7 @@ export class UserController {
 			throw new AppError(`Failed to ${suspend ? 'suspend' : 'un suspend'} user`, 500);
 		}
 
-		return AppResponse(res, 200, null, `User ${suspend ? 'suspended' : 'unsuspended'} successfully`);
+		return AppResponse(res, 200, null, `User ${suspend ? 'suspended' : 'unsuspended'} successfully`, req);
 	});
 
 	makeAdmin = catchAsync(async (req: Request, res: Response) => {
@@ -140,7 +140,7 @@ export class UserController {
 			throw new AppError(`Failed to change user role`, 500);
 		}
 
-		return AppResponse(res, 200, toJSON(changeRole), `User role changed successfully`);
+		return AppResponse(res, 200, toJSON(changeRole), `User role changed successfully`, req);
 	});
 
 	fetchAllClientRoleUsers = catchAsync(async (req: Request, res: Response) => {
@@ -158,7 +158,7 @@ export class UserController {
 			throw new AppError('Failed to fetch users', 500);
 		}
 
-		return AppResponse(res, 200, toJSON(users), 'Users fetched successfully');
+		return AppResponse(res, 200, toJSON(users), 'Users fetched successfully', req);
 	});
 
 	fetchAllNonClientRoleUsers = catchAsync(async (req: Request, res: Response) => {
@@ -176,7 +176,35 @@ export class UserController {
 			throw new AppError('Failed to fetch users', 500);
 		}
 
-		return AppResponse(res, 200, toJSON(users), 'Users fetched successfully');
+		return AppResponse(res, 200, toJSON(users), 'Users fetched successfully', req);
+	});
+
+	startImpersonation = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+		const { userId } = req.body;
+
+		if (!user) {
+			throw new AppError('Please log in again', 401);
+		}
+		if (user.role !== 'admin') {
+			throw new AppError('Not authorized to impersonate', 403);
+		}
+
+		const userToImpersonate = await userRepository.findById(userId);
+		if (!userToImpersonate) {
+			throw new AppError('User to impersonate not found', 404);
+		}
+
+		// Set impersonate cookie
+		setCookie(req, res, 'impersonateUserId', userId, 1000 * 60 * 60); // 1 hour for example
+
+		return AppResponse(res, 200, null, `Now impersonating ${userToImpersonate.firstName}`, req);
+	});
+
+	stopImpersonation = catchAsync(async (req: Request, res: Response) => {
+		clearCookie(res, 'impersonateUserId');
+
+		return AppResponse(res, 200, null, 'Impersonation stopped successfully');
 	});
 }
 

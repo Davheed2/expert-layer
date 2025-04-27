@@ -84,7 +84,7 @@ export class RequestsController {
 			throw new AppError('Request creation failed', 500);
 		}
 
-		AppResponse(res, 201, toJSON(newRequest), 'Request created successfully');
+		AppResponse(res, 201, toJSON(newRequest), 'Request created successfully', req);
 
 		setImmediate(async () => {
 			if (file) {
@@ -113,7 +113,7 @@ export class RequestsController {
 			throw new AppError('No request found', 404);
 		}
 
-		return AppResponse(res, 200, toJSON(requests), 'Requests retrieved successfully');
+		return AppResponse(res, 200, toJSON(requests), 'Requests retrieved successfully', req);
 	});
 
 	findRequestById = catchAsync(async (req: Request, res: Response) => {
@@ -132,7 +132,7 @@ export class RequestsController {
 			throw new AppError('Request not found', 404);
 		}
 
-		return AppResponse(res, 200, toJSON(request), 'Request retrieved successfully');
+		return AppResponse(res, 200, toJSON(request), 'Request retrieved successfully', req);
 	});
 
 	updateRequest = catchAsync(async (req: Request, res: Response) => {
@@ -196,7 +196,7 @@ export class RequestsController {
 			throw new AppError('Request update failed', 500);
 		}
 
-		return AppResponse(res, 200, toJSON(updatedRequest), 'Request updated successfully');
+		return AppResponse(res, 200, toJSON(updatedRequest), 'Request updated successfully', req);
 	});
 
 	deleteRequestFile = catchAsync(async (req: Request, res: Response) => {
@@ -228,7 +228,7 @@ export class RequestsController {
 			throw new AppError('Request file deletion failed', 500);
 		}
 
-		return AppResponse(res, 200, null, 'Request file deleted successfully');
+		return AppResponse(res, 200, null, 'Request file deleted successfully', req);
 	});
 }
 

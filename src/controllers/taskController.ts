@@ -26,10 +26,10 @@ export class TasksController {
 			throw new AppError('User not found', 404);
 		}
 
-        const taskExists = await tasksRepository.findByTask(task);
-        if (taskExists) {
-            throw new AppError('Task already exists', 400);
-        }
+		const taskExists = await tasksRepository.findByTask(task);
+		if (taskExists) {
+			throw new AppError('Task already exists', 400);
+		}
 
 		const { secureUrl } = await uploadPictureFile({
 			fileName: `tasks-image/${Date.now()}-${file.originalname}`,
@@ -38,7 +38,7 @@ export class TasksController {
 		});
 		const newTask = await tasksRepository.create({ task, taskImage: secureUrl });
 
-		return AppResponse(res, 201, toJSON(newTask), 'Task created successfully');
+		return AppResponse(res, 201, toJSON(newTask), 'Task created successfully', req);
 	});
 
 	createTaskDetails = catchAsync(async (req: Request, res: Response) => {
@@ -79,7 +79,7 @@ export class TasksController {
 			amount,
 			popular,
 		});
-		return AppResponse(res, 201, toJSON(newTaskDetails), 'Task details created successfully');
+		return AppResponse(res, 201, toJSON(newTaskDetails), 'Task details created successfully', req);
 	});
 
 	createTaskWithDetails = catchAsync(async (req: Request, res: Response) => {
@@ -104,9 +104,9 @@ export class TasksController {
 		if (!amount) {
 			throw new AppError('Please provide an amount', 400);
 		}
-        if (!popular) {
-            throw new AppError('Please provide a popular status', 400);
-        }
+		if (!popular) {
+			throw new AppError('Please provide a popular status', 400);
+		}
 		if (user.role !== 'admin') {
 			throw new AppError('You are not authorized to create tasks or task details', 401);
 		}
@@ -116,10 +116,10 @@ export class TasksController {
 			throw new AppError('User not found', 404);
 		}
 
-        const taskExists = await tasksRepository.findByTask(task);
-        if (taskExists) {
-            throw new AppError('Task already exists', 400);
-        }
+		const taskExists = await tasksRepository.findByTask(task);
+		if (taskExists) {
+			throw new AppError('Task already exists', 400);
+		}
 
 		const { secureUrl } = await uploadPictureFile({
 			fileName: `tasks-image/${Date.now()}-${file.originalname}`,
@@ -147,7 +147,8 @@ export class TasksController {
 			res,
 			201,
 			toJSON({ task: newTask, taskDetails: newTaskDetails }),
-			'Task and task details created successfully'
+			'Task and task details created successfully',
+			req
 		);
 	});
 
@@ -163,7 +164,7 @@ export class TasksController {
 			throw new AppError('No tasks found', 404);
 		}
 
-		return AppResponse(res, 200, toJSON(tasks), 'Tasks retrieved successfully');
+		return AppResponse(res, 200, toJSON(tasks), 'Tasks retrieved successfully', req);
 	});
 
 	findAllTasksWithDetails = catchAsync(async (req: Request, res: Response) => {
@@ -178,7 +179,7 @@ export class TasksController {
 			throw new AppError('No tasks found', 404);
 		}
 
-		return AppResponse(res, 200, toJSON(tasks), 'Tasks with details retrieved successfully');
+		return AppResponse(res, 200, toJSON(tasks), 'Tasks with details retrieved successfully', req);
 	});
 
 	findAllTaskDetails = catchAsync(async (req: Request, res: Response) => {
@@ -193,7 +194,7 @@ export class TasksController {
 			throw new AppError('No task details found', 404);
 		}
 
-		return AppResponse(res, 200, toJSON(taskDetails), 'Task details retrieved successfully');
+		return AppResponse(res, 200, toJSON(taskDetails), 'Task details retrieved successfully', req);
 	});
 
 	findPopularTaskDetails = catchAsync(async (req: Request, res: Response) => {
@@ -208,7 +209,7 @@ export class TasksController {
 			throw new AppError('No poular task details found', 404);
 		}
 
-		return AppResponse(res, 200, toJSON(popularTaskDetails), 'Popular task details retrieved successfully');
+		return AppResponse(res, 200, toJSON(popularTaskDetails), 'Popular task details retrieved successfully', req);
 	});
 }
 

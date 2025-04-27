@@ -19,7 +19,7 @@ export class WalletController {
 
 		const wallet = await this.walletService.getWalletBalance(user.id);
 
-		return AppResponse(res, 201, toJSON({ wallet }), 'Wallet created successfully');
+		return AppResponse(res, 201, toJSON({ wallet }), 'Wallet created successfully', req);
 	});
 
 	getWalletBalance = catchAsync(async (req: Request, res: Response) => {
@@ -31,7 +31,7 @@ export class WalletController {
 
 		const balance = await this.walletService.getWalletBalance(user.id);
 
-		return AppResponse(res, 200, { balance }, 'Wallet balance retrieved successfully');
+		return AppResponse(res, 200, { balance }, 'Wallet balance retrieved successfully', req);
 	});
 
 	createRequestPayment = catchAsync(async (req: Request, res: Response) => {
@@ -52,7 +52,7 @@ export class WalletController {
 		// If wallet has enough balance, process payment from wallet
 		if (walletBalance >= request.servicePrice) {
 			const transaction = await this.walletService.processWalletPayment(user.id, requestId);
-			return AppResponse(res, 200, toJSON(transaction), 'Payment processed successfully from wallet');
+			return AppResponse(res, 200, toJSON(transaction), 'Payment processed successfully from wallet', req);
 		}
 
 		// Otherwise create payment intent for remaining amount
@@ -67,7 +67,8 @@ export class WalletController {
 				amountToCharge: paymentIntent.amount,
 				walletAmountUsed: walletBalance,
 			},
-			'Payment intent created successfully'
+			'Payment intent created successfully',
+			req
 		);
 	});
 
@@ -92,7 +93,8 @@ export class WalletController {
 				clientSecret: paymentIntent.client_secret,
 				amount: paymentIntent.amount,
 			},
-			'Top-up payment intent created successfully'
+			'Top-up payment intent created successfully',
+			req
 		);
 	});
 
@@ -105,7 +107,7 @@ export class WalletController {
 
 		const transactions = await db('transactions').where({ userId: user.id }).orderBy('created_at', 'desc').limit(50);
 
-		return AppResponse(res, 200, toJSON(transactions), 'Transaction history retrieved successfully');
+		return AppResponse(res, 200, toJSON(transactions), 'Transaction history retrieved successfully', req);
 	});
 }
 

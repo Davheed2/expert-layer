@@ -33,7 +33,7 @@ export class NotificationController {
 			throw new AppError('failed to create system notification', 500);
 		}
 
-		return AppResponse(res, 200, toJSON(notification), 'System notification created successfully');
+		return AppResponse(res, 200, toJSON(notification), 'System notification created successfully', req);
 	});
 
 	getAllSystemNotifications = catchAsync(async (req: Request, res: Response) => {
@@ -51,7 +51,7 @@ export class NotificationController {
 			throw new AppError('No system notification found', 404);
 		}
 
-		return AppResponse(res, 200, toJSON(notification), 'System notifications fetched successfully');
+		return AppResponse(res, 200, toJSON(notification), 'System notifications fetched successfully', req);
 	});
 
 	getAllConfigurableSystemNotifications = catchAsync(async (req: Request, res: Response) => {
@@ -70,7 +70,7 @@ export class NotificationController {
 			throw new AppError('No configurable system notification found', 404);
 		}
 
-		return AppResponse(res, 200, toJSON(notification), 'Configurable system notifications fetched successfully');
+		return AppResponse(res, 200, toJSON(notification), 'Configurable system notifications fetched successfully', req);
 	});
 
 	getSysNotificationById = catchAsync(async (req: Request, res: Response) => {
@@ -92,7 +92,7 @@ export class NotificationController {
 			throw new AppError('Notification not found', 404);
 		}
 
-		return AppResponse(res, 200, toJSON([notification]), 'System notification fetched successfully');
+		return AppResponse(res, 200, toJSON([notification]), 'System notification fetched successfully', req);
 	});
 
 	updateSysNotification = catchAsync(async (req: Request, res: Response) => {
@@ -122,7 +122,7 @@ export class NotificationController {
 			throw new AppError('failed to update system notification', 500);
 		}
 
-		return AppResponse(res, 200, toJSON(updated), 'System notification updated');
+		return AppResponse(res, 200, toJSON(updated), 'System notification updated', req);
 	});
 
 	deleteSysNotification = catchAsync(async (req: Request, res: Response) => {
@@ -149,7 +149,7 @@ export class NotificationController {
 			throw new AppError('failed to delete system notification', 500);
 		}
 
-		return AppResponse(res, 200, null, 'System notification deleted');
+		return AppResponse(res, 200, null, 'System notification deleted', req);
 	});
 
 	fetchUnreadUserNotifications = catchAsync(async (req: Request, res: Response) => {
@@ -164,7 +164,7 @@ export class NotificationController {
 			throw new AppError('failed to fetch unread notifications', 404);
 		}
 
-		return AppResponse(res, 200, toJSON(notification), 'Unread user notifications fetched successfully');
+		return AppResponse(res, 200, toJSON(notification), 'Unread user notifications fetched successfully', req);
 	});
 
 	fetchAllUserNotifications = catchAsync(async (req: Request, res: Response) => {
@@ -179,7 +179,7 @@ export class NotificationController {
 			throw new AppError('failed to fetch unread notifications', 404);
 		}
 
-		return AppResponse(res, 200, toJSON(notification), 'User notifications fetched successfully');
+		return AppResponse(res, 200, toJSON(notification), 'User notifications fetched successfully', req);
 	});
 
 	markAsRead = catchAsync(async (req: Request, res: Response) => {
@@ -206,7 +206,7 @@ export class NotificationController {
 			throw new AppError('failed to mark as read', 500);
 		}
 
-		return AppResponse(res, 200, toJSON(notification), 'Notification read successfully');
+		return AppResponse(res, 200, toJSON(notification), 'Notification read successfully', req);
 	});
 
 	markAllAsRead = catchAsync(async (req: Request, res: Response) => {
@@ -226,7 +226,7 @@ export class NotificationController {
 			throw new AppError('All notification have been read', 400);
 		}
 
-		return AppResponse(res, 200, null, 'All notifications read successfully');
+		return AppResponse(res, 200, null, 'All notifications read successfully', req);
 	});
 
 	deleteNotification = catchAsync(async (req: Request, res: Response) => {
@@ -253,7 +253,7 @@ export class NotificationController {
 			throw new AppError('Failed to delete notification', 500);
 		}
 
-		return AppResponse(res, 200, null, 'Notification deleted successfully');
+		return AppResponse(res, 200, null, 'Notification deleted successfully', req);
 	});
 
 	createUserSetting = catchAsync(async (req: Request, res: Response) => {
@@ -284,7 +284,7 @@ export class NotificationController {
 			throw new AppError('Failed to modify notification settings', 500);
 		}
 
-		return AppResponse(res, 200, null, 'Notification setting updated successfully');
+		return AppResponse(res, 200, null, 'Notification setting updated successfully', req);
 	});
 }
 

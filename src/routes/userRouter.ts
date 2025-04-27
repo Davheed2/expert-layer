@@ -772,5 +772,7 @@ router.get('/clients', userController.fetchAllClientRoleUsers);
  *                   example: "Failed to fetch users"
  */
 router.get('/staffs', userController.fetchAllNonClientRoleUsers);
+router.post('/start-impersonation', userController.startImpersonation);
+router.post('/stop-impersonation', userController.stopImpersonation);
 
 export { router as userRouter };
