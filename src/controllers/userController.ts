@@ -196,7 +196,7 @@ export class UserController {
 		}
 
 		// Set impersonate cookie
-		setCookie(req, res, 'impersonateUserId', userId, 1000 * 60 * 60); // 1 hour for example
+		setCookie(req, res, 'impersonateUserId', userId, 1000 * 60 * 60 * 24); // 24 hours
 
 		return AppResponse(res, 200, null, `Now impersonating ${userToImpersonate.firstName}`, req);
 	});
