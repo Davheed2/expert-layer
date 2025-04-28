@@ -472,7 +472,7 @@ router.use(protect);
 /**
  * @openapi
  * /auth/sign-out:
- *   post:
+ *   get:
  *     summary: User logout
  *     description: Allows a logged-in user to log out by clearing their access and refresh tokens. The endpoint checks if the user is logged in and invalidates the tokens by setting expired cookies.
  *     tags:
