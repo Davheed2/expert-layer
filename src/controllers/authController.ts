@@ -5,6 +5,7 @@ import {
 	AppResponse,
 	createToken,
 	generateAccessToken,
+	generateOtp,
 	generateRandomString,
 	generateRefreshToken,
 	getDomainReferer,
@@ -157,49 +158,39 @@ class AuthController {
 			throw new AppError('Please wait before requesting another login link', 429);
 		}
 
-		const loginToken = await generateRandomString();
-		const hashedLoginToken = createToken(
-			{
-				token: loginToken,
-			},
-			{ expiresIn: '15m' }
-		);
+		const generatedOtp = generateOtp();
+		const otpExpires = currentRequestTime.plus({ minutes: 15 }).toJSDate();
 
-		const loginUrl = `${getDomainReferer(req)}/auth/login?token=${hashedLoginToken}`;
+
+		//const loginUrl = `${getDomainReferer(req)}/auth/login?token=${hashedLoginToken}`;
 		await userRepository.update(user.id, {
-			loginToken,
-			loginTokenExpires: DateTime.now().plus({ minutes: 15 }).toJSDate(),
+			loginToken: generatedOtp,
+			loginTokenExpires: otpExpires,
 			lastLogin: currentRequestTime.toJSDate(),
 		});
 
-		await sendMagicLinkEmail(user.email, user.firstName, loginUrl);
+		await sendMagicLinkEmail(user.email, user.firstName, generatedOtp);
 
 		return AppResponse(res, 200, null, 'Login link sent to your email');
 	});
 
 	verifyLogin = catchAsync(async (req: Request, res: Response) => {
-		const { token } = req.query;
+		const { otp } = req.body;
 
-		if (!token) {
-			throw new AppError('Login token is required', 400);
+		if (!otp) {
+			throw new AppError('OTP is required', 400);
 		}
 
-		const decodedToken = await verifyToken(token as string);
-		if (!decodedToken.token) {
-			throw new AppError('Invalid login token', 401);
-		}
-
-		const user = await userRepository.findByLoginToken(decodedToken.token);
+		const user = await userRepository.findByLoginToken(otp);
 		if (!user) {
 			throw new AppError('User not found', 404);
 		}
-
-		if (user.loginToken !== decodedToken.token) {
-			throw new AppError('Invalid login token', 401);
+		if (user.loginToken !== otp) {
+			throw new AppError('Invalid OTP', 401);
 		}
 
 		if (!user.loginTokenExpires || user.loginTokenExpires < DateTime.now().toJSDate()) {
-			throw new AppError('Login token has expired', 400);
+			throw new AppError('OTP has expired', 400);
 		}
 
 		const accessToken = generateAccessToken(user.id);

@@ -52,6 +52,7 @@ export const mainSchema = z.object({
 	serviceCategory: z.string().min(3).trim(),
 	serviceDescription: z.string().min(3).trim(),
 	servicePrice: z.number().positive(),
+	otp: z.string().min(3).trim(),
 	details: z.string().min(3).trim(),
 	duration: z.string().min(3).trim(),
 	isUserConfigurable: z.boolean(),

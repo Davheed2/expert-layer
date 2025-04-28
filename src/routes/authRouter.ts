@@ -464,7 +464,7 @@ router.post('/sign-in', authController.signIn);
  *                   type: string
  *                   example: "User not found"
  */
-router.get('/verify-login', authController.verifyLogin);
+router.post('/verify-login', authController.verifyLogin);
 router.get('/health', authController.appHealth);
 
 //protect all routes after this middleware

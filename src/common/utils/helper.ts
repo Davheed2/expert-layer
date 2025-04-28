@@ -364,12 +364,12 @@ const sendLoginEmail = async (email: string, name: string, time: string): Promis
 	});
 };
 
-const sendMagicLinkEmail = async (email: string, name: string, magicLink: string): Promise<void> => {
+const sendMagicLinkEmail = async (email: string, name: string, otp: string): Promise<void> => {
 	const emailData: MagicEmailData = {
 		to: email,
 		priority: 'high',
 		name,
-		magicLink,
+		otp,
 	};
 
 	addEmailToQueue({

@@ -19,7 +19,7 @@ export interface LoginEmailData extends CommonDataFields {
 
 export interface MagicEmailData extends CommonDataFields {
 	name: string;
-	magicLink: string;
+	otp: string;
 }
 
 export interface ForgotPasswordData extends CommonDataFields {
