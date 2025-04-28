@@ -202,7 +202,7 @@ export class UserController {
 	});
 
 	stopImpersonation = catchAsync(async (req: Request, res: Response) => {
-		clearCookie(res, 'impersonateUserId');
+		clearCookie(req, res, 'impersonateUserId');
 
 		return AppResponse(res, 200, null, 'Impersonation stopped successfully', req);
 	});

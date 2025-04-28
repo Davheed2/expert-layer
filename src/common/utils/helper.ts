@@ -138,13 +138,8 @@ const setCookie = (
 	}
 };
 
-const clearCookie = (res: Response, name: string) => {
-	res.clearCookie(name, {
-		httpOnly: true,
-		secure: ENVIRONMENT.APP.ENV === 'production',
-		sameSite: ENVIRONMENT.APP.ENV === 'production' ? 'none' : 'lax',
-		path: '/',
-	});
+const clearCookie = (req: Request, res: Response, name: string) => {
+	setCookie(req, res, name, 'expired', -1);
 };
 
 const dateFromString = async (value: string) => {
