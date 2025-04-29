@@ -24,19 +24,26 @@ class TeamService {
 	}
 
 	async addMember(payload: Partial<ITeamMember>): Promise<ITeamMember> {
-		const { teamId, memberId, memberType } = payload;
+		const { teamId, ownerId, memberId, memberType } = payload;
 
-		const [teamMember] = await teamRepository.addTeamMember({ teamId, memberId, memberType });
+		const [teamMember] = await teamRepository.addTeamMember({ teamId, ownerId, memberId, memberType });
 		if (!teamMember) {
 			throw new AppError('Failed to add team member', 500);
 		}
 
-		//await this.setupClientManagerCommunication(teamId, memberId);
+		if (teamId && memberId && memberType) {
+			await this.setupClientManagerCommunication(teamId, memberId, memberType);
+		} else {
+			throw new AppError('Invalid team member data', 400);
+		}
 		return teamMember;
 	}
 
-	setupClientManagerCommunication = async (teamId, managerId) => {
+	setupClientManagerCommunication = async (teamId: string, managerId: string, memberType: string) => {
 		try {
+			// Check if the memberType is 'accountmanager' to determine if it's a manager
+			const isManager = memberType === 'accountmanager';
+
 			// Get the team owner (client)
 			const team = await teamRepository.getTeam(teamId);
 			if (!team) {
@@ -44,8 +51,8 @@ class TeamService {
 			}
 
 			// Create their chat room
-			const roomId = getClientManagerRoomId(team.ownerId, managerId, teamId);
-			await getOrCreateRoom(roomId, 'client-manager', {
+			const roomId = getClientManagerRoomId(teamId);
+			await getOrCreateRoom(roomId, 'team', {
 				clientId: team.ownerId,
 				managerId,
 				teamId,
@@ -54,21 +61,22 @@ class TeamService {
 
 			// Notify both users if they're online
 			const io = global.io; // Make sure io is globally accessible
-			console.log('io', io);
 			if (io) {
-				// Notify the manager
-				const managerSocket = Array.from(io.sockets.sockets.values()).find((s) => {
-					const socket = s as unknown as ExtendedSocket;
-					return socket.data?.user?.id === managerId;
-				}) as ExtendedSocket | undefined;
+				// Notify the manager if it's an account manager
+				if (isManager) {
+					const managerSocket = Array.from(io.sockets.sockets.values()).find((s) => {
+						const socket = s as unknown as ExtendedSocket;
+						return socket.data?.user?.id === managerId;
+					}) as ExtendedSocket | undefined;
 
-				const managerSocketId = managerSocket?.id;
+					const managerSocketId = managerSocket?.id;
 
-				if (managerSocketId) {
-					io.to(managerSocketId).emit('new_client_assigned', {
-						clientId: team.ownerId,
-						teamId,
-					});
+					if (managerSocketId) {
+						io.to(managerSocketId).emit('new_client_assigned', {
+							clientId: team.ownerId,
+							teamId,
+						});
+					}
 				}
 
 				// Notify the client

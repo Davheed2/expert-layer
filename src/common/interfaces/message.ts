@@ -4,7 +4,7 @@ export interface IMessage {
 	id: number;
 	sender_id: string;
 	recipient_id: number | null;
-	team_id: number | null;
+	team_id: string;
 	room_id: number;
 	room_type: string;
 	content: string;

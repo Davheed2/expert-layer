@@ -9,6 +9,16 @@ export const getRoomId = (userId1, userId2) => {
 	return `direct:${sortedIds[0]}:${sortedIds[1]}`;
 };
 
+function sanitizeMetadata(metadata) {
+	const sanitized = { ...metadata };
+	for (const key in sanitized) {
+		if (sanitized[key] instanceof Date) {
+			sanitized[key] = sanitized[key].toISOString();
+		}
+	}
+	return sanitized;
+}
+
 // Get or create a room
 export const getOrCreateRoom = async (roomId, roomType, metadata = {}) => {
 	try {
@@ -21,7 +31,7 @@ export const getOrCreateRoom = async (roomId, roomType, metadata = {}) => {
 				.insert({
 					room_id: roomId,
 					room_type: roomType,
-					metadata: JSON.stringify(metadata),
+					metadata: sanitizeMetadata(metadata),
 					created_at: new Date(),
 					updated_at: new Date(),
 				})
@@ -32,7 +42,7 @@ export const getOrCreateRoom = async (roomId, roomType, metadata = {}) => {
 			id: room.id,
 			roomId: room.room_id,
 			roomType: room.room_type,
-			metadata: JSON.parse(room.metadata || '{}'),
+			metadata: sanitizeMetadata(metadata),
 			createdAt: room.created_at,
 			updatedAt: room.updated_at,
 		};
@@ -120,14 +130,14 @@ export const getUserConversations = async (userId) => {
 };
 
 // Additional function in roomService.ts
-export const getClientManagerRoomId = async (clientId, managerId, teamId) => {
+export const getClientManagerRoomId = (teamId: string): string => {
 	// This creates a unique room ID for a specific client-manager pair within a team
-	return `team:${teamId}:client:${clientId}:manager:${managerId}`;
+	return `team:${teamId}`;
 };
 
 // Function to initialize rooms when a manager is assigned to a client
 export const initializeClientManagerRoom = async (clientId, managerId, teamId) => {
-	const roomId = getClientManagerRoomId(clientId, managerId, teamId);
+	const roomId = getClientManagerRoomId(teamId);
 
 	// Create room if it doesn't exist
 	return getOrCreateRoom(roomId, RoomTypes.DIRECT, {

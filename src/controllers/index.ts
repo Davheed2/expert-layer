@@ -8,3 +8,4 @@ export * from './walletController';
 export * from './webhookController';
 export * from './teamController';
 export * from './requestController';
+export * from './messageController';

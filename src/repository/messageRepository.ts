@@ -26,6 +26,10 @@ class MessageRepository {
 		return await knexDb('messages').where('room_id', roomId).orderBy('created_at', 'desc').limit(limit).offset(offset);
 	};
 
+	getMessagesByTeamId = async (teamId: string, limit: number, offset: number) => {
+		return await knexDb('messages').where('team_id', teamId).orderBy('created_at', 'desc').limit(limit).offset(offset);
+	};
+
 	getUnreadCountForUser = async (userId: string) => {
 		const directCount = await knexDb('messages')
 			.where('recipient_id', userId)
