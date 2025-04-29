@@ -6,12 +6,12 @@ import { messageRepository } from '@/repository';
 export class MessageController {
 	getMessagesByTeam = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
-		const { perPage, page, roomId } = req.query;
+		const { perPage, page, teamId } = req.query;
 
 		if (!user) {
 			throw new AppError('Please log in again', 400);
 		}
-		if (!roomId) {
+		if (!teamId) {
 			throw new AppError('Team ID is required', 400);
 		}
 
@@ -21,7 +21,7 @@ export class MessageController {
 		const offset = (pageNum - 1) * pageSize;
 		const limit = pageSize;
 
-		const messages = await messageRepository.getMessagesByRoomId(roomId as string, limit, offset);
+		const messages = await messageRepository.getMessagesByTeamId(teamId as string, limit, offset);
 		if (!messages) {
 			throw new AppError('No messages found', 404);
 		}
