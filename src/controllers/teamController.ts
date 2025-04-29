@@ -21,13 +21,13 @@ export class TeamController {
 
 	addTeamMember = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
-		const { teamId, userId } = req.body;
+		const { teamId, email } = req.body;
 
 		if (!user) {
 			throw new AppError('Please log in again', 400);
 		}
-		if (!teamId || !userId) {
-			throw new AppError('Team ID and User ID are required', 400);
+		if (!teamId || !email) {
+			throw new AppError('Team ID and email are required', 400);
 		}
 
 		const team = await teamRepository.getTeam(teamId);
@@ -41,12 +41,12 @@ export class TeamController {
 			throw new AppError('You do not have permission to access this resource', 403);
 		}
 
-		const addedUser = await userRepository.findById(userId);
+		const addedUser = await userRepository.findByEmail(email);
 		if (!addedUser) {
 			throw new AppError('User not found', 404);
 		}
 
-		const teamMember = await teamRepository.getTeamMember(teamId, userId);
+		const teamMember = await teamRepository.getTeamMember(teamId, addedUser.id);
 		if (teamMember) {
 			throw new AppError('User is already a member of the team', 400);
 		}
@@ -54,7 +54,7 @@ export class TeamController {
 		const newTeamMember = await Team.addMember({
 			teamId,
 			ownerId: team.ownerId,
-			memberId: userId,
+			memberId: addedUser.id,
 			memberType: addedUser.role,
 		});
 		if (!newTeamMember) {
