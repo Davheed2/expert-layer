@@ -1,12 +1,15 @@
 import { Socket } from 'socket.io';
 import { AppError, authenticate, logger } from '@/common/utils';
+import cookie from 'cookie';
 
 export const socketAuthMiddleware = async (socket: Socket, next: (err?: Error) => void) => {
 	try {
 		logger.info('Auth middleware running for socket connection attempt');
 		// Get tokens from handshake auth or headers
-		const accessToken = socket.handshake.auth.accessToken || socket.handshake.headers.authorization?.split(' ')[1];
-		const refreshToken = socket.handshake.auth.refreshToken || socket.handshake.headers['x-refresh-token'];
+		const cookies = socket.handshake.headers.cookie ? cookie.parse(socket.handshake.headers.cookie) : {};
+
+		const accessToken = cookies.accessToken;
+		const refreshToken = cookies.refreshToken;
 
 		if (!accessToken && !refreshToken) {
 			return next(new AppError('Authentication required'));
