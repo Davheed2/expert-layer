@@ -78,6 +78,23 @@ class TeamRepository {
 		const result = await knexDb.table('team_members').where({ teamId, memberId: userId }).select('*');
 		return result.length ? result[0] : null;
 	};
+
+	findTeamsForUser = async (userId: string): Promise<ITeam[]> => {
+		const teamIds = await knexDb.table('team_members').where({ memberId: userId }).select('teamId');
+
+		if (teamIds.length === 0) {
+			return [];
+		}
+
+		return await knexDb
+			.table('teams')
+			.whereIn(
+				'id',
+				teamIds.map((t) => t.teamId)
+			)
+			.andWhere({ isDeleted: false })
+			.select('*');
+	};
 }
 
 export const teamRepository = new TeamRepository();

@@ -33,7 +33,7 @@ export enum ServiceCategory {
 	DESIGN = 'design',
 	DEVELOPMENT = 'development',
 	CONTENT = 'content',
-	GROWTH = 'growth'
+	GROWTH = 'growth',
 }
 
 export enum ServiceType {
@@ -107,11 +107,14 @@ export enum SocketEvents {
 	USER_OFFLINE = 'user_offline',
 	USER_TYPING = 'user_typing',
 	USER_STOP_TYPING = 'user_stop_typing',
+	ONLINE_USERS = 'online_users',
 
 	// Message events
 	SEND_MESSAGE = 'send_message',
 	MESSAGE_RECEIVED = 'message_received',
 	MESSAGE_READ = 'message_read',
+	GET_ROOM_MESSAGES = 'get_room_messages',
+	ROOM_MESSAGES = 'room_messages',
 
 	// Room events
 	JOIN_ROOM = 'join_room',

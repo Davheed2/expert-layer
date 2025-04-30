@@ -42,7 +42,7 @@ export const getOrCreateRoom = async (roomId, roomType, metadata = {}) => {
 			id: room.id,
 			roomId: room.room_id,
 			roomType: room.room_type,
-			metadata: sanitizeMetadata(metadata),
+			metadata: sanitizeMetadata(room.metadata),
 			createdAt: room.created_at,
 			updatedAt: room.updated_at,
 		};
@@ -127,6 +127,69 @@ export const getUserConversations = async (userId) => {
 		logger.error(`Error fetching conversations: ${(error as Error).message}`);
 		throw error;
 	}
+};
+
+export const getUserConversation = async (userId: string) => {
+	try {
+		const baseSelect = (isSent: boolean) =>
+			knexDb('messages as m')
+				.select(
+					'm.room_id',
+					'm.content as last_message',
+					'm.created_at as last_message_time',
+					isSent ? 'm.recipient_id as other_user_id' : 'm.sender_id as other_user_id',
+					'u.first_name as other_user_first_name',
+					'u.last_name as other_user_last_name',
+					'u.profile_image as other_user_image',
+					knexDb.raw(
+						`(
+              SELECT COUNT(*) FROM messages 
+              WHERE room_id = m.room_id 
+                AND recipient_id = ? 
+                AND NOT EXISTS (
+                  SELECT 1 FROM message_read_receipts 
+                  WHERE message_id = messages.id AND user_id = ?
+                )
+            ) as unread_count`,
+						[userId, userId]
+					),
+					knexDb.raw('ROW_NUMBER() OVER (PARTITION BY m.room_id ORDER BY m.created_at DESC) as rn')
+				)
+				.join('users as u', isSent ? 'u.id' : 'm.sender_id', isSent ? 'm.recipient_id' : 'u.id')
+				.where(isSent ? 'm.sender_id' : 'm.recipient_id', userId)
+				.andWhere('m.room_type', RoomTypes.DIRECT);
+
+		const subquerySent = baseSelect(true);
+		const subqueryReceived = baseSelect(false);
+
+		// Union both and return latest message per room
+		const directRooms = await knexDb
+			.select('*')
+			.from(knexDb.raw('(?) as all_conversations', [knexDb.unionAll([subquerySent, subqueryReceived], true)]))
+			.where('rn', 1);
+
+		return directRooms;
+	} catch (error) {
+		throw new Error('Failed to fetch room conversations: ' + (error as Error).message);
+	}
+};
+
+export const getRoomConversations = async (roomId: string) => {
+	const messages = await knexDb('messages')
+		.select(
+			'messages.id',
+			'messages.content',
+			'messages.created_at',
+			'messages.sender_id',
+			'users.first_name as senderFirstName',
+			'users.last_name as senderLastName',
+			'users.profile_image as senderProfileImage'
+		)
+		.leftJoin('users', 'messages.sender_id', 'users.id')
+		.where('messages.room_id', roomId)
+		.orderBy('messages.created_at', 'asc');
+
+	return messages;
 };
 
 // Additional function in roomService.ts

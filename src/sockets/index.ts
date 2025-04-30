@@ -4,24 +4,32 @@ import { messageHandler } from './handlers/messageHandler';
 import { presenceHandler } from './handlers/presenceHandler';
 import { teamHandler } from './handlers/teamHandler';
 import { logger } from '@/common/utils';
+import { getUserTeamIds } from './services/teamService';
 
 // Global map to track online users
 export const onlineUsers = new Map();
 
 export const initSocketHandlers = (io: SocketIOServer) => {
-	io.on(SocketEvents.CONNECT, (socket) => {
+	io.on(SocketEvents.CONNECT, async (socket) => {
 		const user = socket.data.user;
 
 		logger.info(`User connected: ${user.id}`);
 
-		// Add user to online users map
+		// Join all team rooms
+		const teamIds = await getUserTeamIds(user.id);
+		teamIds.forEach((teamId) => {
+			const roomId = `team:${teamId}`;
+			socket.join(roomId);
+
+			// Notify only this team about the online user
+			socket.to(roomId).emit(SocketEvents.USER_ONLINE, { userId: user.id });
+		});
+
+		// Track online user
 		onlineUsers.set(user.id, {
 			socketId: socket.id,
 			lastSeen: new Date(),
 		});
-
-		// Notify others that user is online
-		socket.broadcast.emit(SocketEvents.USER_ONLINE, { userId: user.id });
 
 		// Initialize handlers
 		messageHandler(io, socket);

@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { SocketEvents, RoomTypes } from '@/common/constants';
 import { saveMessage, markMessageAsRead } from '../services/messageService';
-import { getRoomId } from '../services/roomService';
+import { getRoomConversations, getRoomId } from '../services/roomService';
 import { logger } from '@/common/utils';
 import { messageRepository } from '@/repository';
 
@@ -11,50 +11,66 @@ export const messageHandler = (io: Server, socket: Socket) => {
 	// Handle sending a message
 	socket.on(SocketEvents.SEND_MESSAGE, async (data) => {
 		try {
-			const { recipientId, content, teamId } = data;
+			const { content, recipientId, teamId } = data;
 
-			// Determine room type and ID
-			let roomType = RoomTypes.DIRECT;
-			let roomId;
+			let roomId: string;
+			let roomType: RoomTypes;
 
 			if (teamId) {
+				// Group chat logic
 				roomType = RoomTypes.TEAM;
 				roomId = `team:${teamId}`;
 
-				// Auto-join team room if needed
 				socket.join(roomId);
-			} else {
+				// Save and emit
+				const message = await saveMessage({
+					senderId: user.id,
+					content,
+					roomId,
+					roomType,
+					teamId,
+					recipientId: null,
+				});
+
+				io.to(roomId).emit(SocketEvents.MESSAGE_RECEIVED, message);
+			} else if (recipientId) {
+				// Direct message logic
+				roomType = RoomTypes.DIRECT;
 				roomId = getRoomId(user.id, recipientId);
-			}
 
-			// Save message to database
-			const message = await saveMessage({
-				senderId: user.id,
-				recipientId,
-				content,
-				teamId,
-				roomId,
-				roomType,
-			});
+				const message = await saveMessage({
+					senderId: user.id,
+					recipientId,
+					content,
+					roomId,
+					roomType,
+					teamId: null,
+				});
 
-			// Emit to room
-			io.to(roomId).emit(SocketEvents.MESSAGE_RECEIVED, message);
+				io.to(roomId).emit(SocketEvents.MESSAGE_RECEIVED, message);
 
-			// If it's a direct message, also send to the specific recipient if they're not in the room
-			if (roomType === RoomTypes.DIRECT) {
+				// Optionally emit to individual if not in room
 				const recipientSocket = Array.from(io.sockets.sockets.values()).find((s) => s.data.user?.id === recipientId);
 
 				if (recipientSocket && !recipientSocket.rooms.has(roomId)) {
 					recipientSocket.emit(SocketEvents.MESSAGE_RECEIVED, message);
 				}
+			} else {
+				throw new Error('Invalid message payload: either teamId or recipientId is required');
 			}
 		} catch (error) {
-			if (error instanceof Error) {
-				logger.error(`Error sending message: ${error.message}`);
-			} else {
-				logger.error('Error sending message: An unknown error occurred');
-			}
+			logger.error(`Error sending message: ${error instanceof Error ? error.message : 'Unknown error'}`);
 			socket.emit('error', { message: 'Failed to send message' });
+		}
+	});
+
+	socket.on(SocketEvents.GET_ROOM_MESSAGES, async ({ roomId }) => {
+		try {
+			const messages = await getRoomConversations(roomId);
+			socket.emit(SocketEvents.ROOM_MESSAGES, { roomId, messages });
+		} catch (err) {
+			console.error('Failed to fetch room messages:', err);
+			socket.emit('error', { message: 'Failed to fetch messages.' });
 		}
 	});
 
@@ -89,7 +105,7 @@ export const messageHandler = (io: Server, socket: Socket) => {
 	socket.on(SocketEvents.USER_TYPING, (data) => {
 		const { recipientId, teamId } = data;
 
-		let roomId;
+		let roomId: string;
 		if (teamId) {
 			roomId = `team:${teamId}`;
 		} else {
@@ -113,8 +129,6 @@ export const messageHandler = (io: Server, socket: Socket) => {
 	});
 };
 
-// Helper function to get message by ID (you'll implement this)
-const getMessageById = async (messageId) => {
-	// Implement database retrieval
+const getMessageById = async (messageId: string) => {
 	return messageRepository.findById(messageId);
 };
