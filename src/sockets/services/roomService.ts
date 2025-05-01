@@ -66,8 +66,8 @@ export const getUserConversations = async (userId) => {
           WHEN m.sender_id = ? THEN m.recipient_id
           ELSE m.sender_id
         END as other_user_id,
-        u.name as other_user_name,
-        u.profile_image as other_user_image,
+        u.firstName as other_user_name,
+        u.photo as other_user_image,
         (
           SELECT COUNT(*) FROM messages 
           WHERE room_id = m.room_id 
@@ -138,9 +138,9 @@ export const getUserConversation = async (userId: string) => {
 					'm.content as last_message',
 					'm.created_at as last_message_time',
 					isSent ? 'm.recipient_id as other_user_id' : 'm.sender_id as other_user_id',
-					'u.first_name as other_user_first_name',
-					'u.last_name as other_user_last_name',
-					'u.profile_image as other_user_image',
+					'u.firstName as other_user_first_name',
+					'u.lastName as other_user_last_name',
+					'u.photo as other_user_image',
 					knexDb.raw(
 						`(
               SELECT COUNT(*) FROM messages 
@@ -181,9 +181,9 @@ export const getRoomConversations = async (roomId: string) => {
 			'messages.content',
 			'messages.created_at',
 			'messages.sender_id',
-			'users.first_name as senderFirstName',
-			'users.last_name as senderLastName',
-			'users.profile_image as senderProfileImage'
+			'users.firstName as senderFirstName',
+			'users.lastName as senderLastName',
+			'users.photo as senderProfileImage'
 		)
 		.leftJoin('users', 'messages.sender_id', 'users.id')
 		.where('messages.room_id', roomId)
