@@ -35,8 +35,6 @@ export class TeamController {
 			throw new AppError('Team not found', 404);
 		}
 
-		console.log('team', team)
-
 		if (user.role !== 'admin' || team.ownerId !== user.id) {
 			throw new AppError('You do not have permission to access this resource', 403);
 		}
@@ -76,6 +74,18 @@ export class TeamController {
 
 		const teams = await teamRepository.getAllTeamsWithMembers();
 		return AppResponse(res, 200, toJSON(teams), 'Teams with members retrieved successfully', req);
+	});
+
+	getUserTeamsHandler = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+
+		if (!user) {
+			throw new AppError('Please log in again', 400);
+		}
+
+		const teams = await teamRepository.getUserTeamsWithMemberCount(user.id);
+		if (!teams) throw new AppError('Failed to fetch user teams', 404);
+		return AppResponse(res, 200, toJSON(teams), 'User teams retrieved successfully', req);
 	});
 }
 

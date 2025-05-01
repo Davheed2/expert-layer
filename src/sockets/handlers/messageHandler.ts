@@ -7,24 +7,30 @@ import { messageRepository } from '@/repository';
 
 export const messageHandler = (io: Server, socket: Socket) => {
 	const user = socket.data.user;
+	const { id: senderId, teamIds } = socket.data.user;
 
 	// Handle sending a message
 	socket.on(SocketEvents.SEND_MESSAGE, async (data) => {
 		try {
 			const { content, recipientId, teamId } = data;
 
-			let roomId: string;
+			if (!teamId || !teamIds.includes(teamId)) {
+				return socket.emit('error', { message: 'Invalid or unauthorized teamId' });
+			}
+
+			const roomId = `team:${teamId}`;
+			//let roomId: string;
 			let roomType: RoomTypes;
 
 			if (teamId) {
 				// Group chat logic
 				roomType = RoomTypes.TEAM;
-				roomId = `team:${teamId}`;
+				//roomId = `team:${teamId}`;
 
 				socket.join(roomId);
 				// Save and emit
 				const message = await saveMessage({
-					senderId: user.id,
+					senderId,
 					content,
 					roomId,
 					roomType,
@@ -36,25 +42,25 @@ export const messageHandler = (io: Server, socket: Socket) => {
 			} else if (recipientId) {
 				// Direct message logic
 				roomType = RoomTypes.DIRECT;
-				roomId = getRoomId(user.id, recipientId);
+				//roomId = getRoomId(senderId, recipientId);
 
-				const message = await saveMessage({
-					senderId: user.id,
-					recipientId,
-					content,
-					roomId,
-					roomType,
-					teamId: null,
-				});
+				// const message = await saveMessage({
+				// 	senderId,
+				// 	recipientId,
+				// 	content,
+				// 	roomId,
+				// 	roomType,
+				// 	teamId: null,
+				// });
 
-				io.to(roomId).emit(SocketEvents.MESSAGE_RECEIVED, message);
+				// io.to(roomId).emit(SocketEvents.MESSAGE_RECEIVED, message);
 
-				// Optionally emit to individual if not in room
-				const recipientSocket = Array.from(io.sockets.sockets.values()).find((s) => s.data.user?.id === recipientId);
+				// // Optionally emit to individual if not in room
+				// const recipientSocket = Array.from(io.sockets.sockets.values()).find((s) => s.data.user?.id === recipientId);
 
-				if (recipientSocket && !recipientSocket.rooms.has(roomId)) {
-					recipientSocket.emit(SocketEvents.MESSAGE_RECEIVED, message);
-				}
+				// if (recipientSocket && !recipientSocket.rooms.has(roomId)) {
+				// 	recipientSocket.emit(SocketEvents.MESSAGE_RECEIVED, message);
+				// }
 			} else {
 				throw new Error('Invalid message payload: either teamId or recipientId is required');
 			}
@@ -64,8 +70,15 @@ export const messageHandler = (io: Server, socket: Socket) => {
 		}
 	});
 
-	socket.on(SocketEvents.GET_ROOM_MESSAGES, async ({ roomId }) => {
+	socket.on(SocketEvents.GET_ROOM_MESSAGES, async ({ teamId }) => {
+		const { teamIds } = socket.data.user;
+
+		if (!teamIds.includes(teamId)) {
+			return socket.emit('error', { message: 'You are not part of this team' });
+		}
+		
 		try {
+			const roomId = `team:${teamId}`;
 			const messages = await getRoomConversations(roomId);
 			socket.emit(SocketEvents.ROOM_MESSAGES, { roomId, messages });
 		} catch (err) {

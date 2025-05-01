@@ -20,7 +20,7 @@ function sanitizeMetadata(metadata) {
 }
 
 // Get or create a room
-export const getOrCreateRoom = async (roomId, roomType, metadata = {}) => {
+export const getOrCreateRoom = async (roomId: string, roomType: string, metadata = {}) => {
 	try {
 		// Check if room exists
 		let room = await knexDb('chat_rooms').where('room_id', roomId).first();

@@ -6,7 +6,6 @@ const router = express.Router();
 
 router.use(protect);
 
-
 /**
  * @openapi
  * /team/all:
@@ -331,5 +330,7 @@ router.post('/add-member', teamController.addTeamMember);
  *                   example: "You do not have permission to access this resource"
  */
 router.get('/all-team-members', teamController.fetchTeamsWithMembers);
+
+router.get('/chat/teams', teamController.getUserTeamsHandler);
 
 export { router as teamsRouter };

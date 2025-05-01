@@ -95,6 +95,22 @@ class TeamRepository {
 			.andWhere({ isDeleted: false })
 			.select('*');
 	};
+
+	getUserTeamsWithMemberCount = async (userId: string) => {
+		return knexDb('team_members as tm')
+			.select(
+				'tm.teamId',
+				't.name as teamName',
+				knexDb.raw('COUNT(DISTINCT tm2.id) as memberCount'),
+				knexDb.raw(`'team:' || "tm"."teamId" as roomId`)
+			)
+			.join('teams as t', 't.id', 'tm.teamId')
+			.join('team_members as tm2', 'tm2.teamId', 'tm.teamId')
+			.where('tm.memberId', userId)
+			.andWhere('tm.isDeleted', false)
+			.andWhere('tm2.isDeleted', false)
+			.groupBy('tm.teamId', 't.name');
+	};
 }
 
 export const teamRepository = new TeamRepository();

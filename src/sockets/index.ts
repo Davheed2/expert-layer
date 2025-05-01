@@ -4,7 +4,6 @@ import { messageHandler } from './handlers/messageHandler';
 import { presenceHandler } from './handlers/presenceHandler';
 import { teamHandler } from './handlers/teamHandler';
 import { logger } from '@/common/utils';
-import { getUserTeamIds } from './services/teamService';
 
 // Global map to track online users
 export const onlineUsers = new Map();
@@ -13,17 +12,32 @@ export const initSocketHandlers = (io: SocketIOServer) => {
 	io.on(SocketEvents.CONNECT, async (socket) => {
 		const user = socket.data.user;
 
+		if (!user || !user.id) {
+			logger.error('User data is missing or invalid.');
+			return;
+		}
+
 		logger.info(`User connected: ${user.id}`);
 
-		// Join all team rooms
-		const teamIds = await getUserTeamIds(user.id);
-		teamIds.forEach((teamId) => {
-			const roomId = `team:${teamId}`;
-			socket.join(roomId);
+		const teamIds = socket.data.user?.teamIds || [];
 
-			// Notify only this team about the online user
-			socket.to(roomId).emit(SocketEvents.USER_ONLINE, { userId: user.id });
-		});
+		// Join all team rooms
+		for (const teamId of teamIds) {
+			socket.join(`team:${teamId}`);
+			socket.to(`team:${teamId}`).emit(SocketEvents.USER_ONLINE, { userId: user.id });
+		}
+
+		logger.info(`User joined rooms: ${teamIds.map((id: string) => `team:${id}`).join(', ')}`);
+
+		// Join all team rooms
+		// const teamIds = await getUserTeamIds(user.id);
+		// teamIds.forEach((teamId) => {
+		// 	const roomId = `team:${teamId}`;
+		// 	socket.join(roomId);
+
+		// 	// Notify only this team about the online user
+		// 	socket.to(roomId).emit(SocketEvents.USER_ONLINE, { userId: user.id });
+		// });
 
 		// Track online user
 		onlineUsers.set(user.id, {
