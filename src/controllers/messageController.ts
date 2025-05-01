@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
 import { AppError, AppResponse, toJSON } from '@/common/utils';
 import { catchAsync } from '@/middlewares';
-import { messageRepository } from '@/repository';
+import { getRoomConversations } from '@/sockets/services/roomService';
 
 export class MessageController {
 	getMessagesByTeam = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
-		const { perPage, page, teamId } = req.query;
+		const { teamId } = req.query;
 
 		if (!user) {
 			throw new AppError('Please log in again', 400);
@@ -15,13 +15,15 @@ export class MessageController {
 			throw new AppError('Team ID is required', 400);
 		}
 
-		const pageSize = parseInt(perPage as string, 10) || 10;
-		const pageNum = parseInt(page as string, 10) || 1;
+		// const pageSize = parseInt(perPage as string, 10) || 10;
+		// const pageNum = parseInt(page as string, 10) || 1;
 
-		const offset = (pageNum - 1) * pageSize;
-		const limit = pageSize;
+		// const offset = (pageNum - 1) * pageSize;
+		// const limit = pageSize;
 
-		const messages = await messageRepository.getMessagesByTeamId(teamId as string, limit, offset);
+		//const messages = await messageRepository.getMessagesByTeamId(teamId as string, limit, offset);
+		const roomId = `team:${teamId}`;
+		const messages = await getRoomConversations(roomId);
 		if (!messages) {
 			throw new AppError('No messages found', 404);
 		}
