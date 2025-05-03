@@ -100,6 +100,12 @@ class AuthController {
 			sysNotificationId: 1,
 		});
 
+		const accessToken = generateAccessToken(extinguishUser.id);
+		const refreshToken = generateRefreshToken(extinguishUser.id);
+
+		setCookie(req, res, 'accessToken', accessToken, parseTokenDuration(ENVIRONMENT.JWT_EXPIRES_IN.ACCESS));
+		setCookie(req, res, 'refreshToken', refreshToken, parseTokenDuration(ENVIRONMENT.JWT_EXPIRES_IN.REFRESH));
+
 		AppResponse(res, 200, toJSON(updatedUser), 'Email verified successfully');
 
 		setImmediate(async () => {
