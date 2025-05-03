@@ -5,3 +5,5 @@ export * from './resetPassword';
 export * from './welcomeEmail';
 export * from './signUpEmail';
 export * from './magicEmail';
+export * from './joinTeamEmail';
+export * from './requestCreatedEmail';

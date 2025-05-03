@@ -6,8 +6,10 @@ import { ENVIRONMENT } from '../config';
 import {
 	ForgotPasswordData,
 	IHashData,
+	JoinTeamData,
 	LoginEmailData,
 	MagicEmailData,
+	RequestData,
 	ResetPasswordData,
 	SignUpEmailData,
 	WelcomeEmailData,
@@ -400,6 +402,44 @@ const sendResetPasswordEmail = async (email: string, name: string): Promise<void
 	});
 };
 
+const sendJoinTeamEmail = async (email: string, name: string, teamName: string): Promise<void> => {
+	const emailData: JoinTeamData = {
+		to: email,
+		priority: 'high',
+		name,
+		teamName,
+	};
+
+	addEmailToQueue({
+		type: 'joinTeam',
+		data: emailData,
+	});
+};
+
+const sendRequestCreatedEmail = async (
+	email: string,
+	name: string,
+	userName: string,
+	serviceName: string,
+	serviceCategory: string,
+	requestDetails: string
+): Promise<void> => {
+	const emailData: RequestData = {
+		to: email,
+		priority: 'high',
+		name,
+		userName,
+		serviceName,
+		serviceCategory,
+		requestDetails,
+	};
+
+	addEmailToQueue({
+		type: 'requestCreated',
+		data: emailData,
+	});
+};
+
 export {
 	dateFromString,
 	generateRandom6DigitKey,
@@ -429,4 +469,6 @@ export {
 	sendMagicLinkEmail,
 	sendResetPasswordEmail,
 	sendForgotPasswordEmail,
+	sendJoinTeamEmail,
+	sendRequestCreatedEmail,
 };

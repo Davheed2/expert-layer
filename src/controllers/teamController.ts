@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AppError, AppResponse, toJSON } from '@/common/utils';
+import { AppError, AppResponse, sendJoinTeamEmail, toJSON } from '@/common/utils';
 import { catchAsync } from '@/middlewares';
 import { teamRepository, userRepository } from '@/repository';
 import { Team } from '@/services/Team';
@@ -58,6 +58,8 @@ export class TeamController {
 		if (!newTeamMember) {
 			throw new AppError('Failed to add team member', 500);
 		}
+
+		await sendJoinTeamEmail(addedUser.email, addedUser.firstName, `${user.firstName} ${user.lastName}'s`);
 
 		return AppResponse(res, 201, toJSON([newTeamMember]), 'Team member added successfully', req);
 	});

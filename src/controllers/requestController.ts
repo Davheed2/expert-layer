@@ -5,11 +5,12 @@ import {
 	deleteObjectFromR2,
 	logger,
 	referenceGenerator,
+	sendRequestCreatedEmail,
 	toJSON,
 	uploadDocumentFile,
 } from '@/common/utils';
 import { catchAsync } from '@/middlewares';
-import { requestsRepository, servicesRepository } from '@/repository';
+import { requestsRepository, servicesRepository, userRepository } from '@/repository';
 import { RequestStatus, ServiceStatus } from '@/common/constants';
 import { IRequests } from '@/common/interfaces';
 
@@ -100,8 +101,20 @@ export class RequestsController {
 						file: secureUrl,
 					});
 				}
+
+				const admins = await userRepository.findAllAdmins();
+				for (const admin of admins) {
+					await sendRequestCreatedEmail(
+						admin.email,
+						admin.firstName,
+						`${user.firstName} ${user.lastName}`,
+						serviceName,
+						serviceCategory,
+						details
+					);
+				}
 			} catch (err) {
-				logger.error('Error during background file upload for request', err);
+				logger.error('Error during background file upload for request or admin emails', err);
 			}
 		});
 	});

@@ -6,6 +6,8 @@ import {
 	WelcomeEmailData,
 	SignUpEmailData,
 	MagicEmailData,
+	JoinTeamData,
+	RequestData,
 } from '@/common/interfaces';
 import { logger } from '@/common/utils';
 import nodemailer from 'nodemailer';
@@ -17,6 +19,8 @@ import {
 	resetPasswordEmail,
 	signUpEmail,
 	welcomeEmail,
+	teamJoinEmail,
+	requestCreatedEmail,
 } from '../templates';
 
 const transporter = nodemailer.createTransport({
@@ -58,6 +62,14 @@ export const sendEmail = async (job: EmailJobData) => {
 		case 'resetPassword':
 			htmlContent = resetPasswordEmail(data as ResetPasswordData);
 			subject = 'Reset Password';
+			break;
+		case 'joinTeam':
+			htmlContent = teamJoinEmail(data as JoinTeamData);
+			subject = 'You have been assigned to a project';
+			break;
+		case 'requestCreated':
+			htmlContent = requestCreatedEmail(data as RequestData);
+			subject = 'A new request has been created';
 			break;
 		// Handle other email types...
 		default:

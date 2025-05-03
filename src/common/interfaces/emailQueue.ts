@@ -31,10 +31,25 @@ export interface ResetPasswordData extends CommonDataFields {
 	name: string;
 }
 
+export interface JoinTeamData extends CommonDataFields {
+	name: string;
+	teamName: string;
+}
+
+export interface RequestData extends CommonDataFields {
+	name: string;
+	userName: string;
+	serviceName: string;
+	serviceCategory: string;
+	requestDetails: string;
+}
+
 export type EmailJobData =
 	| { type: 'signUpEmail'; data: SignUpEmailData }
 	| { type: 'welcomeEmail'; data: WelcomeEmailData }
 	| { type: 'loginEmail'; data: LoginEmailData }
 	| { type: 'magicEmail'; data: MagicEmailData }
 	| { type: 'forgotPassword'; data: ForgotPasswordData }
-	| { type: 'resetPassword'; data: ResetPasswordData };
+	| { type: 'resetPassword'; data: ResetPasswordData }
+	| { type: 'joinTeam'; data: JoinTeamData }
+	| { type: 'requestCreated'; data: RequestData };
