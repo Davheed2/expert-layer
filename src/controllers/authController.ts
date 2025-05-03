@@ -9,6 +9,7 @@ import {
 	generateRandomString,
 	generateRefreshToken,
 	getDomainReferer,
+	logger,
 	parseTokenDuration,
 	sendLoginEmail,
 	sendMagicLinkEmail,
@@ -109,25 +110,29 @@ class AuthController {
 		AppResponse(res, 200, toJSON(updatedUser), 'Email verified successfully');
 
 		setImmediate(async () => {
-			const team = await Team.add({
-				name: `${updatedUser[0].firstName} ${updatedUser[0].lastName}'s Organization`,
-				ownerId: updatedUser[0].id,
-			});
-			await Team.addMember({
-				teamId: team.id,
-				memberId: updatedUser[0].id,
-				ownerId: updatedUser[0].id,
-				memberType: updatedUser[0].role,
-			});
-
-			const admins = await userRepository.findAllAdmins();
-			for (const admin of admins) {
-				await Notification.add({
-					userId: admin.id,
-					title: 'New user registered',
-					message: `The user ${updatedUser[0].firstName} ${updatedUser[0].lastName} just registered.`,
-					source: NotificationSource.CLIENT,
+			try {
+				const team = await Team.add({
+					name: `${updatedUser[0].firstName} ${updatedUser[0].lastName}'s Organization`,
+					ownerId: updatedUser[0].id,
 				});
+				await Team.addMember({
+					teamId: team.id,
+					memberId: updatedUser[0].id,
+					ownerId: updatedUser[0].id,
+					memberType: updatedUser[0].role,
+				});
+
+				const admins = await userRepository.findAllAdmins();
+				for (const admin of admins) {
+					await Notification.add({
+						userId: admin.id,
+						title: 'New user registered',
+						message: `The user ${updatedUser[0].firstName} ${updatedUser[0].lastName} just registered.`,
+						source: NotificationSource.CLIENT,
+					});
+				}
+			} catch (err) {
+				logger.error('Error during background team creation', err);
 			}
 		});
 	});
@@ -160,7 +165,6 @@ class AuthController {
 
 		const generatedOtp = generateOtp();
 		const otpExpires = currentRequestTime.plus({ minutes: 15 }).toJSDate();
-
 
 		//const loginUrl = `${getDomainReferer(req)}/auth/login?token=${hashedLoginToken}`;
 		await userRepository.update(user.id, {

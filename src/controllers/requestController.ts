@@ -3,6 +3,7 @@ import {
 	AppError,
 	AppResponse,
 	deleteObjectFromR2,
+	logger,
 	referenceGenerator,
 	toJSON,
 	uploadDocumentFile,
@@ -87,16 +88,20 @@ export class RequestsController {
 		AppResponse(res, 201, toJSON(newRequest), 'Request created successfully', req);
 
 		setImmediate(async () => {
-			if (file) {
-				const { secureUrl } = await uploadDocumentFile({
-					fileName: `requests-file/${Date.now()}-${file.originalname}`,
-					buffer: file.buffer,
-					mimetype: file.mimetype,
-				});
-				await requestsRepository.createRequestFile({
-					requestId: newRequest[0].id,
-					file: secureUrl,
-				});
+			try {
+				if (file) {
+					const { secureUrl } = await uploadDocumentFile({
+						fileName: `requests-file/${Date.now()}-${file.originalname}`,
+						buffer: file.buffer,
+						mimetype: file.mimetype,
+					});
+					await requestsRepository.createRequestFile({
+						requestId: newRequest[0].id,
+						file: secureUrl,
+					});
+				}
+			} catch (err) {
+				logger.error('Error during background file upload for request', err);
 			}
 		});
 	});

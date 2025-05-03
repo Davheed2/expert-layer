@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AppError, AppResponse, toJSON, uploadPictureFile } from '@/common/utils';
+import { AppError, AppResponse, logger, toJSON, uploadPictureFile } from '@/common/utils';
 import { catchAsync } from '@/middlewares';
 import { servicesRepository } from '@/repository';
 import { IService } from '@/common/interfaces';
@@ -91,13 +91,17 @@ export class ServicesController {
 		AppResponse(res, 201, newService, 'Service created successfully', req);
 
 		setImmediate(async () => {
-			if (file) {
-				const { secureUrl } = await uploadPictureFile({
-					fileName: `services-image/${Date.now()}-${file.originalname}`,
-					buffer: file.buffer,
-					mimetype: file.mimetype,
-				});
-				await servicesRepository.update(newService[0].id, { serviceImage: secureUrl });
+			try {
+				if (file) {
+					const { secureUrl } = await uploadPictureFile({
+						fileName: `services-image/${Date.now()}-${file.originalname}`,
+						buffer: file.buffer,
+						mimetype: file.mimetype,
+					});
+					await servicesRepository.update(newService[0].id, { serviceImage: secureUrl });
+				}
+			} catch (err) {
+				logger.error('Error during background file upload for service creation', err);
 			}
 		});
 	});
