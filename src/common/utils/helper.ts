@@ -4,6 +4,7 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import { encode } from 'hi-base32';
 import { ENVIRONMENT } from '../config';
 import {
+	AssignedManagerData,
 	ForgotPasswordData,
 	IHashData,
 	JoinTeamData,
@@ -416,6 +417,19 @@ const sendJoinTeamEmail = async (email: string, name: string, teamName: string):
 	});
 };
 
+const sendAssignedManagerEmail = async (email: string, name: string): Promise<void> => {
+	const emailData: AssignedManagerData = {
+		to: email,
+		priority: 'high',
+		name,
+	};
+
+	addEmailToQueue({
+		type: 'assignedManager',
+		data: emailData,
+	});
+};
+
 const sendRequestCreatedEmail = async (
 	email: string,
 	name: string,
@@ -471,4 +485,5 @@ export {
 	sendForgotPasswordEmail,
 	sendJoinTeamEmail,
 	sendRequestCreatedEmail,
+	sendAssignedManagerEmail,
 };

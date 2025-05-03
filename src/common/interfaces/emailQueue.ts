@@ -44,6 +44,10 @@ export interface RequestData extends CommonDataFields {
 	requestDetails: string;
 }
 
+export interface AssignedManagerData extends CommonDataFields {
+	name: string;
+}
+
 export type EmailJobData =
 	| { type: 'signUpEmail'; data: SignUpEmailData }
 	| { type: 'welcomeEmail'; data: WelcomeEmailData }
@@ -52,4 +56,5 @@ export type EmailJobData =
 	| { type: 'forgotPassword'; data: ForgotPasswordData }
 	| { type: 'resetPassword'; data: ResetPasswordData }
 	| { type: 'joinTeam'; data: JoinTeamData }
-	| { type: 'requestCreated'; data: RequestData };
+	| { type: 'requestCreated'; data: RequestData }
+	| { type: 'assignedManager'; data: AssignedManagerData };

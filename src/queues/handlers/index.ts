@@ -8,6 +8,7 @@ import {
 	MagicEmailData,
 	JoinTeamData,
 	RequestData,
+	AssignedManagerData,
 } from '@/common/interfaces';
 import { logger } from '@/common/utils';
 import nodemailer from 'nodemailer';
@@ -21,6 +22,7 @@ import {
 	welcomeEmail,
 	teamJoinEmail,
 	requestCreatedEmail,
+	accountManagerAssignedEmail,
 } from '../templates';
 
 const transporter = nodemailer.createTransport({
@@ -70,6 +72,10 @@ export const sendEmail = async (job: EmailJobData) => {
 		case 'requestCreated':
 			htmlContent = requestCreatedEmail(data as RequestData);
 			subject = 'A new request has been created';
+			break;
+		case 'assignedManager':
+			htmlContent = accountManagerAssignedEmail(data as AssignedManagerData);
+			subject = 'An account manager has been assigned to your project';
 			break;
 		// Handle other email types...
 		default:

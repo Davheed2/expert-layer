@@ -38,6 +38,7 @@ export const mainSchema = z.object({
 	token: z.string(),
 	receiveCodeViaEmail: z.boolean(),
 	name: z.string().min(3).trim(),
+	ownerEmail: z.string().email('Please enter a valid email address!').toLowerCase(),
 	price: z.number().positive(),
 	credits: z.number().positive(),
 	hours: z.string().min(3).trim(),

@@ -12,6 +12,11 @@ class TeamRepository {
 		return result.length ? result[0] : null;
 	};
 
+	getTeamByOwnerId = async (ownerId: string): Promise<ITeam | null> => {
+		const result = await knexDb.table('teams').where({ ownerId }).select('*');
+		return result.length ? result[0] : null;
+	};
+
 	// getAllTeams = async (): Promise<ITeamWithOwner[]> => {
 	// 	return await knexDb
 	// 		.table('teams')

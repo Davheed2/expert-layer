@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AppError, AppResponse, sendJoinTeamEmail, toJSON } from '@/common/utils';
+import { AppError, AppResponse, sendAssignedManagerEmail, sendJoinTeamEmail, toJSON } from '@/common/utils';
 import { catchAsync } from '@/middlewares';
 import { teamRepository, userRepository } from '@/repository';
 import { Team } from '@/services/Team';
@@ -21,16 +21,21 @@ export class TeamController {
 
 	addTeamMember = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
-		const { teamId, email } = req.body;
+		const { ownerEmail, email } = req.body;
 
 		if (!user) {
 			throw new AppError('Please log in again', 400);
 		}
-		if (!teamId || !email) {
-			throw new AppError('Team ID and email are required', 400);
+		if (!ownerEmail || !email) {
+			throw new AppError('Users email and account managers email are required', 400);
 		}
 
-		const team = await teamRepository.getTeam(teamId);
+		const teamOwner = await userRepository.findByEmail(email);
+		if (!teamOwner) {
+			throw new AppError('User not found', 404);
+		}
+
+		const team = await teamRepository.getTeamByOwnerId(teamOwner.id);
 		if (!team) {
 			throw new AppError('Team not found', 404);
 		}
@@ -41,16 +46,16 @@ export class TeamController {
 
 		const addedUser = await userRepository.findByEmail(email);
 		if (!addedUser) {
-			throw new AppError('User not found', 404);
+			throw new AppError('Account Mnager not found', 404);
 		}
 
-		const teamMember = await teamRepository.getTeamMember(teamId, addedUser.id);
+		const teamMember = await teamRepository.getTeamMember(team.id, addedUser.id);
 		if (teamMember) {
 			throw new AppError('User is already a member of the team', 400);
 		}
 
 		const newTeamMember = await Team.addMember({
-			teamId,
+			teamId: team.id,
 			ownerId: team.ownerId,
 			memberId: addedUser.id,
 			memberType: addedUser.role,
@@ -60,6 +65,7 @@ export class TeamController {
 		}
 
 		await sendJoinTeamEmail(addedUser.email, addedUser.firstName, `${user.firstName} ${user.lastName}'s`);
+		await sendAssignedManagerEmail(teamOwner.email, teamOwner.firstName);
 
 		return AppResponse(res, 201, toJSON([newTeamMember]), 'Team member added successfully', req);
 	});

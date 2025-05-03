@@ -7,3 +7,4 @@ export * from './signUpEmail';
 export * from './magicEmail';
 export * from './joinTeamEmail';
 export * from './requestCreatedEmail';
+export * from './assignedManagerEmail';
