@@ -18,15 +18,15 @@ export const signUpEmail = (data: { name: string; verificationUrl: string }) => 
                 <table width="100%" border="0" cellspacing="0" cellpadding="0">
                   <tr>
                     <td align="center">
-                      <table border="0" cellspacing="0" cellpadding="0">
-                        <tr>
-                          <td>
-                            <a href="${data.verificationUrl}" style="background-color: #bd531e; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; display: inline-block; font-weight: bold;">
-                              Verify Email
-                            </a>
-                          </td>
-                        </tr>
-                      </table>
+                      <table align="center" width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
+                       <tr>
+                        <td align="center">
+                          <a href="${data.verificationUrl}" style="background-color: #bd531e; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; display: inline-block; font-weight: bold; font-family: Arial, Helvetica, sans-serif; line-height: 1.5;">
+                            Verify Email
+                          </a>
+                        </td>
+                       </tr>
+                     </table>
                     </td>
                   </tr>
                 </table>
