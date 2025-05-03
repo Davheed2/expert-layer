@@ -40,7 +40,7 @@ export class TeamController {
 			throw new AppError('Team not found', 404);
 		}
 
-		if (user.role !== 'admin' || team.ownerId !== user.id) {
+		if (user.role !== 'admin' && team.ownerId !== user.id) {
 			throw new AppError('You do not have permission to access this resource', 403);
 		}
 
