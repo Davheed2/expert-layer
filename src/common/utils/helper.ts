@@ -320,12 +320,12 @@ const referenceGenerator = () => {
 	return `TX${year}${month}${day}${randomNum}`;
 };
 
-const sendSignUpEmail = async (email: string, name: string, verificationUrl: string): Promise<void> => {
+const sendSignUpEmail = async (email: string, name: string, otp: string): Promise<void> => {
 	const emailData: SignUpEmailData = {
 		to: email,
 		priority: 'high',
 		name,
-		verificationUrl,
+		otp,
 	};
 
 	addEmailToQueue({

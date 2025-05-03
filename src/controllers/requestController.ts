@@ -90,7 +90,7 @@ export class RequestsController {
 
 		setImmediate(async () => {
 			try {
-				if (file) {
+				if (file?.buffer && file?.originalname && file?.mimetype) {
 					const { secureUrl } = await uploadDocumentFile({
 						fileName: `requests-file/${Date.now()}-${file.originalname}`,
 						buffer: file.buffer,

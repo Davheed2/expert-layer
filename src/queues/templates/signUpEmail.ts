@@ -1,6 +1,6 @@
 import { baseTemplate } from './baseTemplate';
 
-export const signUpEmail = (data: { name: string; verificationUrl: string }) => {
+export const signUpEmail = (data: { name: string; otp: string }) => {
 	return baseTemplate(
 		`<h2>Hi ${data.name},</h2>
 
@@ -9,41 +9,21 @@ export const signUpEmail = (data: { name: string; verificationUrl: string }) => 
         </p>
 
         <p>
-            To complete your registration, please verify your email address by clicking the button below:
+            To complete your registration, please verify your email address by entering the one-time password (OTP) below on the Expert Layer verification page:
         </p>
 
-        <table class="body-action" align="center" width="100%" cellpadding="0" cellspacing="0">
-            <tr>
-              <td align="center">
-                <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                  <tr>
-                    <td align="center">
-                      <table align="center" width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
-                       <tr>
-                        <td align="center">
-                          <a href="${data.verificationUrl}" style="background-color: #bd531e; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; display: inline-block; font-weight: bold; font-family: Arial, Helvetica, sans-serif; line-height: 1.5;">
-                            Verify Email
-                          </a>
-                        </td>
-                       </tr>
-                     </table>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-        </table>
+        <div style="margin: 32px auto; text-align: center;">
+            <div style="display: inline-block; padding: 16px 32px; font-size: 24px; letter-spacing: 8px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; font-weight: bold; color: #111827;">
+                ${data.otp}
+            </div>
+        </div>
 
         <p>
-            If the button above doesn’t work, copy and paste the following link into your browser:
-        </p>
-
-        <p style="word-break: break-all;">
-            <a href="${data.verificationUrl}" style="color: #bd531e;">${data.verificationUrl}</a>
+            This OTP is valid for <strong>1 day</strong>.
         </p>
 
         <p>
-            This link will expire in <strong>30 days</strong>. If you didn’t sign up for Expert Layer, you can ignore this email.
+            If you didn’t sign up for Expert Layer or have trouble verifying, please contact us at support@expertlayer.com.
         </p>
 
         <p>Thanks,<br/>The Expert Layer Team</p>`

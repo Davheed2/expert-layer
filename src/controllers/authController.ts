@@ -3,12 +3,9 @@ import { Request, Response } from 'express';
 import {
 	AppError,
 	AppResponse,
-	createToken,
 	generateAccessToken,
 	generateOtp,
-	generateRandomString,
 	generateRefreshToken,
-	getDomainReferer,
 	logger,
 	parseTokenDuration,
 	sendLoginEmail,
@@ -17,7 +14,6 @@ import {
 	sendWelcomeEmail,
 	setCookie,
 	toJSON,
-	verifyToken,
 } from '@/common/utils';
 import { catchAsync } from '@/middlewares';
 import { ENVIRONMENT } from '@/common/config';
@@ -39,16 +35,18 @@ class AuthController {
 			if (existingUser.email === email) throw new AppError('User with this email already exists', 409);
 		}
 
-		const verificationToken = await generateRandomString();
-		const hashedVerificationToken = createToken(
-			{
-				token: verificationToken,
-			},
-			{ expiresIn: '30d' }
-		);
+		// const verificationToken = await generateRandomString();
+		// const hashedVerificationToken = createToken(
+		// 	{
+		// 		token: verificationToken,
+		// 	},
+		// 	{ expiresIn: '30d' }
+		// );
 
-		const verificationUrl = `${getDomainReferer(req)}/auth/verify?verificationToken=${hashedVerificationToken}`;
-		await sendSignUpEmail(email, firstName, verificationUrl);
+		//const verificationUrl = `${getDomainReferer(req)}/auth/verify?verificationToken=${hashedVerificationToken}`;
+
+		const generatedOtp = generateOtp();
+		await sendSignUpEmail(email, firstName, generatedOtp);
 
 		const [user] = await userRepository.create({
 			email,
@@ -57,8 +55,8 @@ class AuthController {
 			lastName,
 			ipAddress: req.ip,
 			role,
-			verificationToken,
-			verificationTokenExpires: DateTime.now().plus({ days: 30 }).toJSDate(),
+			verificationToken: generatedOtp,
+			verificationTokenExpires: DateTime.now().plus({ days: 1 }).toJSDate(),
 		});
 		if (!user) {
 			throw new AppError('Failed to create user', 500);
@@ -68,18 +66,13 @@ class AuthController {
 	});
 
 	verifyAccount = catchAsync(async (req: Request, res: Response) => {
-		const { verificationToken } = req.query;
+		const { verificationToken } = req.body;
 
 		if (!verificationToken) {
 			throw new AppError('Verification token is required', 400);
 		}
 
-		const decodedVerificationToken = await verifyToken(verificationToken as string);
-		if (!decodedVerificationToken.token) {
-			throw new AppError('Invalid verification token', 401);
-		}
-
-		const extinguishUser = await userRepository.findByVerificationToken(decodedVerificationToken.token);
+		const extinguishUser = await userRepository.findByVerificationToken(verificationToken);
 		if (!extinguishUser) {
 			throw new AppError('Invalid or expired verification token', 404);
 		}

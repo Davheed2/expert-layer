@@ -5,7 +5,7 @@ export interface CommonDataFields {
 
 export interface SignUpEmailData extends CommonDataFields {
 	name: string;
-	verificationUrl: string;
+	otp: string;
 }
 
 export interface WelcomeEmailData extends CommonDataFields {
