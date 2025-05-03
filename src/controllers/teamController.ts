@@ -30,7 +30,7 @@ export class TeamController {
 			throw new AppError('Users email and account managers email are required', 400);
 		}
 
-		const teamOwner = await userRepository.findByEmail(email);
+		const teamOwner = await userRepository.findByEmail(ownerEmail);
 		if (!teamOwner) {
 			throw new AppError('User not found', 404);
 		}
@@ -50,7 +50,6 @@ export class TeamController {
 		}
 
 		const teamMember = await teamRepository.getTeamMember(team.id, addedUser.id);
-		console.log('teamMember', teamMember)
 		if (teamMember) {
 			throw new AppError('User is already a member of the team', 400);
 		}
