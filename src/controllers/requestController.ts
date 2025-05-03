@@ -58,7 +58,7 @@ export class RequestsController {
 		if (serviceMaxRequest !== null && serviceMaxRequest <= 1) {
 			const existingRequestNumber = await requestsRepository.findByUserIdAndServiceId(user.id, serviceId);
 			if (existingRequestNumber.length >= serviceMaxRequest) {
-				if (existingRequestNumber[0].status !== RequestStatus.FAILED) {
+				if (existingRequestNumber[0].status !== RequestStatus.BLOCKED) {
 					throw new AppError('You have reached the maximum number of requests for this service', 400);
 				}
 			}
@@ -77,7 +77,7 @@ export class RequestsController {
 			transactionId,
 			hours: service.hours,
 			credits: service.credits,
-			status: RequestStatus.PROCESSING,
+			status: RequestStatus.DRAFT,
 		};
 		const newRequest = await requestsRepository.create(requestPayload);
 		if (!newRequest) {

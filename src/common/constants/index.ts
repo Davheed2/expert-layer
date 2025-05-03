@@ -53,15 +53,12 @@ export enum ServiceRequestAllocation {
 }
 
 export enum RequestStatus {
+	DRAFT = 'draft',
+	FINDING_EXPERT = 'finding_expert',
+	IN_PROGRESS = 'in_progress',
+	REVIEW = 'review',
 	COMPLETED = 'completed',
-	SUBMITTED = 'submitted',
-	IN_PROGRESS = 'in progress',
-	PENDING_RESPONSE = 'pending_response',
-	CLOSED = 'closed',
-	ON_HOLD = 'on hold',
-	QUEUED = 'queued',
-	FAILED = 'failed',
-	PROCESSING = 'processing',
+	BLOCKED = 'blocked'
 }
 
 export enum RequestPriority {

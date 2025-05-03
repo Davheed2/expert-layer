@@ -14,7 +14,7 @@ export async function up(knex: Knex): Promise<void> {
 		table.string('credits').nullable();
 		table.date('dueDate').nullable();
 		table.enum('serviceCategory', Object.values(ServiceCategory)).notNullable();
-		table.enum('status', Object.values(RequestStatus)).notNullable().defaultTo(RequestStatus.PROCESSING);
+		table.enum('status', Object.values(RequestStatus)).notNullable().defaultTo(RequestStatus.IN_PROGRESS);
 		table.enum('priority', Object.values(RequestPriority)).notNullable().defaultTo(RequestPriority.NONE);
 		table.uuid('serviceId').nullable().references('id').inTable('services').onDelete('CASCADE');
 		table.uuid('userId').notNullable().references('id').inTable('users').onDelete('CASCADE');

@@ -126,7 +126,7 @@ export class WalletService {
 
 			// Update task status
 			await trx('requests').where({ transactionId: request.transactionId }).update({
-				status: 'submitted',
+				status: 'finding_expert',
 				updated_at: new Date(),
 			});
 
@@ -197,7 +197,7 @@ export class WalletService {
 
 			// Update task status
 			await trx('requests').where({ transactionId: request.transactionId }).update({
-				status: 'submitted',
+				status: 'finding_expert',
 				updated_at: new Date(),
 			});
 
@@ -335,7 +335,7 @@ export class WalletService {
 			// If this was a service payment, update the service status
 			if (request_id) {
 				await trx('requests').where({ id: request_id }).update({
-					status: 'failed',
+					status: 'blocked',
 					updated_at: new Date(),
 				});
 			}
@@ -371,7 +371,7 @@ export class WalletService {
 			// If this was a service payment, update the request status
 			if (request_id) {
 				await trx('requests').where({ id: request_id }).update({
-					status: 'processing',
+					status: 'finding_expert',
 					updated_at: new Date(),
 				});
 			}
@@ -411,7 +411,7 @@ export class WalletService {
 			// If this was a service payment, update the service status
 			if (request_id) {
 				await trx('requests').where({ id: request_id }).update({
-					status: 'failed',
+					status: 'blocked',
 					updated_at: new Date(),
 				});
 			}
