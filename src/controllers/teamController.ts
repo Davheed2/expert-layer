@@ -46,10 +46,11 @@ export class TeamController {
 
 		const addedUser = await userRepository.findByEmail(email);
 		if (!addedUser) {
-			throw new AppError('Account Mnager not found', 404);
+			throw new AppError('Account Manager not found', 404);
 		}
 
 		const teamMember = await teamRepository.getTeamMember(team.id, addedUser.id);
+		console.log('teamMember', teamMember)
 		if (teamMember) {
 			throw new AppError('User is already a member of the team', 400);
 		}
