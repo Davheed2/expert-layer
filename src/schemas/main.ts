@@ -1,4 +1,5 @@
 import {
+	RequestDurationType,
 	RequestPriority,
 	Role,
 	ServiceCategory,
@@ -55,7 +56,7 @@ export const mainSchema = z.object({
 	servicePrice: z.number().positive(),
 	otp: z.string().min(3).trim(),
 	details: z.string().min(3).trim(),
-	duration: z.string().min(3).trim(),
+	duration: z.string().trim(),
 	verificationToken: z.string().min(5).max(6),
 	isUserConfigurable: z.boolean(),
 	title: z.string().min(3).trim(),
@@ -70,10 +71,14 @@ export const mainSchema = z.object({
 		ServiceCategory.DEVELOPMENT,
 		ServiceCategory.GROWTH,
 	]),
-	status: z.enum([
-		ServiceStatus.ACTIVE,
-		ServiceStatus.DRAFT
+	status: z.enum([ServiceStatus.ACTIVE, ServiceStatus.DRAFT]),
+	durationType: z.enum([
+		RequestDurationType.CUSTOM,
+		RequestDurationType.EXPRESS,
+		RequestDurationType.PRIORITY,
+		RequestDurationType.STANDARD,
 	]),
+	tierAmount: z.number().positive(),
 	priority: z.enum([RequestPriority.LOW, RequestPriority.MEDIUM, RequestPriority.HIGH, RequestPriority.NONE]),
 	dueDate: z.string().datetime(),
 	requestId: z.string().uuid(),

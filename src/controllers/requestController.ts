@@ -17,7 +17,7 @@ import { IRequests } from '@/common/interfaces';
 export class RequestsController {
 	createRequest = catchAsync(async (req: Request, res: Response) => {
 		const { user, file } = req;
-		const { serviceId, serviceName, serviceCategory, serviceDescription, servicePrice, details, duration } = req.body;
+		const { serviceId, details, duration, durationType } = req.body;
 
 		if (!user) {
 			throw new AppError('Please log in again', 400);
@@ -25,23 +25,14 @@ export class RequestsController {
 		if (!serviceId) {
 			throw new AppError('Please provide a service ID', 400);
 		}
-		if (!serviceName) {
-			throw new AppError('Please provide a service name', 400);
-		}
-		if (!serviceCategory) {
-			throw new AppError('Please provide a service category', 400);
-		}
-		if (!serviceDescription) {
-			throw new AppError('Please provide a service description', 400);
-		}
-		if (!servicePrice) {
-			throw new AppError('Please provide a service price', 400);
-		}
 		if (!details) {
 			throw new AppError('Please provide request details', 400);
 		}
 		if (!duration) {
 			throw new AppError('Please provide a request duration', 400);
+		}
+		if (!durationType) {
+			throw new AppError('Please provide a request duration type', 400);
 		}
 
 		const service = await servicesRepository.findById(serviceId);
@@ -66,20 +57,33 @@ export class RequestsController {
 			}
 		}
 
+		let durationAmount: number = 0;
+		if (durationType === 'standard') {
+			durationAmount = 0;
+		} else if (durationType === 'custom') {
+			durationAmount = 0;
+		} else if (durationType === 'priority') {
+			durationAmount = 49;
+		} else if (durationType === 'express') {
+			durationAmount = 99;
+		}
+
 		const transactionId = referenceGenerator();
 		const requestPayload = {
 			userId: user.id,
-			serviceId,
-			serviceName,
-			serviceCategory,
-			serviceDescription,
-			servicePrice,
+			serviceId: service.id,
+			serviceName: service.name,
+			serviceCategory: service.category,
+			serviceDescription: service.description,
+			servicePrice: service.price,
 			details,
 			duration,
 			transactionId,
 			hours: service.hours,
 			credits: service.credits,
 			status: RequestStatus.DRAFT,
+			durationType,
+			durationAmount,
 		};
 		const newRequest = await requestsRepository.create(requestPayload);
 		if (!newRequest) {
@@ -108,8 +112,8 @@ export class RequestsController {
 						admin.email,
 						admin.firstName,
 						`${user.firstName} ${user.lastName}`,
-						serviceName,
-						serviceCategory,
+						service.name,
+						service.category,
 						details
 					);
 				}

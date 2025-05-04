@@ -58,7 +58,7 @@ export enum RequestStatus {
 	IN_PROGRESS = 'in_progress',
 	REVIEW = 'review',
 	COMPLETED = 'completed',
-	BLOCKED = 'blocked'
+	BLOCKED = 'blocked',
 }
 
 export enum RequestPriority {
@@ -66,6 +66,13 @@ export enum RequestPriority {
 	MEDIUM = 'medium',
 	HIGH = 'high',
 	NONE = 'none',
+}
+
+export enum RequestDurationType {
+	STANDARD = 'standard',
+	PRIORITY = 'priority',
+	EXPRESS = 'express',
+	CUSTOM = 'custom',
 }
 
 export enum CurrencyType {

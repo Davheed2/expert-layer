@@ -10,6 +10,8 @@ export interface IRequests {
 	credits: number;
 	hours: string;
 	serviceName: string;
+	durationType: string;
+	durationAmount: number;
 	serviceCategory: string;
 	serviceDescription: string;
 	servicePrice: number;

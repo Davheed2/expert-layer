@@ -36,7 +36,7 @@ export class WalletController {
 
 	createRequestPayment = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
-		const { requestId } = req.body;
+		const { requestId, tierAmount } = req.body;
 
 		if (!user) {
 			throw new AppError('Please log in again', 400);
@@ -50,13 +50,14 @@ export class WalletController {
 		}
 
 		// If wallet has enough balance, process payment from wallet
-		if (walletBalance >= request.servicePrice) {
+		const amountToPay = Number(request.servicePrice) + Number(request.durationAmount);
+		if (walletBalance >= amountToPay) {
 			const transaction = await this.walletService.processWalletPayment(user.id, requestId);
 			return AppResponse(res, 200, toJSON(transaction), 'Payment processed successfully from wallet', req);
 		}
 
 		// Otherwise create payment intent for remaining amount
-		const paymentIntent = await this.walletService.createRequestPaymentIntent(user.id, requestId);
+		const paymentIntent = await this.walletService.createRequestPaymentIntent(user.id, requestId, tierAmount);
 
 		return AppResponse(
 			res,

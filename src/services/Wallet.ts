@@ -60,7 +60,11 @@ export class WalletService {
 		return wallet.balance;
 	}
 
-	async createRequestPaymentIntent(userId: string, requestId: string): Promise<Stripe.PaymentIntent> {
+	async createRequestPaymentIntent(
+		userId: string,
+		requestId: string,
+		tierAmount: number
+	): Promise<Stripe.PaymentIntent> {
 		const [user, request, wallet] = await Promise.all([
 			this.db('users').where({ id: userId }).first(),
 			this.db('requests').where({ id: requestId }).first(),
@@ -71,20 +75,25 @@ export class WalletService {
 			throw new AppError('User or request not found', 404);
 		}
 
+		if (!tierAmount) {
+			throw new AppError('Tier Amount is required', 404);
+		}
+
 		const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
 		const walletBalance = wallet?.balance || 0;
 
 		// If wallet balance covers the full cost, no need for payment intent
-		if (walletBalance >= request.servicePrice) {
+		const amountToPay = Number(request.servicePrice) + Number(request.durationAmount);
+		if (walletBalance >= amountToPay) {
 			throw new AppError('Wallet balance is sufficient for this task, use processWalletPayment instead');
 		}
 
 		// Amount to charge via Stripe (task price minus wallet balance)
-		const amountToCharge = Math.max(0, request.servicePrice - walletBalance);
+		//const amountToCharge = Math.max(0, amountToPay - walletBalance);
 
 		// Create a payment intent for the remaining amount
 		const paymentIntent = await stripe.paymentIntents.create({
-			amount: amountToCharge,
+			amount: tierAmount,
 			currency: 'usd',
 			customer: stripeCustomerId,
 			payment_method_types: ['card'],
@@ -92,7 +101,7 @@ export class WalletService {
 				user_id: userId,
 				request_id: requestId,
 				wallet_amount_used: walletBalance,
-				request_price: request.servicePrice,
+				request_price: amountToPay,
 				request_name: request.taskName,
 				transaction_id: request.transactionId,
 			},
@@ -114,12 +123,13 @@ export class WalletService {
 				throw new Error('Task or wallet not found');
 			}
 
-			if (wallet.balance < request.servicePrice) {
+			const amountToPay = Number(request.servicePrice) + Number(request.durationAmount);
+			if (wallet.balance < amountToPay) {
 				throw new AppError('Insufficient wallet balance');
 			}
 
 			// Update wallet balance
-			const newBalance = wallet.balance - request.servicePrice;
+			const newBalance = wallet.balance - amountToPay;
 			await trx('wallets').where({ id: wallet.id }).update({
 				balance: newBalance,
 				updated_at: new Date(),
@@ -138,7 +148,7 @@ export class WalletService {
 					requestId,
 					status: 'success',
 					type: 'task_payment',
-					amount: -request.servicePrice,
+					amount: -amountToPay,
 					walletBalanceBefore: wallet.balance,
 					walletBalanceAfter: newBalance,
 					metadata: {
@@ -171,7 +181,7 @@ export class WalletService {
 
 			const amountPaid = paymentIntent.amount;
 			const walletAmountUsed = parseInt(wallet_amount_used || '0');
-			const taskPrice = request.servicePrice;
+			const taskPrice = Number(request.servicePrice) + Number(request.durationAmount);
 			console.log('walletAmountUsed', walletAmountUsed);
 			console.log('amountPaid', amountPaid);
 			console.log('taskPrice', taskPrice);
