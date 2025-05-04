@@ -87,7 +87,6 @@ export class WalletService {
 			amount: amountToCharge,
 			currency: 'usd',
 			customer: stripeCustomerId,
-			automatic_payment_methods: { enabled: true },
 			metadata: {
 				user_id: userId,
 				request_id: requestId,
