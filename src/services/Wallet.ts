@@ -172,6 +172,9 @@ export class WalletService {
 			const amountPaid = paymentIntent.amount;
 			const walletAmountUsed = parseInt(wallet_amount_used || '0');
 			const taskPrice = request.servicePrice;
+			console.log('walletAmountUsed', walletAmountUsed);
+			console.log('amountPaid', amountPaid);
+			console.log('taskPrice', taskPrice);
 
 			// Calculate if there's excess payment to add to wallet
 			const totalPayment = amountPaid + walletAmountUsed;
