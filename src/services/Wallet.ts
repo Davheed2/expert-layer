@@ -87,6 +87,7 @@ export class WalletService {
 			amount: amountToCharge,
 			currency: 'usd',
 			customer: stripeCustomerId,
+			payment_method_types: ['card'],
 			metadata: {
 				user_id: userId,
 				request_id: requestId,
