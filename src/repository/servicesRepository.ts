@@ -34,6 +34,7 @@ class ServicesRepository {
 		return await knexDb
 			.table('services')
 			.where({ isDeleted: false, category })
+			.andWhere({ status: 'active' })
 			.orderBy('created_at', 'desc')
 			.limit(limit)
 			.offset(offset);
