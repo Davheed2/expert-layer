@@ -23,7 +23,7 @@ export class StripeWebhookController {
 
 					if (paymentIntent.metadata.transaction_type === 'wallet_topup') {
 						await walletService.handleWalletTopUp(paymentIntent.id);
-					} else if (paymentIntent.metadata.service_id) {
+					} else if (paymentIntent.metadata.request_id) {
 						await walletService.handleSuccessfulPayment(paymentIntent.id);
 					}
 					break;
