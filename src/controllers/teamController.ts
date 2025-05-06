@@ -26,9 +26,6 @@ export class TeamController {
 		if (!user) {
 			throw new AppError('Please log in again', 400);
 		}
-		if (user.role !== 'admin') {
-			throw new AppError('You do not have permission to access this resource', 403);
-		}
 
 		const team = await teamRepository.getTeam(teamId as string);
 		if (team) throw new AppError('No team Found', 404);
