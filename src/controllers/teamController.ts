@@ -28,7 +28,7 @@ export class TeamController {
 		}
 
 		const team = await teamRepository.getTeam(teamId as string);
-		if (team) throw new AppError('No team Found', 404);
+		if (!team) throw new AppError('No team Found', 404);
 
 		return AppResponse(res, 200, toJSON([team]), 'Team retrieved successfully', req);
 	});
