@@ -19,6 +19,23 @@ export class TeamController {
 		return AppResponse(res, 200, toJSON(teams), 'Teams retrieved successfully', req);
 	});
 
+	findTeamById = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+		const { teamId } = req.query;
+
+		if (!user) {
+			throw new AppError('Please log in again', 400);
+		}
+		if (user.role !== 'admin') {
+			throw new AppError('You do not have permission to access this resource', 403);
+		}
+
+		const team = await teamRepository.getTeam(teamId as string);
+		if (team) throw new AppError('No team Found', 404);
+
+		return AppResponse(res, 200, toJSON([team]), 'Team retrieved successfully', req);
+	});
+
 	addTeamMember = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
 		const { ownerEmail, email } = req.body;

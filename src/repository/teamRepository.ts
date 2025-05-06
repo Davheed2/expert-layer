@@ -102,20 +102,41 @@ class TeamRepository {
 	};
 
 	getUserTeamsWithMemberCount = async (userId: string) => {
-		return knexDb('team_members as tm')
-			.select(
-				'tm.teamId',
-				't.name as teamName',
-				knexDb.raw('COUNT(DISTINCT tm2.id) as memberCount'),
-				knexDb.raw(`'team:' || "tm"."teamId" as roomId`)
-			)
-			.join('teams as t', 't.id', 'tm.teamId')
-			.join('team_members as tm2', 'tm2.teamId', 'tm.teamId')
-			.where('tm.memberId', userId)
-			.andWhere('tm.isDeleted', false)
-			.andWhere('tm2.isDeleted', false)
-			.groupBy('tm.teamId', 't.name');
+		const teams = await knexDb('teams as t').select('t.id as teamId', 't.name as teamName').where('t.isDeleted', false);
+
+		const teamMembers = await knexDb('team_members as tm')
+			.select('tm.teamId', 'tm.memberId', 'tm.memberType')
+			.where('tm.isDeleted', false);
+
+		return teams.map((team) => {
+			const membersForTeam = teamMembers.filter((member) => member.teamId === team.teamId);
+			const userMembership = membersForTeam.find((member) => member.memberId === userId);
+
+			return {
+				...team,
+				memberCount: membersForTeam.length,
+				roomId: `team:${team.teamId}`,
+				isMember: !!userMembership,
+				memberType: userMembership ? userMembership.memberType : null,
+			};
+		});
 	};
+
+	// getUserTeamsWithMemberCount = async (userId: string) => {
+	// 	return knexDb('team_members as tm')
+	// 		.select(
+	// 			'tm.teamId',
+	// 			't.name as teamName',
+	// 			knexDb.raw('COUNT(DISTINCT tm2.id) as memberCount'),
+	// 			knexDb.raw(`'team:' || "tm"."teamId" as roomId`)
+	// 		)
+	// 		.join('teams as t', 't.id', 'tm.teamId')
+	// 		.join('team_members as tm2', 'tm2.teamId', 'tm.teamId')
+	// 		.where('tm.memberId', userId)
+	// 		.andWhere('tm.isDeleted', false)
+	// 		.andWhere('tm2.isDeleted', false)
+	// 		.groupBy('tm.teamId', 't.name');
+	// };
 }
 
 export const teamRepository = new TeamRepository();

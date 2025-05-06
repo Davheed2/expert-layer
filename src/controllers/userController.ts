@@ -20,6 +20,25 @@ export class UserController {
 		return AppResponse(res, 200, toJSON([extinguishUser]), 'Profile retrieved successfully', req);
 	});
 
+	getUserProfile = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+		const { userId } = req.query;
+
+		if (!user) {
+			throw new AppError('Please log in again', 400);
+		}
+		if (user.role !== 'admin') {
+			throw new AppError('You are not allowed to access this resource', 400);
+		}
+
+		const extinguishUser = await userRepository.findById(userId as string);
+		if (!extinguishUser) {
+			throw new AppError('User not found', 404);
+		}
+
+		return AppResponse(res, 200, toJSON([extinguishUser]), 'User profile retrieved successfully', req);
+	});
+
 	updateProfile = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
 		const allowedUpdates = ['firstName', 'lastName', 'email'];

@@ -95,6 +95,94 @@ router.use(protect);
  *                   example: "User not found"
  */
 router.get('/', userController.getProfile);
+/**
+ * @openapi
+ * /user:
+ *   get:
+ *     summary: Retrieve user profile
+ *     description: Allows an admin user to retrieve a users profile information by passing the userId in the query paramenters. The endpoint checks if the user is logged in, fetches the user's data from the database, and returns the users profile details.
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         format: uuid
+ *                         example: "d171a5f8-3ec0-486a-a148-0d3c2dc07289"
+ *                       firstName:
+ *                         type: string
+ *                         example: "Dshfjfk"
+ *                       lastName:
+ *                         type: string
+ *                         example: "Gjrjrngj"
+ *                       email:
+ *                         type: string
+ *                         format: email
+ *                         example: "daviscarlos2404@gmail.com"
+ *                       photo:
+ *                         type: string
+ *                         nullable: true
+ *                         example: null
+ *                       role:
+ *                         type: string
+ *                         example: "talent"
+ *                       isSuspended:
+ *                         type: boolean
+ *                         example: false
+ *                       isDeleted:
+ *                         type: boolean
+ *                         example: false
+ *                       created_at:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-04-19T17:14:26.071Z"
+ *                 message:
+ *                   type: string
+ *                   example: "Profile retrieved successfully"
+ *       400:
+ *         description: Bad Request - User not logged in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Please log in again"
+ *       404:
+ *         description: Not Found - User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "User not found"
+ */
+router.get('/profile', userController.getUserProfile);
 // router.get('/all', userController.getAllUsers);
 /**
  * @openapi
