@@ -101,6 +101,33 @@ class TeamRepository {
 			.select('*');
 	};
 
+	getUserTeamWithMemberCount = async (teamId: string, userId: string) => {
+		const team = await knexDb('teams as t')
+			.select('t.id as teamId', 't.name as teamName')
+			.where('t.id', teamId)
+			.andWhere('t.isDeleted', false)
+			.first();
+
+		if (!team) {
+			return null;
+		}
+
+		const teamMembers = await knexDb('team_members as tm')
+			.select('tm.teamId', 'tm.memberId', 'tm.memberType')
+			.where('tm.teamId', teamId)
+			.andWhere('tm.isDeleted', false);
+
+		const userMembership = teamMembers.find((member) => member.memberId === userId);
+
+		return {
+			...team,
+			memberCount: teamMembers.length,
+			roomId: `team:${team.teamId}`,
+			isMember: !!userMembership,
+			memberType: userMembership ? userMembership.memberType : null,
+		};
+	};
+
 	getUserTeamsWithMemberCount = async (userId: string) => {
 		const teams = await knexDb('teams as t').select('t.id as teamId', 't.name as teamName').where('t.isDeleted', false);
 

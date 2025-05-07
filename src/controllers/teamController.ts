@@ -95,6 +95,7 @@ export class TeamController {
 		}
 
 		const teams = await teamRepository.getAllTeamsWithMembers();
+		if (!teams) throw new AppError('No teams Found', 404);
 		return AppResponse(res, 200, toJSON(teams), 'Teams with members retrieved successfully', req);
 	});
 
@@ -108,6 +109,22 @@ export class TeamController {
 		const teams = await teamRepository.getUserTeamsWithMemberCount(user.id);
 		if (!teams) throw new AppError('Failed to fetch user teams', 404);
 		return AppResponse(res, 200, toJSON(teams), 'User teams retrieved successfully', req);
+	});
+
+	getUserTeamHandler = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+		const { teamId } = req.query;
+
+		if (!user) {
+			throw new AppError('Please log in again', 400);
+		}
+		if (!teamId) {
+			throw new AppError('Team ID is required', 400);
+		}
+
+		const teams = await teamRepository.getUserTeamWithMemberCount(teamId as string, user.id);
+		if (!teams) throw new AppError('Failed to fetch user team', 404);
+		return AppResponse(res, 200, toJSON(teams), 'User team retrieved successfully', req);
 	});
 }
 

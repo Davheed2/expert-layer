@@ -332,6 +332,7 @@ router.post('/add-member', teamController.addTeamMember);
 router.get('/all-team-members', teamController.fetchTeamsWithMembers);
 
 router.get('/chat/teams', teamController.getUserTeamsHandler);
+router.get('/chat/team', teamController.getUserTeamHandler);
 router.get('/find', teamController.findTeamById);
 
 export { router as teamsRouter };
