@@ -66,7 +66,7 @@ export const mainSchema = z.object({
 	role: z.enum([Role.ACCOUNTMANAGER, Role.ADMIN, Role.CLIENT, Role.TALENT]),
 	key: z.string(),
 	category: z.enum([
-		ServiceCategory.CONTENT,
+		ServiceCategory.MARKETING,
 		ServiceCategory.DESIGN,
 		ServiceCategory.DEVELOPMENT,
 		ServiceCategory.GROWTH,

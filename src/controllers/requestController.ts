@@ -12,18 +12,15 @@ import {
 import { catchAsync } from '@/middlewares';
 import { requestsRepository, servicesRepository, userRepository } from '@/repository';
 import { RequestStatus, ServiceStatus } from '@/common/constants';
-import { IRequests } from '@/common/interfaces';
+import { IRequests, IService } from '@/common/interfaces';
 
 export class RequestsController {
 	createRequest = catchAsync(async (req: Request, res: Response) => {
 		const { user, file } = req;
-		const { serviceId, details, duration, durationType } = req.body;
+		const { serviceId, details, duration, serviceName, serviceCategory, serviceDescription, servicePrice } = req.body;
 
 		if (!user) {
 			throw new AppError('Please log in again', 400);
-		}
-		if (!serviceId) {
-			throw new AppError('Please provide a service ID', 400);
 		}
 		if (!details) {
 			throw new AppError('Please provide request details', 400);
@@ -31,59 +28,54 @@ export class RequestsController {
 		if (!duration) {
 			throw new AppError('Please provide a request duration', 400);
 		}
-		if (!durationType) {
-			throw new AppError('Please provide a request duration type', 400);
-		}
 
-		const service = await servicesRepository.findById(serviceId);
-		if (!service) {
-			throw new AppError('Service not found', 404);
-		}
-		if (service.isDeleted) {
-			throw new AppError('Service not found', 404);
-		}
-		if (service.status === ServiceStatus.DRAFT) {
-			throw new AppError('Service is not active', 400);
-		}
+		let service: Partial<IService> = {};
+		let hours: string | undefined;
+		let credits: number | undefined;
 
-		//remember to check for when the service is a recurring service, that need to be checked monthly
-		const serviceMaxRequest = service.maxRequest;
-		if (serviceMaxRequest !== null && serviceMaxRequest <= 1) {
-			const existingRequestNumber = await requestsRepository.findByUserIdAndServiceId(user.id, serviceId);
-			if (existingRequestNumber.length >= serviceMaxRequest) {
-				if (existingRequestNumber[0].status !== RequestStatus.BLOCKED) {
-					throw new AppError('You have reached the maximum number of requests for this service', 400);
-				}
+		if (serviceId) {
+			const existingService = await servicesRepository.findById(serviceId);
+			if (!existingService || existingService.isDeleted) {
+				throw new AppError('Service not found', 404);
 			}
-		}
 
-		let durationAmount: number = 0;
-		if (durationType === 'standard') {
-			durationAmount = 0;
-		} else if (durationType === 'custom') {
-			durationAmount = 0;
-		} else if (durationType === 'priority') {
-			durationAmount = 49;
-		} else if (durationType === 'express') {
-			durationAmount = 99;
+			if (existingService.status === ServiceStatus.DRAFT) {
+				throw new AppError('Service is not active', 400);
+			}
+
+			service = existingService;
+			hours = existingService.hours;
+			credits = existingService.credits;
+		} else {
+			// If no serviceId, ensure custom service data is provided
+			if (!serviceName) {
+				throw new AppError('Please provide service name when no service ID is specified', 400);
+			}
+			if (!serviceCategory) {
+				throw new AppError('Please provide service category when no service ID is specified', 400);
+			}
+			if (!serviceDescription) {
+				throw new AppError('Please provide service description when no service ID is specified', 400);
+			}
+			if (!servicePrice) {
+				throw new AppError('Please provide service price when no service ID is specified', 400);
+			}
 		}
 
 		const transactionId = referenceGenerator();
 		const requestPayload = {
 			userId: user.id,
-			serviceId: service.id,
-			serviceName: service.name,
-			serviceCategory: service.category,
-			serviceDescription: service.description,
-			servicePrice: service.price,
+			serviceId: service?.id,
+			serviceName: service?.name || serviceName,
+			serviceCategory: service?.category || serviceCategory,
+			serviceDescription: service?.description || serviceDescription,
+			servicePrice: service?.price || servicePrice,
 			details,
 			duration,
 			transactionId,
-			hours: service.hours,
-			credits: service.credits,
+			hours,
+			credits,
 			status: RequestStatus.DRAFT,
-			durationType,
-			durationAmount,
 		};
 		const newRequest = await requestsRepository.create(requestPayload);
 		if (!newRequest) {
@@ -112,8 +104,8 @@ export class RequestsController {
 						admin.email,
 						admin.firstName,
 						`${user.firstName} ${user.lastName}`,
-						service.name,
-						service.category,
+						service?.name || serviceName,
+						service?.category || serviceCategory,
 						details
 					);
 				}
@@ -122,7 +114,7 @@ export class RequestsController {
 			}
 		});
 	});
-
+	
 	findByUserId = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
 

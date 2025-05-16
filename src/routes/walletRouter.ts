@@ -193,7 +193,7 @@ router.get('/balance', walletController.getWalletBalance);
 router.post('/service-payment', walletController.createRequestPayment);
 /**
  * @openapi
- * /wallet/topup:
+ * /wallet/fund:
  *   post:
  *     summary: Create a wallet top-up payment intent
  *     description: Allows a logged-in user to initiate a wallet top-up by specifying an amount. The endpoint validates the user’s login status, ensures a valid positive amount is provided, and creates a Stripe payment intent for the top-up.
@@ -256,7 +256,7 @@ router.post('/service-payment', walletController.createRequestPayment);
  *                     - Please log in again
  *                     - Invalid amount
  */
-router.post('/topup', walletController.createWalletTopUp);
+router.post('/fund', walletController.createWalletTopUp);
 /**
  * @openapi
  * /wallet/transactions:

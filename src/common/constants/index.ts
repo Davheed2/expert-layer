@@ -32,7 +32,7 @@ export enum ServiceStatus {
 export enum ServiceCategory {
 	DESIGN = 'design',
 	DEVELOPMENT = 'development',
-	CONTENT = 'content',
+	MARKETING = 'marketing',
 	GROWTH = 'growth',
 }
 

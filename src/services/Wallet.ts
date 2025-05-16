@@ -267,6 +267,7 @@ export class WalletService {
 			amount,
 			currency: 'usd',
 			customer: stripeCustomerId,
+			payment_method_types: ['card'],
 			metadata: {
 				user_id: userId,
 				transaction_type: 'wallet_topup',
