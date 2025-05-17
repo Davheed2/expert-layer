@@ -91,12 +91,16 @@ export class RequestsController {
 			transactionId,
 			hours,
 			credits,
-			status: RequestStatus.DRAFT,
+			status: RequestStatus.FINDING_EXPERT,
 		};
 		const newRequest = await requestsRepository.create(requestPayload);
 		if (!newRequest) {
 			throw new AppError('Request creation failed', 500);
 		}
+
+		await walletRepository.update(walletBalance[0].id, {
+			balance: (walletBalance[0].balance -= cost),
+		});
 
 		AppResponse(res, 201, toJSON(newRequest), 'Request created successfully', req);
 

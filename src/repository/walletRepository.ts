@@ -1,5 +1,6 @@
 import { knexDb } from '@/common/config';
 import { IWallet } from '@/common/interfaces';
+import { DateTime } from 'luxon';
 
 class WalletRepository {
 	create = async (payload: Partial<IWallet>) => {
@@ -12,6 +13,13 @@ class WalletRepository {
 
 	findByUserId = async (userId: string): Promise<IWallet[]> => {
 		return await knexDb.table('wallets').where({ userId }).select('*');
+	};
+
+	update = async (id: string, payload: Partial<IWallet>) => {
+		return await knexDb('wallets')
+			.where({ id })
+			.update({ ...payload, updated_at: DateTime.now().toJSDate() })
+			.returning('*');
 	};
 }
 
