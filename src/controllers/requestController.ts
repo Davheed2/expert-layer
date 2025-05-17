@@ -10,7 +10,7 @@ import {
 	uploadDocumentFile,
 } from '@/common/utils';
 import { catchAsync } from '@/middlewares';
-import { requestsRepository, servicesRepository, userRepository } from '@/repository';
+import { requestsRepository, servicesRepository, userRepository, walletRepository } from '@/repository';
 import { RequestStatus, ServiceStatus } from '@/common/constants';
 import { IRequests, IService } from '@/common/interfaces';
 
@@ -32,6 +32,7 @@ export class RequestsController {
 		let service: Partial<IService> = {};
 		let hours: string | undefined;
 		let credits: number | undefined;
+		let price: number | undefined;
 
 		if (serviceId) {
 			const existingService = await servicesRepository.findById(serviceId);
@@ -46,8 +47,8 @@ export class RequestsController {
 			service = existingService;
 			hours = existingService.hours;
 			credits = existingService.credits;
+			price = existingService.price;
 		} else {
-			// If no serviceId, ensure custom service data is provided
 			if (!serviceName) {
 				throw new AppError('Please provide service name when no service ID is specified', 400);
 			}
@@ -62,6 +63,21 @@ export class RequestsController {
 			}
 		}
 
+		let walletBalance = await walletRepository.findByUserId(user.id);
+		if (!walletBalance || walletBalance.length === 0) {
+			walletBalance = await walletRepository.create({
+				userId: user.id,
+			});
+		}
+
+		const cost = Number(price || servicePrice);
+		if (isNaN(cost)) {
+			throw new AppError('Invalid service price', 400);
+		}
+		if (walletBalance[0].balance < cost) {
+			throw new AppError('Insufficient Balance', 400);
+		}
+
 		const transactionId = referenceGenerator();
 		const requestPayload = {
 			userId: user.id,
@@ -69,7 +85,7 @@ export class RequestsController {
 			serviceName: service?.name || serviceName,
 			serviceCategory: service?.category || serviceCategory,
 			serviceDescription: service?.description || serviceDescription,
-			servicePrice: service?.price || servicePrice,
+			servicePrice: price || servicePrice,
 			details,
 			duration,
 			transactionId,
@@ -114,7 +130,7 @@ export class RequestsController {
 			}
 		});
 	});
-	
+
 	findByUserId = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
 

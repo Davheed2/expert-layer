@@ -8,3 +8,4 @@ export * from './servicesRepository';
 export * from './teamRepository';
 export * from './messageRepository';
 export * from './requestRepository';
+export * from './walletRepository';
