@@ -17,13 +17,13 @@ export class StripeWebhookController {
 
 			// Handle different event types
 			switch (event.type) {
-				case 'payment_intent.processing': {
+				case 'payment_intent.created': {
 					const paymentIntent = event.data.object as Stripe.PaymentIntent;
 					console.log('Payment processing:', paymentIntent.id);
 					await walletService.handleProcessingPayment(paymentIntent.id);
 					break;
 				}
-				
+
 				case 'payment_intent.succeeded': {
 					const paymentIntent = event.data.object as Stripe.PaymentIntent;
 					console.log('Payment succeeded:', paymentIntent.id);
