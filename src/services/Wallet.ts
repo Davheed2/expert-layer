@@ -183,6 +183,8 @@ export class WalletService {
 						: `Payment of $${amount / 100} for request ${request_id}`,
 				reference,
 				stripePaymentIntentId: paymentIntentId,
+				walletBalanceBefore: wallet_amount_used,
+				walletBalanceAfter: wallet_amount_used,
 				metadata: {
 					attempted_amount: amount,
 					wallet_amount_used,
