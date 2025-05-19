@@ -6,8 +6,8 @@ export async function up(knex: Knex): Promise<void> {
 		table.uuid('id').primary().defaultTo(knex.fn.uuid());
 		table.uuid('userId').references('id').inTable('users').onDelete('CASCADE');
 		table.integer('amount').notNullable();
-		table.integer('walletBalanceBefore').notNullable();
-		table.integer('walletBalanceAfter').notNullable();
+		table.integer('walletBalanceBefore').nullable();
+		table.integer('walletBalanceAfter').nullable();
         table.string('description').notNullable();
 		table.string('reference').notNullable();
 		table.enum('type', Object.values(TransactionType)).notNullable();
