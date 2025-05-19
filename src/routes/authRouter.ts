@@ -517,5 +517,6 @@ router.use(protect);
  *                   example: "You are not logged in"
  */
 router.get('/sign-out', authController.signOut);
+router.post('/password/change', authController.changePassword);
 
 export { router as authRouter };

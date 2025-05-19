@@ -3,13 +3,16 @@ import { Request, Response } from 'express';
 import {
 	AppError,
 	AppResponse,
+	comparePassword,
 	generateAccessToken,
 	generateOtp,
 	generateRefreshToken,
+	hashPassword,
 	logger,
 	parseTokenDuration,
 	sendLoginEmail,
 	sendMagicLinkEmail,
+	sendResetPasswordEmail,
 	sendSignUpEmail,
 	sendWelcomeEmail,
 	setCookie,
@@ -212,6 +215,51 @@ class AuthController {
 		await sendLoginEmail(user.email, user.firstName, loginTime);
 
 		return AppResponse(res, 200, toJSON([user]), 'User logged in successfully');
+	});
+
+	changePassword = catchAsync(async (req: Request, res: Response) => {
+		const { password, confirmPassword } = req.body;
+		const { user } = req;
+
+		if (!password || !confirmPassword) {
+			throw new AppError('All fields are required', 403);
+		}
+		if (password !== confirmPassword) {
+			throw new AppError('Passwords do not match', 403);
+		}
+		if (!user) {
+			throw new AppError('You are not logged in', 401);
+		}
+
+		const extinguishUser = await userRepository.findById(user.id);
+		if (!extinguishUser) {
+			throw new AppError('User not found', 400);
+		}
+		if (!extinguishUser.password) {
+			throw new AppError('No existing password set for this user', 400);
+		}
+		
+		const isSamePassword = await comparePassword(password, extinguishUser.password);
+		if (isSamePassword) {
+			throw new AppError('New password cannot be the same as the old password', 400);
+		}
+
+		const hashedPassword = await hashPassword(password);
+
+		const updatedUser = await userRepository.update(extinguishUser.id, {
+			password: hashedPassword,
+			passwordResetRetries: 0,
+			passwordChangedAt: DateTime.now().toJSDate(),
+			passwordResetToken: '',
+			passwordResetExpires: DateTime.now().toJSDate(),
+		});
+		if (!updatedUser) {
+			throw new AppError('Password reset failed', 400);
+		}
+
+		await sendResetPasswordEmail(extinguishUser.email, extinguishUser.firstName);
+
+		return AppResponse(res, 200, null, 'Password reset successfully');
 	});
 
 	signOut = catchAsync(async (req: Request, res: Response) => {

@@ -15,6 +15,10 @@ class RequestsRepository {
 		return await knexDb.table('requests').where({ id }).first();
 	};
 
+	findAll = async (): Promise<IRequests[]> => {
+		return await knexDb.table('requests').where({ isDeleted: false }).orderBy('created_at', 'desc');
+	};
+
 	findByRequestFileId = async (id: string): Promise<IRequestFiles | null> => {
 		return await knexDb.table('request_files').where({ id }).first();
 	};

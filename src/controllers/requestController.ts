@@ -142,9 +142,17 @@ export class RequestsController {
 			throw new AppError('Please log in again', 400);
 		}
 
-		const requests = await requestsRepository.findByUserId(user.id);
-		if (!requests) {
-			throw new AppError('No request found', 404);
+		let requests: IRequests[];
+		if (user.role === 'admin') {
+			requests = await requestsRepository.findAll();
+			if (!requests) {
+				throw new AppError('No request found', 404);
+			}
+		} else {
+			requests = await requestsRepository.findByUserId(user.id);
+			if (!requests) {
+				throw new AppError('No request found', 404);
+			}
 		}
 
 		return AppResponse(res, 200, toJSON(requests), 'Requests retrieved successfully', req);
@@ -186,6 +194,11 @@ export class RequestsController {
 		const existingRequest = await requestsRepository.findById(requestId);
 		if (!existingRequest) {
 			throw new AppError('Request not found', 404);
+		}
+		if (status === 'blocked') {
+			if (existingRequest.status !== 'draft') {
+				throw new AppError('You can only cancel a draft request', 400);
+			}
 		}
 
 		const updatePayload: Partial<IRequests> = {};
