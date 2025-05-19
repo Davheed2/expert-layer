@@ -316,9 +316,9 @@ const referenceGenerator = () => {
 	const day = date.getDate().toString().padStart(2, '0');
 	const randomNum = Math.floor(Math.random() * 10000)
 		.toString()
-		.padStart(14, '0'); // Random number between 0000 and 9999
+		.padStart(5, '0'); // Random number between 0000 and 9999
 
-	return `TX${year}${month}${day}${randomNum}`;
+	return `INV-${year}${month}${day}${randomNum}`;
 };
 
 const sendSignUpEmail = async (email: string, name: string, otp: string): Promise<void> => {

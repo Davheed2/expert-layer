@@ -5,11 +5,11 @@ export async function up(knex: Knex): Promise<void> {
 	await knex.schema.createTable('transactions', (table) => {
 		table.uuid('id').primary().defaultTo(knex.fn.uuid());
 		table.uuid('userId').references('id').inTable('users').onDelete('CASCADE');
-		table.uuid('taskId').references('id').inTable('tasks').onDelete('SET NULL').nullable();
-		table.uuid('requestId').references('id').inTable('requests').onDelete('CASCADE');
 		table.integer('amount').notNullable();
 		table.integer('walletBalanceBefore').notNullable();
 		table.integer('walletBalanceAfter').notNullable();
+        table.string('description').notNullable();
+		table.string('reference').notNullable();
 		table.enum('type', Object.values(TransactionType)).notNullable();
 		table.enum('status', Object.values(TransactionStatus)).notNullable().defaultTo(TransactionStatus.PENDING);
 		table.string('stripePaymentIntentId').nullable();

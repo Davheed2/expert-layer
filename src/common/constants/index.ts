@@ -81,13 +81,10 @@ export enum CurrencyType {
 }
 
 export enum TransactionType {
-	DEPOSIT = 'deposit',
+	CREDIT = 'credit',
 	WITHDRAWAL = 'withdrawal',
-	REFUND = 'refund',
-	TASK_PAYMENT = 'task_payment',
-	WALLET_CREDIT = 'wallet_credit',
-	FAILED = 'failed',
-	CHARGEBACK = 'chargeback',
+	REQUEST = 'request',
+	FAILED = 'failed'
 }
 
 export enum TransactionStatus {

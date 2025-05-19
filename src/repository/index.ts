@@ -9,3 +9,4 @@ export * from './teamRepository';
 export * from './messageRepository';
 export * from './requestRepository';
 export * from './walletRepository';
+export * from './transactionRepository';
