@@ -11,7 +11,6 @@ export const onlineUsers = new Map();
 export const initSocketHandlers = (io: SocketIOServer) => {
 	io.on(SocketEvents.CONNECT, async (socket) => {
 		const user = socket.data.user;
-		console.log('User data:', user);
 
 		if (!user || !user.id) {
 			logger.error('User data is missing or invalid.');

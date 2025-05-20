@@ -20,6 +20,8 @@ export const messageHandler = (io: Server, socket: Socket) => {
 				return socket.emit('error', { message: 'Invalid or unauthorized teamId' });
 			}
 
+			console.log('User team IDs:', teamIds);
+
 			const roomId = `team:${teamId}`;
 			//let roomId: string;
 			let roomType: RoomTypes;
@@ -39,6 +41,7 @@ export const messageHandler = (io: Server, socket: Socket) => {
 					teamId,
 					recipientId: null,
 				});
+				console.log('Message saved:', message);
 
 				io.to(roomId).emit(SocketEvents.MESSAGE_RECEIVED, message);
 			} else if (recipientId) {

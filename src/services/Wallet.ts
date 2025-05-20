@@ -177,9 +177,7 @@ export class WalletService {
 				amount,
 				status: 'processing',
 				description:
-					transaction_type === 'wallet_topup'
-						? `$${amount} Credit`
-						: `Payment of $${amount} for request ${request_id}`,
+					transaction_type === 'wallet_topup' ? `$${amount} Credit` : `Payment of $${amount} for request ${request_id}`,
 				reference,
 				stripePaymentIntentId: paymentIntentId,
 				walletBalanceBefore: wallet_amount_used,
@@ -338,6 +336,12 @@ export class WalletService {
 					walletBalanceBefore: walletBefore,
 					walletBalanceAfter: newBalance,
 				});
+
+			await Notification.add({
+				userId,
+				title: 'Wallet Top-Up Successful',
+				message: `Your wallet has been successfully topped up with $${amount}.`,
+			});
 		});
 	}
 
