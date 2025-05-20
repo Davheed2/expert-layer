@@ -90,6 +90,7 @@ export const socketAuthMiddleware = async (socket: Socket, next: (err?: Error) =
 			.andWhere('isDeleted', false)
 			.select('teamId');
 
+		console.log('Memberships:', memberships);
 		if (!memberships || memberships.length === 0) {
 			return next(new AppError('User is not part of any teams'));
 		}

@@ -11,6 +11,8 @@ export const messageHandler = (io: Server, socket: Socket) => {
 
 	// Handle sending a message
 	socket.on(SocketEvents.SEND_MESSAGE, async (data) => {
+		console.log('Received message data:', data);
+		console.log('Sender ID:', senderId);
 		try {
 			const { content, recipientId, teamId } = data;
 
