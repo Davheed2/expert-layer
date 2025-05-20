@@ -16,6 +16,7 @@ export const messageHandler = (io: Server, socket: Socket) => {
 		try {
 			const { content, recipientId, teamId } = data;
 
+			console.log('teamId:', teamId, 'teamIds:', teamIds)
 			if (!teamId || !teamIds.includes(teamId)) {
 				return socket.emit('error', { message: 'Invalid or unauthorized teamId' });
 			}
