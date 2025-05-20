@@ -135,16 +135,30 @@ class TeamRepository {
 			.select('tm.teamId', 'tm.memberId', 'tm.memberType')
 			.where('tm.isDeleted', false);
 
+		// Get unique memberIds to fetch user info in one query
+		const memberIds = [...new Set(teamMembers.map((m) => m.memberId))];
+		const users = await knexDb('users').whereIn('id', memberIds).select('id', 'firstName', 'lastName');
+
 		return teams.map((team) => {
 			const membersForTeam = teamMembers.filter((member) => member.teamId === team.teamId);
-			const userMembership = membersForTeam.find((member) => member.memberId === userId);
+			const membersWithNames = membersForTeam.map((member) => {
+				const user = users.find((u) => u.id === member.memberId);
+				return {
+					memberId: member.memberId,
+					firstName: user ? user.firstName : null,
+					lastName: user ? user.lastName : null,
+					memberType: member.memberType,
+				};
+			});
+			const userMembership = membersWithNames.find((member) => member.memberId === userId);
 
 			return {
 				...team,
-				memberCount: membersForTeam.length,
+				memberCount: membersWithNames.length,
 				roomId: `team:${team.teamId}`,
 				isMember: !!userMembership,
 				memberType: userMembership ? userMembership.memberType : null,
+				members: membersWithNames,
 			};
 		});
 	};
