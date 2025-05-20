@@ -14,3 +14,4 @@ export * from './team';
 export * from './message';
 export * from './chatRooms';
 export * from './requests';
+export * from './statistics';

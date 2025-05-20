@@ -11,6 +11,17 @@ class UserRepository {
 		return await knexDb.table('users').where({ id }).first();
 	};
 
+	findProfile = async (id: string) => {
+		const profile = await knexDb.table('users').where({ id }).first();
+		if (!profile) return [];
+
+		const team = await knexDb.table('teams').where({ ownerId: id }).select('id').first();
+		return {
+			...profile,
+			teamId: team ? team.id : null,
+		};
+	};
+
 	findByEmail = async (email: string): Promise<IUser | null> => {
 		return await knexDb.table('users').where({ email }).first();
 	};

@@ -10,3 +10,4 @@ export * from './teamController';
 export * from './requestController';
 export * from './messageController';
 export * from './transactionController';
+export * from './statisticsController';

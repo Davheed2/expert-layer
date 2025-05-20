@@ -12,7 +12,7 @@ export class UserController {
 			throw new AppError('Please log in again', 400);
 		}
 
-		const extinguishUser = await userRepository.findById(user.id);
+		const extinguishUser = await userRepository.findProfile(user.id);
 		if (!extinguishUser) {
 			throw new AppError('User not found', 404);
 		}
@@ -31,7 +31,7 @@ export class UserController {
 			throw new AppError('You are not allowed to access this resource', 400);
 		}
 
-		const extinguishUser = await userRepository.findById(userId as string);
+		const extinguishUser = await userRepository.findProfile(userId as string);
 		if (!extinguishUser) {
 			throw new AppError('User not found', 404);
 		}
