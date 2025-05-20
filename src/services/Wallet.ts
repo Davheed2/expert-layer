@@ -179,8 +179,8 @@ export class WalletService {
 				status: 'processing',
 				description:
 					transaction_type === 'wallet_topup'
-						? `$${amount / 100} Credit`
-						: `Payment of $${amount / 100} for request ${request_id}`,
+						? `$${amount} Credit`
+						: `Payment of $${amount} for request ${request_id}`,
 				reference,
 				stripePaymentIntentId: paymentIntentId,
 				walletBalanceBefore: wallet_amount_used,

@@ -25,7 +25,7 @@ export class TransactionController {
 		} else {
 			transactions = await transactionRepository.findByUserId(user.id);
 		}
-		if (!transactions.length) {
+		if (!transactions) {
 			throw new AppError('No transactions found', 404);
 		}
 
