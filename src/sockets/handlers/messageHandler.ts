@@ -3,7 +3,7 @@ import { SocketEvents, RoomTypes } from '@/common/constants';
 import { saveMessage, markMessageAsRead } from '../services/messageService';
 import { getRoomConversations, getRoomId } from '../services/roomService';
 import { logger } from '@/common/utils';
-import { messageRepository } from '@/repository';
+import { messageRepository, teamRepository, userRepository } from '@/repository';
 
 export const messageHandler = (io: Server, socket: Socket) => {
 	const user = socket.data.user;
@@ -14,9 +14,22 @@ export const messageHandler = (io: Server, socket: Socket) => {
 		console.log('Received message data:', data);
 		console.log('Sender ID:', senderId);
 		try {
-			const { content, recipientId, teamId } = data;
+			//const { content, recipientId, teamId } = data;
+			const { content, recipientId } = data;
+			let { teamId } = data;
 
-			console.log('teamId:', teamId, 'teamIds:', teamIds)
+			const user = await userRepository.findById(senderId);
+			if (!user) {
+				return socket.emit('error', { message: 'User not found' });
+			}
+			if (user.role === 'client') {
+				const team = await teamRepository.getTeamByOwnerId(senderId);
+				if (!team) {
+					return socket.emit('error', { message: 'Client not part of any team' });
+				}
+				teamId = team.id;
+			}
+			console.log('teamId:', teamId, 'teamIds:', teamIds);
 			if (!teamId || !teamIds.includes(teamId)) {
 				return socket.emit('error', { message: 'Invalid or unauthorized teamId' });
 			}
@@ -82,7 +95,7 @@ export const messageHandler = (io: Server, socket: Socket) => {
 		if (!teamIds.includes(teamId)) {
 			return socket.emit('error', { message: 'You are not part of this team' });
 		}
-		
+
 		try {
 			const roomId = `team:${teamId}`;
 			const messages = await getRoomConversations(roomId);
