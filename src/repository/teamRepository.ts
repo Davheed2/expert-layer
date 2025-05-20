@@ -149,6 +149,22 @@ class TeamRepository {
 		});
 	};
 
+	getMemberIdsForAccountManager = async (accountManagerId: string): Promise<string[]> => {
+		// Step 1: Get teams the account manager is a member of
+		const teams = await this.findTeamsForUser(accountManagerId);
+		const teamIds = teams.map((team) => team.id);
+
+		if (teamIds.length === 0) return [];
+
+		// Step 2: Get all team members from those teams
+		const members = await knexDb('team_members').whereIn('teamId', teamIds).select('memberId');
+
+		// Step 3: Return unique member IDs (including or excluding the manager as needed)
+		const uniqueMemberIds = [...new Set(members.map((m) => m.memberId))];
+
+		return uniqueMemberIds;
+	};
+
 	// getUserTeamsWithMemberCount = async (userId: string) => {
 	// 	return knexDb('team_members as tm')
 	// 		.select(
