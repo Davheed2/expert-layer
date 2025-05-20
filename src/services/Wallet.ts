@@ -166,9 +166,8 @@ export class WalletService {
 
 	async handleProcessingPayment(paymentIntentId: string): Promise<void> {
 		const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-		const { user_id, request_id, wallet_amount_used, transaction_type } = paymentIntent.metadata;
+		const { user_id, request_id, wallet_amount_used, transaction_type, reference } = paymentIntent.metadata;
 
-		const reference = referenceGenerator();
 		const amount = paymentIntent.amount;
 
 		await this.db.transaction(async (trx) => {
@@ -282,6 +281,7 @@ export class WalletService {
 		}
 
 		const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
+		const reference = referenceGenerator();
 
 		// Create a payment intent for wallet top-up
 		const paymentIntent = await stripe.paymentIntents.create({
@@ -293,6 +293,7 @@ export class WalletService {
 				user_id: userId,
 				transaction_type: 'wallet_topup',
 				amount: amount.toString(),
+				reference,
 			},
 		});
 
@@ -308,6 +309,7 @@ export class WalletService {
 		}
 
 		const userId = paymentIntent.metadata.user_id;
+		const reference = paymentIntent.metadata.reference;
 		const amount = parseInt(paymentIntent.amount.toString());
 
 		await this.db.transaction(async (trx) => {
@@ -329,7 +331,7 @@ export class WalletService {
 			}
 
 			await trx('transactions')
-				.where({ stripePaymentIntentId: paymentIntentId })
+				.where({ reference })
 				.update({
 					status: 'success',
 					description: `$${amount} Credit`,
