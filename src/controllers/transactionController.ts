@@ -29,7 +29,12 @@ export class TransactionController {
 			throw new AppError('No transactions found', 404);
 		}
 
-		return AppResponse(res, 200, toJSON(transactions), 'Transactions retrieved successfully');
+		return AppResponse(
+			res,
+			200,
+			toJSON(transactions, ['walletBalanceBefore', 'walletBalanceAfter', 'stripePaymentIntentId', 'metadata']),
+			'Transactions retrieved successfully'
+		);
 	});
 }
 
