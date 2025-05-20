@@ -35,16 +35,16 @@ export class TeamController {
 
 	addTeamMember = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
-		const { ownerEmail, email } = req.body;
+		const { email } = req.body;
 
 		if (!user) {
 			throw new AppError('Please log in again', 400);
 		}
-		if (!ownerEmail || !email) {
-			throw new AppError('Users email and account managers email are required', 400);
+		if (!email) {
+			throw new AppError('Users email is required', 400);
 		}
 
-		const teamOwner = await userRepository.findByEmail(ownerEmail);
+		const teamOwner = await userRepository.findByEmail(user.email);
 		if (!teamOwner) {
 			throw new AppError('User not found', 404);
 		}
