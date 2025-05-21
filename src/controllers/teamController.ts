@@ -3,6 +3,7 @@ import { AppError, AppResponse, sendAssignedManagerEmail, sendJoinTeamEmail, toJ
 import { catchAsync } from '@/middlewares';
 import { teamRepository, userRepository } from '@/repository';
 import { Team } from '@/services/Team';
+import { ITeam } from '@/common/interfaces';
 
 export class TeamController {
 	getAllTeams = catchAsync(async (req: Request, res: Response) => {
@@ -79,7 +80,9 @@ export class TeamController {
 		}
 
 		await sendJoinTeamEmail(addedUser.email, addedUser.firstName, `${user.firstName} ${user.lastName}'s`);
-		await sendAssignedManagerEmail(teamOwner.email, teamOwner.firstName);
+		if (addedUser.role === 'accountmanager') {
+			await sendAssignedManagerEmail(addedUser.email, addedUser.firstName);
+		}
 
 		return AppResponse(res, 201, toJSON([newTeamMember]), 'Team member added successfully', req);
 	});
@@ -106,8 +109,15 @@ export class TeamController {
 			throw new AppError('Please log in again', 400);
 		}
 
-		const teams = await teamRepository.getUserTeamsWithMemberCount(user.id);
-		if (!teams) throw new AppError('Failed to fetch user teams', 404);
+		let teams: ITeam[];
+		if (user.role === 'client') {
+			teams = await teamRepository.getClientTeamMembers(user.id);
+			if (!teams) throw new AppError('No teams Found', 404);
+		} else {
+			teams = await teamRepository.getUserTeamsWithMemberCount(user.id);
+			if (!teams) throw new AppError('No teams Found', 404);
+		}
+
 		return AppResponse(res, 200, toJSON(teams), 'User teams retrieved successfully', req);
 	});
 

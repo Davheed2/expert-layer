@@ -1,5 +1,5 @@
 import { knexDb } from '@/common/config';
-import { IRequests, IRequestFiles } from '@/common/interfaces';
+import { IRequests, IRequestFiles, IRequestTalents } from '@/common/interfaces';
 import { DateTime } from 'luxon';
 
 class RequestsRepository {
@@ -19,6 +19,34 @@ class RequestsRepository {
 		return await knexDb.table('requests').where({ isDeleted: false }).orderBy('created_at', 'desc');
 	};
 
+	findAll2 = async (): Promise<(IRequests & { files: IRequestFiles[] } & { experts: IRequestTalents[] })[]> => {
+		const requests = await knexDb.table('requests').where({ isDeleted: false }).orderBy('created_at', 'desc');
+
+		const requestsWithFiles = await Promise.all(
+			requests.map(async (request) => {
+				const files = await knexDb.table('request_files').where({ requestId: request.id, isDeleted: false });
+				const expert = await knexDb
+					.table('request_talents')
+					.where({ requestId: request.id, isDeleted: false })
+					.select('userId');
+
+				let experts = [];
+				if (expert.length > 0) {
+					experts = await knexDb
+						.table('users')
+						.whereIn(
+							'id',
+							expert.map((e: { userId: string }) => e.userId)
+						)
+						.select('id', 'firstName', 'lastName', 'photo');
+				}
+				return { ...request, files, experts };
+			})
+		);
+
+		return requestsWithFiles;
+	};
+
 	findByRequestFileId = async (id: string): Promise<IRequestFiles | null> => {
 		return await knexDb.table('request_files').where({ id }).first();
 	};
@@ -34,26 +62,60 @@ class RequestsRepository {
 		return await knexDb('requests').where({ id }).update({ isDeleted: true, updated_at: DateTime.now().toJSDate() });
 	};
 
-	findByUserId = async (userId: string): Promise<(IRequests & { files: IRequestFiles[] })[]> => {
+	findByUserId = async (
+		userId: string
+	): Promise<(IRequests & { files: IRequestFiles[] } & { experts: IRequestTalents[] })[]> => {
 		const requests = await knexDb.table('requests').where({ userId, isDeleted: false }).orderBy('created_at', 'desc');
 
 		const requestsWithFiles = await Promise.all(
 			requests.map(async (request) => {
 				const files = await knexDb.table('request_files').where({ requestId: request.id, isDeleted: false });
-				return { ...request, files };
+				const expert = await knexDb
+					.table('request_talents')
+					.where({ requestId: request.id, isDeleted: false })
+					.select('userId');
+
+				let experts = [];
+				if (expert.length > 0) {
+					experts = await knexDb
+						.table('users')
+						.whereIn(
+							'id',
+							expert.map((e: { userId: string }) => e.userId)
+						)
+						.select('id', 'firstName', 'lastName', 'photo');
+				}
+				return { ...request, files, experts };
 			})
 		);
 
 		return requestsWithFiles;
 	};
 
-	findRequestById = async (id: string): Promise<(IRequests & { files: IRequestFiles[] })[]> => {
+	findRequestById = async (
+		id: string
+	): Promise<(IRequests & { files: IRequestFiles[] } & { experts: IRequestTalents[] })[]> => {
 		const requests: IRequests[] = await knexDb.table('requests').where({ id, isDeleted: false });
 
 		const requestsWithFiles = await Promise.all(
 			requests.map(async (request) => {
 				const files = await knexDb.table('request_files').where({ requestId: request.id, isDeleted: false });
-				return { ...request, files };
+				const expert = await knexDb
+					.table('request_talents')
+					.where({ requestId: request.id, isDeleted: false })
+					.select('userId');
+
+				let experts = [];
+				if (expert.length > 0) {
+					experts = await knexDb
+						.table('users')
+						.whereIn(
+							'id',
+							expert.map((e: { userId: string }) => e.userId)
+						)
+						.select('id', 'firstName', 'lastName', 'photo');
+				}
+				return { ...request, files, experts };
 			})
 		);
 
@@ -68,6 +130,18 @@ class RequestsRepository {
 		return await knexDb('request_files')
 			.where({ id })
 			.update({ isDeleted: true, updated_at: DateTime.now().toJSDate() });
+	};
+
+	addExpertToRequest = async (payload: Partial<IRequestTalents>) => {
+		return await knexDb.table('request_talents').insert(payload).returning('*');
+	};
+
+	removeExpertFromRequest = async (requestId: string, userId: string) => {
+		return await knexDb('request_talents').where({ requestId, userId }).del().returning('*');
+	};
+
+	findRequestTalentById = async (requestId: string, userId: string) => {
+		return await knexDb('request_talents').where({ requestId, userId }).first();
 	};
 }
 

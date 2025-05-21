@@ -773,5 +773,7 @@ router.post('/update', multerUpload.single('requestFile'), requestsController.up
  *                     - Failed to delete the existing document.
  */
 router.post('/delete-file', requestsController.deleteRequestFile);
+router.post('/add-expert', requestsController.addExpertToRequest);
+router.post('/remove-expert', requestsController.removeExpertFromRequest);
 
 export { router as requestRouter };

@@ -63,7 +63,7 @@ export class UserController {
 		if (Object.keys(updateData).length === 0) {
 			throw new AppError('No valid fields to update', 400);
 		}
-		
+
 		if (updateData.email) {
 			const existingUser = await userRepository.findByEmail(updateData.email);
 			if (existingUser && existingUser.id !== user.id) {
@@ -198,6 +198,21 @@ export class UserController {
 		}
 
 		const users = await userRepository.findAllNonClientRoleUsers();
+		if (!users) {
+			throw new AppError('Failed to fetch users', 500);
+		}
+
+		return AppResponse(res, 200, toJSON(users), 'Users fetched successfully', req);
+	});
+
+	fetchAllTalentRoleUsers = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+
+		if (!user) {
+			throw new AppError('Please log in again', 401);
+		}
+
+		const users = await userRepository.findAllTalentRoleUsers();
 		if (!users) {
 			throw new AppError('Failed to fetch users', 500);
 		}

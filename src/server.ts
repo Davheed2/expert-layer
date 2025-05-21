@@ -92,6 +92,7 @@ app.use(
 	cors({
 		origin: [
 			'https://expert-layer.vercel.app',
+			'https://app.expertlayer.co',
 			'http://localhost:5173',
 			'http://localhost:3000',
 			'http://localhost:3001',
@@ -213,6 +214,7 @@ const io = new SocketIOServer(server, {
 	cors: {
 		origin: [
 			'https://expert-layer.vercel.app',
+			'https://app.expertlayer.co',
 			'http://localhost:5173',
 			'http://localhost:3000',
 			'http://localhost:3001',

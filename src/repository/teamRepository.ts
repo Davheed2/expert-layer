@@ -163,6 +163,53 @@ class TeamRepository {
 		});
 	};
 
+	getClientTeamMembers = async (userId: string) => {
+		const teams = await knexDb('teams as t')
+			.select('t.id as teamId', 't.name as teamName')
+			.where('t.ownerId', userId)
+			.andWhere('t.isDeleted', false);
+
+		const teamIds = teams.map((team) => team.teamId);
+
+		if (teamIds.length === 0) return [];
+
+		// Step 2: Get team members where team.ownerId = userId and memberId != ownerId
+		const teamMembers = await knexDb('team_members as tm')
+			.select('tm.teamId', 'tm.memberId', 'tm.memberType')
+			.whereIn('tm.teamId', teamIds)
+			.andWhereNot('tm.memberId', userId)
+			.andWhere('tm.isDeleted', false);
+
+		// Get unique memberIds to fetch user info in one query
+		const memberIds = [...new Set(teamMembers.map((m) => m.memberId))];
+		const users = memberIds.length
+			? await knexDb('users').whereIn('id', memberIds).select('id', 'firstName', 'lastName')
+			: [];
+
+		return teams.map((team) => {
+			const membersForTeam = teamMembers.filter((member) => member.teamId === team.teamId);
+			const membersWithNames = membersForTeam.map((member) => {
+				const user = users.find((u) => u.id === member.memberId);
+				return {
+					memberId: member.memberId,
+					firstName: user ? user.firstName : null,
+					lastName: user ? user.lastName : null,
+					memberType: member.memberType,
+				};
+			});
+			const userMembership = membersWithNames.find((member) => member.memberId === userId);
+
+			return {
+				...team,
+				memberCount: membersWithNames.length,
+				roomId: `team:${team.teamId}`,
+				isMember: !!userMembership,
+				memberType: userMembership ? userMembership.memberType : null,
+				members: membersWithNames,
+			};
+		});
+	};
+
 	getMemberIdsForAccountManager = async (accountManagerId: string): Promise<string[]> => {
 		// Step 1: Get teams the account manager is a member of
 		const teams = await this.findTeamsForUser(accountManagerId);

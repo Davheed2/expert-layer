@@ -93,6 +93,10 @@ class UserRepository {
 	findAllClientRoleUsers = async (): Promise<IUser[]> => {
 		return knexDb('users').where('role', 'client').andWhere('isDeleted', false);
 	};
+
+	findAllTalentRoleUsers = async (): Promise<IUser[]> => {
+		return knexDb('users').where('role', 'talent').andWhere('isDeleted', false);
+	};
 }
 
 export const userRepository = new UserRepository();

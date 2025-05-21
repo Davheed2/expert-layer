@@ -10,20 +10,23 @@ import {
 	uploadDocumentFile,
 } from '@/common/utils';
 import { catchAsync } from '@/middlewares';
-import { requestsRepository, servicesRepository, userRepository, walletRepository } from '@/repository';
-import { RequestStatus, ServiceStatus } from '@/common/constants';
+import {
+	requestsRepository,
+	servicesRepository,
+	transactionRepository,
+	userRepository,
+	walletRepository,
+} from '@/repository';
+import { RequestStatus, ServiceStatus, TransactionStatus, TransactionType } from '@/common/constants';
 import { IRequests, IService } from '@/common/interfaces';
 
 export class RequestsController {
 	createRequest = catchAsync(async (req: Request, res: Response) => {
 		const { user, file } = req;
-		const { serviceId, details, duration, serviceName, serviceCategory, serviceDescription, servicePrice } = req.body;
+		const { serviceId, duration, serviceName, serviceCategory, serviceDescription, servicePrice } = req.body;
 
 		if (!user) {
 			throw new AppError('Please log in again', 400);
-		}
-		if (!details) {
-			throw new AppError('Please provide request details', 400);
 		}
 		if (!duration) {
 			throw new AppError('Please provide a request duration', 400);
@@ -86,7 +89,6 @@ export class RequestsController {
 			serviceCategory: service?.category || serviceCategory,
 			serviceDescription: service?.description || serviceDescription,
 			servicePrice: price || servicePrice,
-			details,
 			duration,
 			transactionId,
 			hours,
@@ -100,6 +102,16 @@ export class RequestsController {
 
 		await walletRepository.update(walletBalance[0].id, {
 			balance: (walletBalance[0].balance -= cost),
+		});
+
+		const reference = referenceGenerator();
+		await transactionRepository.create({
+			userId: user.id,
+			amount: cost,
+			type: TransactionType.REQUEST,
+			status: TransactionStatus.SUCCESS,
+			reference,
+			description: `$${cost} paid for ${service?.name || serviceName}`,
 		});
 
 		AppResponse(res, 201, toJSON(newRequest), 'Request created successfully', req);
@@ -126,7 +138,7 @@ export class RequestsController {
 						`${user.firstName} ${user.lastName}`,
 						service?.name || serviceName,
 						service?.category || serviceCategory,
-						details
+						service?.description || serviceDescription
 					);
 				}
 			} catch (err) {
@@ -144,7 +156,7 @@ export class RequestsController {
 
 		let requests: IRequests[];
 		if (user.role === 'admin') {
-			requests = await requestsRepository.findAll();
+			requests = await requestsRepository.findAll2();
 			if (!requests) {
 				throw new AppError('No request found', 404);
 			}
@@ -276,6 +288,99 @@ export class RequestsController {
 		}
 
 		return AppResponse(res, 200, null, 'Request file deleted successfully', req);
+	});
+
+	addExpertToRequest = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+		const { requestId, userId } = req.body;
+
+		if (!user) {
+			throw new AppError('Please log in again', 400);
+		}
+		if (user.role !== 'admin') {
+			throw new AppError('You are not authorized to add an expert to this request', 401);
+		}
+		if (!requestId) {
+			throw new AppError('Request ID is required', 400);
+		}
+		if (!userId) {
+			throw new AppError('Expert ID is required', 400);
+		}
+
+		const existingRequest = await requestsRepository.findById(requestId);
+		if (!existingRequest) {
+			throw new AppError('Request not found', 404);
+		}
+
+		const existingExpert = await userRepository.findById(userId);
+		if (!existingExpert) {
+			throw new AppError('Expert not found', 404);
+		}
+		if (existingExpert.role !== 'talent') {
+			throw new AppError('User is not an expert', 400);
+		}
+		if (existingRequest.userId === userId) {
+			throw new AppError('You cannot assign the user as their own expert', 400);
+		}
+
+		const existingRequestTalent = await requestsRepository.findRequestTalentById(requestId, userId);
+		if (existingRequestTalent) {
+			throw new AppError('Expert already assigned to this request', 400);
+		}
+
+		const requestTalent = await requestsRepository.addExpertToRequest({
+			requestId,
+			userId,
+		});
+		if (!requestTalent) {
+			throw new AppError('Failed to add expert to request', 500);
+		}
+
+		const updatedRequest = await requestsRepository.update(requestId, {
+			status: RequestStatus.IN_PROGRESS,
+		});
+		if (!updatedRequest) {
+			throw new AppError('Failed to update request status', 500);
+		}
+		return AppResponse(res, 201, toJSON(requestTalent), 'Expert added to request successfully', req);
+	});
+
+	removeExpertFromRequest = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+		const { requestId, userId } = req.body;
+
+		if (!user) {
+			throw new AppError('Please log in again', 400);
+		}
+		if (user.role !== 'admin') {
+			throw new AppError('You are not authorized to remove an expert from this request', 401);
+		}
+		if (!requestId) {
+			throw new AppError('Request ID is required', 400);
+		}
+		if (!userId) {
+			throw new AppError('Expert ID is required', 400);
+		}
+
+		const existingRequest = await requestsRepository.findById(requestId);
+		if (!existingRequest) {
+			throw new AppError('Request not found', 404);
+		}
+
+		const existingExpert = await userRepository.findById(userId);
+		if (!existingExpert) {
+			throw new AppError('Expert not found', 404);
+		}
+		if (existingExpert.role !== 'talent') {
+			throw new AppError('User is not an expert', 400);
+		}
+
+		const requestTalent = await requestsRepository.removeExpertFromRequest(requestId, userId);
+		if (!requestTalent) {
+			throw new AppError('Failed to remove expert from request', 500);
+		}
+
+		return AppResponse(res, 200, null, 'Expert removed from request successfully', req);
 	});
 }
 

@@ -15,7 +15,6 @@ export interface IRequests {
 	serviceCategory: string;
 	serviceDescription: string;
 	servicePrice: number;
-	details: string;
 	transactionId: string;
 	isDeleted: boolean;
 	duration: string;
@@ -28,6 +27,15 @@ export interface IRequestFiles {
 	id: string;
 	requestId: string;
 	file: string;
+	isDeleted: boolean;
+	created_at?: Date;
+	updated_at?: Date;
+}
+
+export interface IRequestTalents {
+	id: string;
+	requestId: string;
+	userId: string;
 	isDeleted: boolean;
 	created_at?: Date;
 	updated_at?: Date;

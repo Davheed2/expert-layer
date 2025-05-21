@@ -860,6 +860,7 @@ router.get('/clients', userController.fetchAllClientRoleUsers);
  *                   example: "Failed to fetch users"
  */
 router.get('/staffs', userController.fetchAllNonClientRoleUsers);
+router.get('/talents', userController.fetchAllTalentRoleUsers);
 router.post('/start-impersonation', userController.startImpersonation);
 router.post('/stop-impersonation', userController.stopImpersonation);
 

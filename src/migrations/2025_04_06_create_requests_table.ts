@@ -6,7 +6,6 @@ export async function up(knex: Knex): Promise<void> {
 		table.uuid('id').primary().defaultTo(knex.fn.uuid());
 		table.string('serviceName').notNullable();
 		table.string('serviceDescription').notNullable();
-		table.string('details').notNullable();
 		table.string('servicePrice').notNullable();
 		table.string('transactionId').notNullable();
 		table.string('duration').notNullable();
