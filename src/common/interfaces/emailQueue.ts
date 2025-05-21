@@ -48,6 +48,15 @@ export interface AssignedManagerData extends CommonDataFields {
 	name: string;
 }
 
+export interface RequestJoinData extends CommonDataFields {
+	name: string;
+	requestName: string;
+}
+
+export interface AssignedExpertData extends CommonDataFields {
+	name: string;
+}
+
 export type EmailJobData =
 	| { type: 'signUpEmail'; data: SignUpEmailData }
 	| { type: 'welcomeEmail'; data: WelcomeEmailData }
@@ -57,4 +66,6 @@ export type EmailJobData =
 	| { type: 'resetPassword'; data: ResetPasswordData }
 	| { type: 'joinTeam'; data: JoinTeamData }
 	| { type: 'requestCreated'; data: RequestData }
-	| { type: 'assignedManager'; data: AssignedManagerData };
+	| { type: 'assignedManager'; data: AssignedManagerData }
+	| { type: 'assignedTalent'; data: AssignedExpertData }
+	| { type: 'joinRequest'; data: RequestJoinData }

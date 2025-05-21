@@ -4,6 +4,7 @@ import jwt, { SignOptions } from 'jsonwebtoken';
 import { encode } from 'hi-base32';
 import { ENVIRONMENT } from '../config';
 import {
+	AssignedExpertData,
 	AssignedManagerData,
 	ForgotPasswordData,
 	IHashData,
@@ -11,6 +12,7 @@ import {
 	LoginEmailData,
 	MagicEmailData,
 	RequestData,
+	RequestJoinData,
 	ResetPasswordData,
 	SignUpEmailData,
 	WelcomeEmailData,
@@ -454,6 +456,33 @@ const sendRequestCreatedEmail = async (
 	});
 };
 
+const sendExpertJoinEmail = async (email: string, name: string, requestName: string): Promise<void> => {
+	const emailData: RequestJoinData = {
+		to: email,
+		priority: 'high',
+		name,
+		requestName
+	};
+
+	addEmailToQueue({
+		type: 'joinRequest',
+		data: emailData,
+	});
+};
+
+const sendExpertAssignedEmail = async (email: string, name: string): Promise<void> => {
+	const emailData: AssignedExpertData = {
+		to: email,
+		priority: 'high',
+		name,
+	};
+
+	addEmailToQueue({
+		type: 'assignedTalent',
+		data: emailData,
+	});
+};
+
 export {
 	dateFromString,
 	generateRandom6DigitKey,
@@ -486,4 +515,6 @@ export {
 	sendJoinTeamEmail,
 	sendRequestCreatedEmail,
 	sendAssignedManagerEmail,
+	sendExpertAssignedEmail,
+	sendExpertJoinEmail,
 };

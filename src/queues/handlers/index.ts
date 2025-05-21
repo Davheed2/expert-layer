@@ -9,6 +9,8 @@ import {
 	JoinTeamData,
 	RequestData,
 	AssignedManagerData,
+	RequestJoinData,
+	AssignedExpertData,
 } from '@/common/interfaces';
 import { logger } from '@/common/utils';
 import nodemailer from 'nodemailer';
@@ -23,6 +25,8 @@ import {
 	teamJoinEmail,
 	requestCreatedEmail,
 	accountManagerAssignedEmail,
+	expertJoinEmail,
+	expertAssignedEmail,
 } from '../templates';
 
 const transporter = nodemailer.createTransport({
@@ -76,6 +80,14 @@ export const sendEmail = async (job: EmailJobData) => {
 		case 'assignedManager':
 			htmlContent = accountManagerAssignedEmail(data as AssignedManagerData);
 			subject = 'An account manager has been assigned to your project';
+			break;
+		case 'assignedTalent':
+			htmlContent = expertAssignedEmail(data as AssignedExpertData);
+			subject = 'An expert has been assigned to your project';
+			break;
+		case 'joinRequest':
+			htmlContent = expertJoinEmail(data as RequestJoinData);
+			subject = 'You have been assigned to a request';
 			break;
 		// Handle other email types...
 		default:

@@ -8,3 +8,5 @@ export * from './magicEmail';
 export * from './joinTeamEmail';
 export * from './requestCreatedEmail';
 export * from './assignedManagerEmail';
+export * from './assignedTalentEmail';
+export * from './joinRequestEmail';

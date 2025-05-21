@@ -5,6 +5,8 @@ import {
 	deleteObjectFromR2,
 	logger,
 	referenceGenerator,
+	sendExpertAssignedEmail,
+	sendExpertJoinEmail,
 	sendRequestCreatedEmail,
 	toJSON,
 	uploadDocumentFile,
@@ -311,6 +313,10 @@ export class RequestsController {
 		if (!existingRequest) {
 			throw new AppError('Request not found', 404);
 		}
+		const requestOwner = await userRepository.findById(existingRequest.userId);
+		if (!requestOwner) {
+			throw new AppError('Request owner not found', 404);
+		}
 
 		const existingExpert = await userRepository.findById(userId);
 		if (!existingExpert) {
@@ -342,6 +348,12 @@ export class RequestsController {
 		if (!updatedRequest) {
 			throw new AppError('Failed to update request status', 500);
 		}
+
+		await sendExpertAssignedEmail(requestOwner.email, requestOwner.firstName);
+		if (existingExpert.role === 'talent') {
+			await sendExpertJoinEmail(existingExpert.email, existingExpert.firstName, existingRequest.serviceName);
+		}
+
 		return AppResponse(res, 201, toJSON(requestTalent), 'Expert added to request successfully', req);
 	});
 
