@@ -113,6 +113,9 @@ export class TeamController {
 		if (user.role === 'client') {
 			teams = await teamRepository.getClientTeamMembers(user.id);
 			if (!teams) throw new AppError('No teams Found', 404);
+		} else if (user.role === 'accountmanager') {
+			teams = await teamRepository.getManagerTeamsWithMemberCount(user.id);
+			if (!teams) throw new AppError('No teams Found', 404);
 		} else {
 			teams = await teamRepository.getUserTeamsWithMemberCount(user.id);
 			if (!teams) throw new AppError('No teams Found', 404);
