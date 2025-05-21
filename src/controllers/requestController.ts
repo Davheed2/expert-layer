@@ -198,9 +198,6 @@ export class RequestsController {
 		if (!user) {
 			throw new AppError('Please log in again', 400);
 		}
-		if (user.role !== 'admin') {
-			throw new AppError('You are not authorized to update this request', 401);
-		}
 		if (!requestId) {
 			throw new AppError('Request ID is required', 400);
 		}
