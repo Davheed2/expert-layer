@@ -26,6 +26,7 @@ class StatisticsRepository {
 			.count('* as count')
 			.first();
 		const totalRevenue = await knexDb('transactions')
+			.where({ type: 'credit' })
 			.modify((queryBuilder) => {
 				if (startDate) queryBuilder.where('created_at', '>=', startDate);
 				if (endDate) queryBuilder.where('created_at', '<=', endDate);
