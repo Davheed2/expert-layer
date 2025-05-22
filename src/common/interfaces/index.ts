@@ -15,3 +15,4 @@ export * from './message';
 export * from './chatRooms';
 export * from './requests';
 export * from './statistics';
+export * from './comments';

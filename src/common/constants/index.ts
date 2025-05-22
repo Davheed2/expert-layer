@@ -84,7 +84,7 @@ export enum TransactionType {
 	CREDIT = 'credit',
 	WITHDRAWAL = 'withdrawal',
 	REQUEST = 'request',
-	FAILED = 'failed'
+	FAILED = 'failed',
 }
 
 export enum TransactionStatus {
@@ -124,6 +124,8 @@ export enum SocketEvents {
 	// Team events
 	TEAM_UPDATE = 'team_update',
 	TEAM_MESSAGE = 'team_message',
+
+	REQUEST_COMMENT = 'request_comment',
 }
 
 export enum RoomTypes {

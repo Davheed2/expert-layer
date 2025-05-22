@@ -775,5 +775,6 @@ router.post('/update', multerUpload.single('requestFile'), requestsController.up
 router.post('/delete-file', requestsController.deleteRequestFile);
 router.post('/add-expert', requestsController.addExpertToRequest);
 router.post('/remove-expert', requestsController.removeExpertFromRequest);
+router.post('/update-expert', requestsController.replaceExpertFromRequest);
 
 export { router as requestRouter };

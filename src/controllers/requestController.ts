@@ -198,6 +198,15 @@ export class RequestsController {
 		if (!user) {
 			throw new AppError('Please log in again', 400);
 		}
+		if (status === 'in_progress') {
+			if (user.role !== 'talent') {
+				throw new AppError('You are not authorized to update this request to in progress', 401);
+			}
+		}
+
+		if (user.role !== 'admin') {
+			throw new AppError('You are not authorized to update this request', 401);
+		}
 		if (!requestId) {
 			throw new AppError('Request ID is required', 400);
 		}
@@ -209,6 +218,11 @@ export class RequestsController {
 		if (status === 'blocked') {
 			if (existingRequest.status !== 'draft') {
 				throw new AppError('You can only cancel a draft request', 400);
+			}
+		}
+		if (status === 'completed') {
+			if (user.role !== existingRequest.userId) {
+				throw new AppError('You are not authorized to update this request to completed', 401);
 			}
 		}
 
@@ -339,13 +353,6 @@ export class RequestsController {
 			throw new AppError('Failed to add expert to request', 500);
 		}
 
-		const updatedRequest = await requestsRepository.update(requestId, {
-			status: RequestStatus.IN_PROGRESS,
-		});
-		if (!updatedRequest) {
-			throw new AppError('Failed to update request status', 500);
-		}
-
 		await sendExpertAssignedEmail(requestOwner.email, requestOwner.firstName);
 		if (existingExpert.role === 'talent') {
 			await sendExpertJoinEmail(existingExpert.email, existingExpert.firstName, existingRequest.serviceName);
@@ -390,6 +397,59 @@ export class RequestsController {
 		}
 
 		return AppResponse(res, 200, null, 'Expert removed from request successfully', req);
+	});
+
+	replaceExpertFromRequest = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+		const { requestId, userId } = req.body;
+
+		if (!user) {
+			throw new AppError('Please log in again', 400);
+		}
+		if (user.role !== 'admin') {
+			throw new AppError('You are not authorized to remove an expert from this request', 401);
+		}
+		if (!requestId) {
+			throw new AppError('Request ID is required', 400);
+		}
+		if (!userId) {
+			throw new AppError('Expert ID is required', 400);
+		}
+
+		const existingRequest = await requestsRepository.findById(requestId);
+		if (!existingRequest) {
+			throw new AppError('Request not found', 404);
+		}
+
+		const existingExpert = await userRepository.findById(userId);
+		if (!existingExpert) {
+			throw new AppError('Expert not found', 404);
+		}
+		if (existingExpert.role !== 'talent') {
+			throw new AppError('User is not an expert', 400);
+		}
+
+		const existingRequestTalent = await requestsRepository.findRequestTalentById(requestId, userId);
+		console.log('existingRequestTalent', existingRequestTalent);
+		if (existingRequestTalent) {
+			const requestTalent = await requestsRepository.removeExpertFromRequest(
+				existingRequestTalent.requestId,
+				existingRequestTalent.userId
+			);
+			if (!requestTalent) {
+				throw new AppError('Failed to remove expert from request', 500);
+			}
+		}
+
+		const requestTalent = await requestsRepository.addExpertToRequest({
+			requestId,
+			userId,
+		});
+		if (!requestTalent) {
+			throw new AppError('Failed to add expert to request', 500);
+		}
+
+		return AppResponse(res, 200, null, 'Expert replaced successfully', req);
 	});
 }
 

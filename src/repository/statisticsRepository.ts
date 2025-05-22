@@ -12,10 +12,16 @@ class StatisticsRepository {
 			.count('* as count')
 			.first();
 
-		const totalClients = await knexDb('users').where({ isDeleted: false }).count('* as count').first();
+		const unSpentFunds = await knexDb('wallets')
+			.where({ isDeleted: false })
+			.where('balance', '>', 0)
+			.modify((queryBuilder) => {
+				if (startDate) queryBuilder.where('created_at', '>=', startDate);
+				if (endDate) queryBuilder.where('created_at', '<=', endDate);
+			})
+			.sum('balance as total')
+			.first();
 
-		const growthRate =
-			totalClients && Number(totalClients.count) ? (Number(newClients?.count) / Number(totalClients.count)) * 100 : 0;
 		const activeRequests = await knexDb('requests')
 			.where({ isDeleted: false })
 			.whereIn('status', ['in_progress', 'review', 'finding_expert'])
@@ -38,7 +44,7 @@ class StatisticsRepository {
 			totalRevenue: Number(totalRevenue?.total) || 0,
 			newClients: Number(newClients?.count) || 0,
 			activeRequests: Number(activeRequests?.count) || 0,
-			growthRate,
+			growthRate: Number(unSpentFunds?.total) || 0,
 		};
 	};
 }

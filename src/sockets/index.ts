@@ -4,6 +4,7 @@ import { messageHandler } from './handlers/messageHandler';
 import { presenceHandler } from './handlers/presenceHandler';
 import { teamHandler } from './handlers/teamHandler';
 import { logger } from '@/common/utils';
+import { commentHandler } from './handlers';
 
 // Global map to track online users
 export const onlineUsers = new Map();
@@ -47,6 +48,7 @@ export const initSocketHandlers = (io: SocketIOServer) => {
 
 		// Initialize handlers
 		messageHandler(io, socket);
+		commentHandler(io, socket);
 		presenceHandler(io, socket);
 		teamHandler(io, socket);
 

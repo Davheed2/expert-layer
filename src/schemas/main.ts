@@ -53,6 +53,7 @@ export const mainSchema = z.object({
 	serviceName: z.string().min(3).trim(),
 	serviceCategory: z.string().min(3).trim(),
 	serviceDescription: z.string().min(3).trim(),
+	comment: z.string().min(3).trim(),
 	servicePrice: z.number().positive(),
 	otp: z.string().min(3).trim(),
 	details: z.string().min(3).trim(),
