@@ -339,12 +339,12 @@ export class RequestsController {
 			throw new AppError('Failed to add expert to request', 500);
 		}
 
-		// const updatedRequest = await requestsRepository.update(requestId, {
-		// 	status: RequestStatus.IN_PROGRESS,
-		// });
-		// if (!updatedRequest) {
-		// 	throw new AppError('Failed to update request status', 500);
-		// }
+		const updatedRequest = await requestsRepository.update(requestId, {
+			status: RequestStatus.IN_PROGRESS,
+		});
+		if (!updatedRequest) {
+			throw new AppError('Failed to update request status', 500);
+		}
 
 		await sendExpertAssignedEmail(requestOwner.email, requestOwner.firstName);
 		if (existingExpert.role === 'talent') {
