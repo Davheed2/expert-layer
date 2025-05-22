@@ -12,7 +12,7 @@ class StatisticsRepository {
 			.count('* as count')
 			.first();
 
-		const unSpentFunds = await knexDb('wallets')
+		const unspentCredits = await knexDb('wallets')
 			.where({ isDeleted: false })
 			.where('balance', '>', 0)
 			.modify((queryBuilder) => {
@@ -44,7 +44,7 @@ class StatisticsRepository {
 			totalRevenue: Number(totalRevenue?.total) || 0,
 			newClients: Number(newClients?.count) || 0,
 			activeRequests: Number(activeRequests?.count) || 0,
-			growthRate: Number(unSpentFunds?.total) || 0,
+			unspentCredits: Number(unspentCredits?.total) || 0,
 		};
 	};
 }
