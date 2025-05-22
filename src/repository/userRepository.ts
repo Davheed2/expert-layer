@@ -1,5 +1,5 @@
 import { knexDb } from '@/common/config';
-import { IUser } from '@/common/interfaces';
+import { IUser, IWallet } from '@/common/interfaces';
 import { DateTime } from 'luxon';
 
 class UserRepository {
@@ -90,8 +90,19 @@ class UserRepository {
 		return knexDb('users').whereNotIn('role', ['client']).andWhere('isDeleted', false);
 	};
 
-	findAllClientRoleUsers = async (): Promise<IUser[]> => {
-		return knexDb('users').where('role', 'client').andWhere('isDeleted', false);
+	findAllClientRoleUsers = async (): Promise<(IUser & { balance: number | null })[]> => {
+		const clients = await knexDb('users').where('role', 'client').andWhere('isDeleted', false);
+
+		const clientIds = clients.map((client: IUser) => client.id);
+
+		const wallets = await knexDb('wallets').whereIn('userId', clientIds).select('userId', 'balance');
+
+		const walletMap = new Map(wallets.map((w: IWallet) => [w.userId, w.balance]));
+
+		return clients.map((client: IUser) => ({
+			...client,
+			balance: walletMap.get(client.id) ?? null,
+		}));
 	};
 
 	findAllTalentRoleUsers = async (): Promise<IUser[]> => {
