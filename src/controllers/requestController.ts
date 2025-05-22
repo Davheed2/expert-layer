@@ -391,7 +391,12 @@ export class RequestsController {
 			throw new AppError('User is not an expert', 400);
 		}
 
-		const requestTalent = await requestsRepository.removeExpertFromRequest(requestId, userId);
+		const existingRequestTalent = await requestsRepository.findRequestTalentById(requestId, userId);
+		if (!existingRequestTalent) {
+			throw new AppError('Expert not assigned to this request', 400);
+		}
+
+		const requestTalent = await requestsRepository.removeExpertFromRequest(existingRequestTalent.id);
 		if (!requestTalent) {
 			throw new AppError('Failed to remove expert from request', 500);
 		}
@@ -429,14 +434,10 @@ export class RequestsController {
 			throw new AppError('User is not an expert', 400);
 		}
 
-		const existingRequestTalent = await requestsRepository.findRequestTalentById(requestId, userId);
-		console.log('existingRequestTalent', existingRequestTalent);
+		const existingRequestTalent = await requestsRepository.findRequestTalentByRequestId(requestId);
 		if (existingRequestTalent) {
-			const requestTalent = await requestsRepository.removeExpertFromRequest(
-				existingRequestTalent.requestId,
-				existingRequestTalent.userId
-			);
-			if (!requestTalent) {
+			const talent = await requestsRepository.removeExpertFromRequest(existingRequestTalent.id);
+			if (!talent) {
 				throw new AppError('Failed to remove expert from request', 500);
 			}
 		}
@@ -449,7 +450,7 @@ export class RequestsController {
 			throw new AppError('Failed to add expert to request', 500);
 		}
 
-		return AppResponse(res, 200, null, 'Expert replaced successfully', req);
+		return AppResponse(res, 200, toJSON(requestTalent), 'Expert replaced successfully', req);
 	});
 }
 

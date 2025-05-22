@@ -154,12 +154,16 @@ class RequestsRepository {
 		return await knexDb.table('request_talents').insert(payload).returning('*');
 	};
 
-	removeExpertFromRequest = async (requestId: string, userId: string) => {
-		return await knexDb('request_talents').where({ requestId, userId }).del().returning('*');
+	removeExpertFromRequest = async (id: string) => {
+		return await knexDb.table('request_talents').where({ id }).del().returning('*');
 	};
 
 	findRequestTalentById = async (requestId: string, userId: string) => {
 		return await knexDb('request_talents').where({ requestId, userId }).first();
+	};
+
+	findRequestTalentByRequestId = async (requestId: string) => {
+		return await knexDb('request_talents').where({ requestId }).first();
 	};
 }
 
