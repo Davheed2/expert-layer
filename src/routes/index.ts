@@ -10,3 +10,4 @@ export * from './requestRouter';
 export * from './messageRouter';
 export * from './transactionRouter';
 export * from './statisticsRouter';
+export * from './commentRouter';

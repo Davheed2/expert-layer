@@ -28,6 +28,7 @@ import {
 	messageRouter,
 	transactionRouter,
 	statisticsRouter,
+	commentRouter,
 } from '@/routes';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
@@ -188,6 +189,7 @@ app.use('/api/v1/request', requestRouter);
 app.use('/api/v1/message', messageRouter);
 app.use('/api/v1/transaction', transactionRouter);
 app.use('/api/v1/statistics', statisticsRouter);
+app.use('/api/v1/comment', commentRouter);
 
 // Swagger documentation
 app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
