@@ -163,6 +163,16 @@ export class RequestsController {
 			if (!requests) {
 				throw new AppError('No request found', 404);
 			}
+		} else if (user.role === 'talent') {
+			requests = await requestsRepository.findByTalentId(user.id);
+			if (!requests) {
+				throw new AppError('No request found', 404);
+			}
+		} else if (user.role === 'accountmanager') {
+			requests = await requestsRepository.findByManagerId(user.id);
+			if (!requests) {
+				throw new AppError('No request found', 404);
+			}
 		} else {
 			requests = await requestsRepository.findByUserId(user.id);
 			if (!requests) {
