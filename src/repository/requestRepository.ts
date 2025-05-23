@@ -1,5 +1,5 @@
 import { knexDb } from '@/common/config';
-import { IRequests, IRequestFiles, IRequestTalents, IComment } from '@/common/interfaces';
+import { IRequests, IRequestFiles, IRequestTalents } from '@/common/interfaces';
 import { DateTime } from 'luxon';
 
 class RequestsRepository {
@@ -94,9 +94,7 @@ class RequestsRepository {
 
 	findRequestById = async (
 		id: string
-	): Promise<
-		(IRequests & { files: IRequestFiles[] } & { experts: IRequestTalents[] } & { comments: IComment[] })[]
-	> => {
+	): Promise<(IRequests & { files: IRequestFiles[] } & { experts: IRequestTalents[] })[]> => {
 		const requests: IRequests[] = await knexDb.table('requests').where({ id, isDeleted: false });
 
 		const requestsWithFiles = await Promise.all(
@@ -118,22 +116,7 @@ class RequestsRepository {
 						.select('id', 'firstName', 'lastName', 'photo');
 				}
 
-				const comments = await knexDb
-					.table('request_comments')
-					.where({ requestId: request.id, isDeleted: false })
-					.select('id', 'userId', 'comment', 'created_at');
-				const commentsWithUser = await Promise.all(
-					comments.map(async (com) => {
-						const user = await knexDb
-							.table('users')
-							.where({ id: com.userId })
-							.select('id', 'firstName', 'lastName', 'photo')
-							.first();
-						return { ...com, user };
-					})
-				);
-
-				return { ...request, files, experts, comments: commentsWithUser };
+				return { ...request, files, experts };
 			})
 		);
 

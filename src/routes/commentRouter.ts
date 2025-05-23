@@ -7,6 +7,8 @@ const router = express.Router();
 
 router.use(protect);
 
+
+router.get('/request', commentController.findByRequestId);
 router.post('/image', multerUpload.single('commentImage'), commentController.convertImageToUploadString);
 
 export { router as commentRouter };

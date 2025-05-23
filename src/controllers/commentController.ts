@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AppError, AppResponse, toJSON, uploadPictureFile } from '@/common/utils';
 import { catchAsync } from '@/middlewares';
+import { commentRepository } from '@/repository';
 
 export class CommentController {
 	convertImageToUploadString = catchAsync(async (req: Request, res: Response) => {
@@ -23,6 +24,20 @@ export class CommentController {
 		}
 
 		return AppResponse(res, 200, toJSON({ secureUrl }), 'Image uploaded successfully', req);
+	});
+
+	findByRequestId = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+		const { requestId } = req.query;
+
+		if (!user) {
+			throw new AppError('Please log in again', 400);
+		}
+
+		const comment = await commentRepository.getByRequestId(requestId as string);
+		if (!comment) throw new AppError('No comment Found', 404);
+
+		return AppResponse(res, 200, toJSON(comment), 'Comments retrieved successfully', req);
 	});
 }
 
