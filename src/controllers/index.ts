@@ -12,3 +12,4 @@ export * from './messageController';
 export * from './transactionController';
 export * from './statisticsController';
 export * from './commentController';
+export * from './activityController';

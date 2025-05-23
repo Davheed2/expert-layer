@@ -12,3 +12,4 @@ export * from './walletRepository';
 export * from './transactionRepository';
 export * from './statisticsRepository';
 export * from './commentRepository';
+export * from './activityRepository';

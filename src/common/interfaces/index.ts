@@ -16,3 +16,4 @@ export * from './chatRooms';
 export * from './requests';
 export * from './statistics';
 export * from './comments';
+export * from './activity';

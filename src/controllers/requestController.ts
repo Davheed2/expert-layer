@@ -21,6 +21,7 @@ import {
 } from '@/repository';
 import { RequestStatus, ServiceStatus, TransactionStatus, TransactionType } from '@/common/constants';
 import { IRequests, IService } from '@/common/interfaces';
+import { Activity } from '@/services/Activities';
 
 export class RequestsController {
 	createRequest = catchAsync(async (req: Request, res: Response) => {
@@ -203,7 +204,6 @@ export class RequestsController {
 				throw new AppError('You are not authorized to update this request to in progress', 401);
 			}
 		}
-
 		if (user.role !== 'admin') {
 			throw new AppError('You are not authorized to update this request', 401);
 		}
@@ -224,6 +224,24 @@ export class RequestsController {
 			if (user.role !== existingRequest.userId) {
 				throw new AppError('You are not authorized to update this request to completed', 401);
 			}
+		}
+
+		if (status === 'in_progress') {
+			await Activity.add({
+				userId: user.id,
+				requestId: existingRequest.id,
+				activity: 'Request status updated to in-progress',
+				activityDescription: `${user.firstName} ${user.lastName} updated the request status to in-progress`,
+			});
+		}
+
+		if (status === 'review') {
+			await Activity.add({
+				userId: user.id,
+				requestId: existingRequest.id,
+				activity: 'Request status updated to review',
+				activityDescription: `${user.firstName} ${user.lastName} updated the request status to review`,
+			});
 		}
 
 		const updatePayload: Partial<IRequests> = {};
@@ -266,6 +284,42 @@ export class RequestsController {
 		const updatedRequest = await requestsRepository.update(requestId, updatePayload);
 		if (!updatedRequest) {
 			throw new AppError('Request update failed', 500);
+		}
+
+		if (status === 'in_progress') {
+			await Activity.add({
+				userId: user.id,
+				requestId: existingRequest.id,
+				activity: 'Request status updated to in-progress',
+				activityDescription: `${user.firstName} ${user.lastName} updated the request status to in-progress`,
+			});
+		}
+
+		if (status === 'review') {
+			await Activity.add({
+				userId: user.id,
+				requestId: existingRequest.id,
+				activity: 'Request status updated to review',
+				activityDescription: `${user.firstName} ${user.lastName} updated the request status to review`,
+			});
+		}
+
+		if (status === 'completed') {
+			await Activity.add({
+				userId: user.id,
+				requestId: existingRequest.id,
+				activity: 'Request status updated to completed',
+				activityDescription: `${user.firstName} ${user.lastName} updated the request status to completed`,
+			});
+		}
+
+		if (status === 'blocked') {
+			await Activity.add({
+				userId: user.id,
+				requestId: existingRequest.id,
+				activity: 'Request status updated to blocked',
+				activityDescription: `${user.firstName} ${user.lastName} updated the request status to blocked`,
+			});
 		}
 
 		return AppResponse(res, 200, toJSON(updatedRequest), 'Request updated successfully', req);
@@ -358,6 +412,13 @@ export class RequestsController {
 			await sendExpertJoinEmail(existingExpert.email, existingExpert.firstName, existingRequest.serviceName);
 		}
 
+		await Activity.add({
+			userId: existingExpert.id,
+			requestId: existingRequest.id,
+			activity: 'Expert added to request',
+			activityDescription: `${existingExpert.firstName} ${existingExpert.lastName} was added as an expert to the request`,
+		});
+
 		return AppResponse(res, 201, toJSON(requestTalent), 'Expert added to request successfully', req);
 	});
 
@@ -400,6 +461,13 @@ export class RequestsController {
 		if (!requestTalent) {
 			throw new AppError('Failed to remove expert from request', 500);
 		}
+
+		await Activity.add({
+			userId: existingExpert.id,
+			requestId: existingRequest.id,
+			activity: 'Expert removed from request',
+			activityDescription: `${existingExpert.firstName} ${existingExpert.lastName} was removed as an expert from this request`,
+		});
 
 		return AppResponse(res, 200, null, 'Expert removed from request successfully', req);
 	});
@@ -449,6 +517,13 @@ export class RequestsController {
 		if (!requestTalent) {
 			throw new AppError('Failed to add expert to request', 500);
 		}
+
+		await Activity.add({
+			userId: existingExpert.id,
+			requestId: existingRequest.id,
+			activity: 'Expert added to request',
+			activityDescription: `${existingExpert.firstName} ${existingExpert.lastName} was added as an expert to the request`,
+		});
 
 		return AppResponse(res, 200, toJSON(requestTalent), 'Expert replaced successfully', req);
 	});
