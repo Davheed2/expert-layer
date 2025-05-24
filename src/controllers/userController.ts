@@ -235,6 +235,21 @@ export class UserController {
 		return AppResponse(res, 200, toJSON(users), 'Users fetched successfully', req);
 	});
 
+	fetchAllManagerRoleUsers = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+
+		if (!user) {
+			throw new AppError('Please log in again', 401);
+		}
+
+		const users = await userRepository.findAllTalentRoleUsers();
+		if (!users) {
+			throw new AppError('Failed to fetch users', 500);
+		}
+
+		return AppResponse(res, 200, toJSON(users), 'Users fetched successfully', req);
+	});
+
 	startImpersonation = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
 		const { userId } = req.body;

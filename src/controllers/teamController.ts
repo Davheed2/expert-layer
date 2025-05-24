@@ -135,7 +135,7 @@ export class TeamController {
 
 	addTeamMember = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
-		const { email } = req.body;
+		const { email, userId } = req.body;
 
 		if (!user) {
 			throw new AppError('Please log in again', 400);
@@ -143,8 +143,11 @@ export class TeamController {
 		if (!email) {
 			throw new AppError('Users email is required', 400);
 		}
+		if (!userId) {
+			throw new AppError('User ID is required', 400);
+		}
 
-		const teamOwner = await userRepository.findByEmail(user.email);
+		const teamOwner = await userRepository.findById(userId);
 		if (!teamOwner) {
 			throw new AppError('User not found', 404);
 		}
@@ -154,7 +157,7 @@ export class TeamController {
 			throw new AppError('Team not found', 404);
 		}
 
-		if (user.role !== 'admin' && team.ownerId !== user.id) {
+		if (user.role !== 'admin') {
 			throw new AppError('You do not have permission to access this resource', 403);
 		}
 

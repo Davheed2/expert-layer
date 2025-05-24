@@ -94,23 +94,70 @@ class UserRepository {
 		return await knexDb.table('users').where({ referralCode }).first();
 	};
 
-	findAllClientRoleUsers = async (): Promise<(IUser & { balance: number | null })[]> => {
+	findAllClientRoleUsers = async (): Promise<(IUser & { balance: number | null } & { accountManager: IUser[] })[]> => {
 		const clients = await knexDb('users').where('role', 'client').andWhere('isDeleted', false);
 
 		const clientIds = clients.map((client: IUser) => client.id);
 
 		const wallets = await knexDb('wallets').whereIn('userId', clientIds).select('userId', 'balance');
-
 		const walletMap = new Map(wallets.map((w: IWallet) => [w.userId, w.balance]));
+
+		// Get account manager memberIds for each client from team_members
+		const teamMembers = await knexDb('team_members')
+			.whereIn('ownerId', clientIds)
+			.andWhere('memberType', 'accountmanager')
+			.select('ownerId', 'memberId');
+
+		// Map clientId to array of account manager userIds
+		const clientToManagerIds = new Map<string, string[]>();
+		for (const tm of teamMembers) {
+			if (!clientToManagerIds.has(tm.ownerId)) {
+				clientToManagerIds.set(tm.ownerId, []);
+			}
+			clientToManagerIds.get(tm.ownerId)!.push(tm.memberId);
+		}
+
+		// Get all unique account manager userIds
+		const allManagerIds = Array.from(new Set(teamMembers.map((tm) => tm.memberId)));
+		let managers: IUser[] = [];
+		if (allManagerIds.length > 0) {
+			managers = (await knexDb('users')
+				.whereIn('id', allManagerIds)
+				.andWhere('isDeleted', false)
+				.select('id', 'firstName', 'lastName', 'photo', 'email')) as IUser[];
+		}
+		const managerMap = new Map(managers.map((m) => [m.id, m]));
 
 		return clients.map((client: IUser) => ({
 			...client,
 			balance: walletMap.get(client.id) ?? null,
+			accountManager: (clientToManagerIds.get(client.id) || [])
+				.map((mid) => managerMap.get(mid))
+				.filter(Boolean) as IUser[],
 		}));
 	};
 
+	// findAllClientRoleUsers = async (): Promise<(IUser & { balance: number | null } & { accountManager: IUser[] })[]> => {
+	// 	const clients = await knexDb('users').where('role', 'client').andWhere('isDeleted', false);
+
+	// 	const clientIds = clients.map((client: IUser) => client.id);
+
+	// 	const wallets = await knexDb('wallets').whereIn('userId', clientIds).select('userId', 'balance');
+	// 	const walletMap = new Map(wallets.map((w: IWallet) => [w.userId, w.balance]));
+
+	// 	return clients.map((client: IUser) => ({
+	// 		...client,
+	// 		balance: walletMap.get(client.id) ?? null,
+	// 		accountManager: [],
+	// 	}));
+	// };
+
 	findAllTalentRoleUsers = async (): Promise<IUser[]> => {
 		return knexDb('users').where('role', 'talent').andWhere('isDeleted', false);
+	};
+
+	findAllManagerRoleUsers = async (): Promise<IUser[]> => {
+		return knexDb('users').where('role', 'accountmanager').andWhere('isDeleted', false);
 	};
 }
 
