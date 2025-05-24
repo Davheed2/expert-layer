@@ -57,6 +57,27 @@ export interface AssignedExpertData extends CommonDataFields {
 	name: string;
 }
 
+export interface InviteNonExistingUserData extends CommonDataFields {
+	name: string;
+	teamOwnerFirstName: string;
+	teamOwnerLastName: string;
+	referralLink: string;
+}
+
+export interface InviteExistingUserData extends CommonDataFields {
+	name: string;
+	teamOwnerName: string;
+	inviteLink: string;
+}
+
+export interface NewCommentData extends CommonDataFields {
+	recipientName: string;
+	commenterFirstName: string;
+	commenterLastName: string;
+	requestName: string;
+	requestLink: string;
+}
+
 export type EmailJobData =
 	| { type: 'signUpEmail'; data: SignUpEmailData }
 	| { type: 'welcomeEmail'; data: WelcomeEmailData }
@@ -69,3 +90,6 @@ export type EmailJobData =
 	| { type: 'assignedManager'; data: AssignedManagerData }
 	| { type: 'assignedTalent'; data: AssignedExpertData }
 	| { type: 'joinRequest'; data: RequestJoinData }
+	| { type: 'inviteNonExistingUser'; data: InviteNonExistingUserData }
+	| { type: 'inviteExistingUser'; data: InviteExistingUserData }
+	| { type: 'newComment'; data: NewCommentData };

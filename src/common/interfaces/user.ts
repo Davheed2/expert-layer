@@ -22,7 +22,7 @@ export interface IUser {
 	tokenIsUsed: boolean;
 	loginToken: string | null;
 	loginTokenExpires: Date | null;
-	
+	referralCode: string;
 	isDeleted: boolean;
 	created_at?: Date;
 	updated_at?: Date;

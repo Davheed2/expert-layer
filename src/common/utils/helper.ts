@@ -8,9 +8,12 @@ import {
 	AssignedManagerData,
 	ForgotPasswordData,
 	IHashData,
+	InviteExistingUserData,
+	InviteNonExistingUserData,
 	JoinTeamData,
 	LoginEmailData,
 	MagicEmailData,
+	NewCommentData,
 	RequestData,
 	RequestJoinData,
 	ResetPasswordData,
@@ -323,6 +326,15 @@ const referenceGenerator = () => {
 	return `INV-${year}${month}${day}${randomNum}`;
 };
 
+const generateReferralCode = () => {
+	return otpGenerator.generate(6, {
+		digits: true,
+		upperCaseAlphabets: true,
+		specialChars: false,
+		lowerCaseAlphabets: true,
+	});
+};
+
 const sendSignUpEmail = async (email: string, name: string, otp: string): Promise<void> => {
 	const emailData: SignUpEmailData = {
 		to: email,
@@ -461,7 +473,7 @@ const sendExpertJoinEmail = async (email: string, name: string, requestName: str
 		to: email,
 		priority: 'high',
 		name,
-		requestName
+		requestName,
 	};
 
 	addEmailToQueue({
@@ -479,6 +491,72 @@ const sendExpertAssignedEmail = async (email: string, name: string): Promise<voi
 
 	addEmailToQueue({
 		type: 'assignedTalent',
+		data: emailData,
+	});
+};
+
+const sendInviteNonExistingUserEmail = async (
+	email: string,
+	name: string,
+	teamOwnerFirstName: string,
+	teamOwnerLastName: string,
+	referralLink: string
+): Promise<void> => {
+	const emailData: InviteNonExistingUserData = {
+		to: email,
+		priority: 'high',
+		name,
+		teamOwnerFirstName,
+		teamOwnerLastName,
+		referralLink,
+	};
+
+	addEmailToQueue({
+		type: 'inviteNonExistingUser',
+		data: emailData,
+	});
+};
+
+const sendInviteExistingUserEmail = async (
+	email: string,
+	name: string,
+	teamOwnerName: string,
+	inviteLink: string
+): Promise<void> => {
+	const emailData: InviteExistingUserData = {
+		to: email,
+		priority: 'high',
+		name,
+		teamOwnerName,
+		inviteLink,
+	};
+
+	addEmailToQueue({
+		type: 'inviteExistingUser',
+		data: emailData,
+	});
+};
+
+const sendNewCommentEmail = async (
+	email: string,
+	recipientName: string,
+	commenterFirstName: string,
+	commenterLastName: string,
+	requestName: string,
+	requestLink: string
+): Promise<void> => {
+	const emailData: NewCommentData = {
+		to: email,
+		priority: 'high',
+		recipientName,
+		commenterFirstName,
+		commenterLastName,
+		requestName,
+		requestLink,
+	};
+
+	addEmailToQueue({
+		type: 'newComment',
 		data: emailData,
 	});
 };
@@ -517,4 +595,8 @@ export {
 	sendAssignedManagerEmail,
 	sendExpertAssignedEmail,
 	sendExpertJoinEmail,
+	generateReferralCode,
+	sendInviteNonExistingUserEmail,
+	sendInviteExistingUserEmail,
+	sendNewCommentEmail,
 };

@@ -59,6 +59,7 @@ export const mainSchema = z.object({
 	details: z.string().min(3).trim(),
 	duration: z.string().trim(),
 	verificationToken: z.string().min(5).max(6),
+	referralCode: z.string().min(3).trim(),
 	isUserConfigurable: z.boolean(),
 	title: z.string().min(3).trim(),
 	description: z.string().min(3).trim(),

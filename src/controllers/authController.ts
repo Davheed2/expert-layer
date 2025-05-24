@@ -1,4 +1,4 @@
-import { userRepository } from '@/repository';
+import { teamRepository, userRepository } from '@/repository';
 import { Request, Response } from 'express';
 import {
 	AppError,
@@ -6,6 +6,7 @@ import {
 	comparePassword,
 	generateAccessToken,
 	generateOtp,
+	generateReferralCode,
 	generateRefreshToken,
 	hashPassword,
 	logger,
@@ -24,10 +25,11 @@ import { DateTime } from 'luxon';
 import { Notification } from '@/services/Notification';
 import { NotificationSource } from '@/common/constants';
 import { Team } from '@/services/Team';
+import { IUser } from '@/common/interfaces';
 
 class AuthController {
 	signUp = catchAsync(async (req: Request, res: Response) => {
-		const { email, firstName, lastName, role } = req.body;
+		const { email, firstName, lastName, role, referralCode } = req.body;
 
 		if (!firstName || !lastName || !email || !role) {
 			throw new AppError('Incomplete signup data', 400);
@@ -47,9 +49,17 @@ class AuthController {
 		// );
 
 		//const verificationUrl = `${getDomainReferer(req)}/auth/verify?verificationToken=${hashedVerificationToken}`;
+		let referrer: IUser | null = null;
+		if (referralCode) {
+			referrer = await userRepository.findByReferralCode(referralCode);
+			console.log(referrer);
+			if (!referrer) {
+				throw new AppError('Invalid referral code', 400);
+			}
+		}
 
 		const generatedOtp = generateOtp();
-		await sendSignUpEmail(email, firstName, generatedOtp);
+		const referCode = generateReferralCode();
 
 		const [user] = await userRepository.create({
 			email,
@@ -60,10 +70,27 @@ class AuthController {
 			role,
 			verificationToken: generatedOtp,
 			verificationTokenExpires: DateTime.now().plus({ days: 1 }).toJSDate(),
+			referralCode: referCode,
 		});
 		if (!user) {
 			throw new AppError('Failed to create user', 500);
 		}
+
+		if (referrer) {
+			const team = await teamRepository.getTeamByOwnerId(referrer.id);
+			if (!team) {
+				throw new AppError('Referrer team not found', 404);
+			}
+
+			await Team.addMember({
+				teamId: team.id,
+				ownerId: team.ownerId,
+				memberId: user.id,
+				memberType: user.role,
+			});
+		}
+
+		await sendSignUpEmail(email, firstName, generatedOtp);
 
 		return AppResponse(res, 201, toJSON([user]), `Verification link sent to ${email}`);
 	});
@@ -238,7 +265,7 @@ class AuthController {
 		if (!extinguishUser.password) {
 			throw new AppError('No existing password set for this user', 400);
 		}
-		
+
 		const isSamePassword = await comparePassword(password, extinguishUser.password);
 		if (isSamePassword) {
 			throw new AppError('New password cannot be the same as the old password', 400);

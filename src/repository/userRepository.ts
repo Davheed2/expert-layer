@@ -90,6 +90,10 @@ class UserRepository {
 		return knexDb('users').whereNotIn('role', ['client']).andWhere('isDeleted', false);
 	};
 
+	findByReferralCode = async (referralCode: string): Promise<IUser | null> => {
+		return await knexDb.table('users').where({ referralCode }).first();
+	};
+
 	findAllClientRoleUsers = async (): Promise<(IUser & { balance: number | null })[]> => {
 		const clients = await knexDb('users').where('role', 'client').andWhere('isDeleted', false);
 

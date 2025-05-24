@@ -10,3 +10,7 @@ export * from './requestCreatedEmail';
 export * from './assignedManagerEmail';
 export * from './assignedTalentEmail';
 export * from './joinRequestEmail';
+export * from './inviteExistingUserEmail';
+export * from './inviteExistingUserEmail';
+export * from './inviteNonExistingUserEmail';
+export * from './newCommentEmail';
