@@ -335,4 +335,8 @@ router.get('/chat/teams', teamController.getUserTeamsHandler);
 router.get('/chat/team', teamController.getUserTeamHandler);
 router.get('/find', teamController.findTeamById);
 
+router.post('/team-invite', teamController.clientInviteTeamMember);
+router.post('/accept-team-invite', teamController.acceptTeamInvite);
+
+
 export { router as teamsRouter };

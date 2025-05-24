@@ -39,6 +39,21 @@ export class UserController {
 		return AppResponse(res, 200, toJSON([extinguishUser]), 'User profile retrieved successfully', req);
 	});
 
+	findByReferralCode = catchAsync(async (req: Request, res: Response) => {
+		const { referralCode } = req.query;
+
+		if (!referralCode) {
+			throw new AppError('Referral code is required', 400);
+		}
+
+		const user = await userRepository.findByReferralCode(referralCode as string);
+		if (!user) {
+			throw new AppError('No user found with this referral code', 404);
+		}
+
+		return AppResponse(res, 200, toJSON(user), 'User found successfully', req);
+	});
+
 	updateProfile = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
 		const allowedUpdates = ['firstName', 'lastName', 'email'];

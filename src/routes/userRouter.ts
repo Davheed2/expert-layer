@@ -863,5 +863,6 @@ router.get('/staffs', userController.fetchAllNonClientRoleUsers);
 router.get('/talents', userController.fetchAllTalentRoleUsers);
 router.post('/start-impersonation', userController.startImpersonation);
 router.post('/stop-impersonation', userController.stopImpersonation);
+router.get('/referral-code', userController.findByReferralCode);
 
 export { router as userRouter };
