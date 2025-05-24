@@ -209,14 +209,6 @@ export class RequestsController {
 		if (!user) {
 			throw new AppError('Please log in again', 400);
 		}
-		if (status === 'in_progress') {
-			if (user.role !== 'talent') {
-				throw new AppError('You are not authorized to update this request to in progress', 401);
-			}
-		}
-		if (user.role !== 'admin') {
-			throw new AppError('You are not authorized to update this request', 401);
-		}
 		if (!requestId) {
 			throw new AppError('Request ID is required', 400);
 		}
@@ -237,21 +229,15 @@ export class RequestsController {
 		}
 
 		if (status === 'in_progress') {
-			await Activity.add({
-				userId: user.id,
-				requestId: existingRequest.id,
-				activity: 'Request status updated to in-progress',
-				activityDescription: `${user.firstName} ${user.lastName} updated the request status to in-progress`,
-			});
+			if (user.role !== 'talent') {
+				throw new AppError('You are not authorized to update this request to in progress', 401);
+			}
 		}
 
 		if (status === 'review') {
-			await Activity.add({
-				userId: user.id,
-				requestId: existingRequest.id,
-				activity: 'Request status updated to review',
-				activityDescription: `${user.firstName} ${user.lastName} updated the request status to review`,
-			});
+			if (user.role !== 'talent') {
+				throw new AppError('You are not authorized to update this request to in progress', 401);
+			}
 		}
 
 		const updatePayload: Partial<IRequests> = {};
