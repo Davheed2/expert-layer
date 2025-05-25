@@ -47,7 +47,7 @@ export const commentHandler = (io: Server, socket: Socket) => {
 				return socket.emit('error', { message: 'Team not found for the request' });
 			}
 
-			const requestLink = `https://expert-layer.vercel.app/dashboard/requests/${requestId}`;
+			const requestLink = `https://app.expertlayer.co/dashboard/requests/${requestId}`;
 			if (user.role === 'talent') {
 				const teamMembers = await teamRepository.getTeamMembers(team.id);
 				for (const member of teamMembers) {
