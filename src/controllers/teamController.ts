@@ -81,7 +81,7 @@ export class TeamController {
 			throw new AppError('User is already a member of the team', 400);
 		}
 
-		const referralLink = `${getDomainReferer(req)}/dashboard/?ref=${teamOwner.referralCode}`;
+		const referralLink = `${getDomainReferer(req)}/dashboard/team?ref=${teamOwner.referralCode}`;
 		await sendInviteExistingUserEmail(
 			addedUser.email,
 			addedUser.firstName,
