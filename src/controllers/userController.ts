@@ -242,7 +242,7 @@ export class UserController {
 			throw new AppError('Please log in again', 401);
 		}
 
-		const users = await userRepository.findAllTalentRoleUsers();
+		const users = await userRepository.findAllManagerRoleUsers();
 		if (!users) {
 			throw new AppError('Failed to fetch users', 500);
 		}
