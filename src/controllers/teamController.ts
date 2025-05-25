@@ -70,7 +70,7 @@ export class TeamController {
 
 		const addedUser = await userRepository.findByEmail(email);
 		if (!addedUser) {
-			const referralLink = `${getDomainReferer(req)}/auth/sign-up?ref=${teamOwner.referralCode}`;
+			const referralLink = `${getDomainReferer(req)}/auth/register?ref=${teamOwner.referralCode}`;
 
 			await sendInviteNonExistingUserEmail(email, '', teamOwner.firstName, teamOwner.lastName, referralLink);
 			return AppResponse(res, 201, null, 'Invitation sent to user to join the team', req);

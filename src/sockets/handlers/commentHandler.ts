@@ -37,6 +37,9 @@ export const commentHandler = (io: Server, socket: Socket) => {
 				activityDescription: `${user.firstName} ${user.lastName} added a new comment`,
 			});
 
+			//send email to request talents and team members
+			
+
 			io.to(requestId).emit(SocketEvents.REQUEST_COMMENT, newComment);
 		} catch (error) {
 			logger.error(`Error saving comment: ${error instanceof Error ? error.message : 'Unknown error'}`);

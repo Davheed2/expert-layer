@@ -17,7 +17,7 @@ export const inviteExistingUserEmail = (data: { name: string; teamOwnerName: str
                     <table border="0" cellspacing="0" cellpadding="0">
                         <tr>
                             <td>
-                                <a href="${data.inviteLink}" class="button" style="background-color:rgb(189, 83, 30); border-radius: 20px; color: #bd531e; display: inline-block; text-decoration: none; padding: 12px 30px; font-size: 16px;">
+                                <a href="${data.inviteLink}" class="button" style="background-color:rgb(189, 83, 30); border-radius: 20px; color: #bd531e; display: inline-block; text-decoration: none; padding: 12px 30px; font-size: 16px; color: #fff;">
                                     Accept Invitation
                                 </a>
                             </td>
