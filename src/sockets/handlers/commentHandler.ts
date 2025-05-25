@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { SocketEvents } from '@/common/constants';
-import { logger } from '@/common/utils';
-import { commentRepository, userRepository } from '@/repository';
+import { logger, sendNewCommentEmail } from '@/common/utils';
+import { commentRepository, userRepository, requestsRepository, teamRepository } from '@/repository';
 import { Activity } from '@/services/Activities';
 
 export const commentHandler = (io: Server, socket: Socket) => {
@@ -37,8 +37,32 @@ export const commentHandler = (io: Server, socket: Socket) => {
 				activityDescription: `${user.firstName} ${user.lastName} added a new comment`,
 			});
 
+			const request = await requestsRepository.findById(requestId);
+			if (!request) {
+				return socket.emit('error', { message: 'Request not found' });
+			}
+
+			const team = await teamRepository.findTeamsForUser(request.userId);
+			if (!team) {
+				return socket.emit('error', { message: 'Team not found for the request' });
+			}
+
 			//send email to request talents and team members
-			
+			if (user.role === 'talent') {
+				//const teamMembers = await teamRepository.getTeamMember(team[0].id, request.userId);
+				//for (const member of teamMembers) {
+					await sendNewCommentEmail('', '', '', '', '', '')
+					// if (member.userId !== senderId) {
+					// 	await Activity.add({
+					// 		userId: member.userId,
+					// 		requestId,
+					// 		activity: 'Request Comment',
+					// 		activityDescription: `${user.firstName} ${user.lastName} added a new comment on request ${request.title}`,
+					// 	});
+					// }
+				//}
+			}
+
 
 			io.to(requestId).emit(SocketEvents.REQUEST_COMMENT, newComment);
 		} catch (error) {

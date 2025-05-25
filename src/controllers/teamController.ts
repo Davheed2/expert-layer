@@ -226,6 +226,19 @@ export class TeamController {
 		return AppResponse(res, 200, toJSON(teams), 'User teams retrieved successfully', req);
 	});
 
+	getClientTeamMembers = catchAsync(async (req: Request, res: Response) => {
+		const { user } = req;
+
+		if (!user) {
+			throw new AppError('Please log in again', 400);
+		}
+
+		const teams = await teamRepository.getClientTeamMembers2(user.id);
+		if (!teams) throw new AppError('No teams Found', 404);
+
+		return AppResponse(res, 200, toJSON(teams), 'User team members retrieved successfully', req);
+	});
+
 	getUserTeamHandler = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
 		const { teamId } = req.query;
