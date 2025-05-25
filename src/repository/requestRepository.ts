@@ -95,9 +95,7 @@ class RequestsRepository {
 	findByTalentId = async (
 		userId: string
 	): Promise<(IRequests & { files: IRequestFiles[] } & { experts: IRequestTalents[] })[]> => {
-		const requestTalents = await knexDb('request_talents')
-			.where({ userId, isDeleted: false })
-			.select('requestId');
+		const requestTalents = await knexDb('request_talents').where({ userId, isDeleted: false }).select('requestId');
 
 		const requestIds = requestTalents.map((rt: { requestId: string }) => rt.requestId);
 
@@ -234,6 +232,10 @@ class RequestsRepository {
 
 	findRequestTalentById = async (requestId: string, userId: string) => {
 		return await knexDb('request_talents').where({ requestId, userId }).first();
+	};
+
+	getTalentsForRequest = async (requestId: string): Promise<IRequestTalents[]> => {
+		return await knexDb('request_talents').where({ requestId, isDeleted: false });
 	};
 
 	findRequestTalentByRequestId = async (requestId: string) => {

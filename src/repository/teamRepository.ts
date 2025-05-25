@@ -84,6 +84,11 @@ class TeamRepository {
 		return result.length ? result[0] : null;
 	};
 
+	getTeamMembers = async (teamId: string): Promise<ITeamMember[]> => {
+		const result = await knexDb.table('team_members').where({ teamId, isDeleted: false }).select('*');
+		return result;
+	}
+
 	findTeamsForUser = async (userId: string): Promise<ITeam[]> => {
 		const teamIds = await knexDb.table('team_members').where({ memberId: userId }).select('teamId');
 

@@ -42,28 +42,70 @@ export const commentHandler = (io: Server, socket: Socket) => {
 				return socket.emit('error', { message: 'Request not found' });
 			}
 
-			const team = await teamRepository.findTeamsForUser(request.userId);
+			const [team] = await teamRepository.findTeamsForUser(request.userId);
 			if (!team) {
 				return socket.emit('error', { message: 'Team not found for the request' });
 			}
 
-			//send email to request talents and team members
+			const requestLink = `https://expert-layer.vercel.app/dashboard/requests/${requestId}`;
 			if (user.role === 'talent') {
-				//const teamMembers = await teamRepository.getTeamMember(team[0].id, request.userId);
-				//for (const member of teamMembers) {
-					await sendNewCommentEmail('', '', '', '', '', '')
-					// if (member.userId !== senderId) {
-					// 	await Activity.add({
-					// 		userId: member.userId,
-					// 		requestId,
-					// 		activity: 'Request Comment',
-					// 		activityDescription: `${user.firstName} ${user.lastName} added a new comment on request ${request.title}`,
-					// 	});
-					// }
-				//}
+				const teamMembers = await teamRepository.getTeamMembers(team.id);
+				for (const member of teamMembers) {
+					// Skip the sender
+					if (member.memberId === senderId) continue;
+
+					const memberUser = await userRepository.findById(member.memberId);
+					if (!memberUser || !memberUser.email) continue;
+
+					await sendNewCommentEmail(
+						memberUser.email,
+						memberUser.firstName,
+						user.firstName,
+						user.lastName,
+						request.serviceName,
+						requestLink
+					);
+				}
+			} else {
+				// Get talents for the request
+				const talents = await requestsRepository.getTalentsForRequest(requestId);
+				for (const talent of talents) {
+					// Skip the sender if they are a talent
+					if (talent.userId === senderId) continue;
+
+					const talentUser = await userRepository.findById(talent.userId);
+					if (!talentUser || !talentUser.email) continue;
+
+					await sendNewCommentEmail(
+						talentUser.email,
+						talentUser.firstName,
+						user.firstName,
+						user.lastName,
+						request.serviceName,
+						requestLink
+					);
+				}
+
+				// Notify other team members (excluding sender)
+				const teamMembers = await teamRepository.getTeamMembers(team.id);
+				for (const member of teamMembers) {
+					if (member.memberId === senderId) continue;
+
+					const memberUser = await userRepository.findById(member.memberId);
+					if (!memberUser || !memberUser.email) continue;
+
+					await sendNewCommentEmail(
+						memberUser.email,
+						memberUser.firstName,
+						user.firstName,
+						user.lastName,
+						request.serviceName,
+						requestLink
+					);
+				}
 			}
 
-
+			// if (member.userId !== senderId) {
 			io.to(requestId).emit(SocketEvents.REQUEST_COMMENT, newComment);
 		} catch (error) {
 			logger.error(`Error saving comment: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -71,3 +113,14 @@ export const commentHandler = (io: Server, socket: Socket) => {
 		}
 	});
 };
+
+// const teamMembers = await teamRepository.getTeamMembers(team.id);
+// 			for (const member of teamMembers) {
+// 				// Skip the sender
+// 				if (member.memberId === senderId) continue;
+
+// 				const memberUser = await userRepository.findById(member.memberId);
+// 				if (!memberUser || !memberUser.email) continue;
+
+// 				await sendNewCommentEmail(memberUser.email, user.firstName, request.serviceName, comment, team.name, requestId);
+// 			}

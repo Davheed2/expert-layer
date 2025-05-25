@@ -69,7 +69,6 @@ export class TeamController {
 		}
 
 		const addedUser = await userRepository.findByEmail(email);
-		console.log('Added User:', addedUser);
 		if (!addedUser) {
 			const referralLink = `${getDomainReferer(req)}/auth/register?ref=${teamOwner.referralCode}`;
 
