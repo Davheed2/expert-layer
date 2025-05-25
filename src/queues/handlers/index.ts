@@ -11,6 +11,9 @@ import {
 	AssignedManagerData,
 	RequestJoinData,
 	AssignedExpertData,
+	InviteNonExistingUserData,
+	InviteExistingUserData,
+	NewCommentData,
 } from '@/common/interfaces';
 import { logger } from '@/common/utils';
 import nodemailer from 'nodemailer';
@@ -27,6 +30,9 @@ import {
 	accountManagerAssignedEmail,
 	expertJoinEmail,
 	expertAssignedEmail,
+	inviteNonExistingUserEmail,
+	inviteExistingUserEmail,
+	newCommentEmail,
 } from '../templates';
 
 const transporter = nodemailer.createTransport({
@@ -88,6 +94,18 @@ export const sendEmail = async (job: EmailJobData) => {
 		case 'joinRequest':
 			htmlContent = expertJoinEmail(data as RequestJoinData);
 			subject = 'You have been assigned to a request';
+			break;
+		case 'inviteNonExistingUser':
+			htmlContent = inviteNonExistingUserEmail(data as InviteNonExistingUserData);
+			subject = 'You have been invited to join an organization';
+			break;
+		case 'inviteExistingUser':
+			htmlContent = inviteExistingUserEmail(data as InviteExistingUserData);
+			subject = 'You have been invited to join an organization';
+			break;
+		case 'newComment':
+			htmlContent = newCommentEmail(data as NewCommentData);
+			subject = 'New comment addedd to request';
 			break;
 		// Handle other email types...
 		default:
