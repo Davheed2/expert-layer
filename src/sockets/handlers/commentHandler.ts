@@ -113,14 +113,3 @@ export const commentHandler = (io: Server, socket: Socket) => {
 		}
 	});
 };
-
-// const teamMembers = await teamRepository.getTeamMembers(team.id);
-// 			for (const member of teamMembers) {
-// 				// Skip the sender
-// 				if (member.memberId === senderId) continue;
-
-// 				const memberUser = await userRepository.findById(member.memberId);
-// 				if (!memberUser || !memberUser.email) continue;
-
-// 				await sendNewCommentEmail(memberUser.email, user.firstName, request.serviceName, comment, team.name, requestId);
-// 			}
