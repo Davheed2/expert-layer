@@ -105,7 +105,7 @@ export const sendEmail = async (job: EmailJobData) => {
 			break;
 		case 'newComment':
 			htmlContent = newCommentEmail(data as NewCommentData);
-			subject = 'New comment addedd to request';
+			subject = 'New comment added to request';
 			break;
 		// Handle other email types...
 		default:
