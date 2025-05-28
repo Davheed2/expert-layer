@@ -271,7 +271,7 @@ export class WalletService {
 	}
 
 	// Top up wallet directly
-	async createWalletTopUpIntent(userId: string, amount: number): Promise<Stripe.PaymentIntent> {
+	async createWalletTopUpIntent(userId: string, amount: number, recurring: boolean): Promise<Stripe.PaymentIntent> {
 		const user = await this.db('users').where({ id: userId }).first();
 
 		if (!user) {
@@ -287,11 +287,13 @@ export class WalletService {
 			currency: 'usd',
 			customer: stripeCustomerId,
 			payment_method_types: ['card'],
+			setup_future_usage: 'off_session',
 			metadata: {
 				user_id: userId,
 				transaction_type: 'wallet_topup',
 				amount: amount.toString(),
 				reference,
+				recurring: recurring.toString(),
 			},
 		});
 
@@ -305,6 +307,8 @@ export class WalletService {
 		if (paymentIntent.metadata.transaction_type !== 'wallet_topup') {
 			throw new AppError('Not a wallet top-up transaction');
 		}
+
+		const recurringPayment = paymentIntent.metadata.recurring;
 
 		const userId = paymentIntent.metadata.user_id;
 		const reference = paymentIntent.metadata.reference;
@@ -336,6 +340,17 @@ export class WalletService {
 					walletBalanceBefore: walletBefore,
 					walletBalanceAfter: newBalance,
 				});
+
+			if (recurringPayment === 'true') {
+				await trx('wallet_topup_subscriptions').insert({
+					userId,
+					amount,
+					currency: paymentIntent.currency,
+					stripeCustomerId: paymentIntent.customer,
+					reference,
+					nextBillingDate: new Date(new Date().setMonth(new Date().getMonth() + 1)),
+				});
+			}
 
 			await Notification.add({
 				userId,

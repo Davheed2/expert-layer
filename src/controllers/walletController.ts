@@ -75,17 +75,20 @@ export class WalletController {
 
 	createWalletTopUp = catchAsync(async (req: Request, res: Response) => {
 		const { user } = req;
-		const { amount } = req.body;
+		const { amount, recurring } = req.body;
 
 		if (!user) {
 			throw new AppError('Please log in again', 400);
+		}
+		if (typeof recurring !== "boolean") {
+			throw new AppError('Invalid recurring value', 400);
 		}
 
 		if (!amount || amount <= 0) {
 			throw new AppError('Invalid amount', 400);
 		}
 
-		const paymentIntent = await this.walletService.createWalletTopUpIntent(user.id, amount);
+		const paymentIntent = await this.walletService.createWalletTopUpIntent(user.id, amount, recurring);
 
 		return AppResponse(
 			res,

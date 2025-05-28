@@ -5,7 +5,7 @@ export async function up(knex: Knex): Promise<void> {
 		table.uuid('id').primary().defaultTo(knex.fn.uuid());
         table.uuid('userId').notNullable().references('id').inTable('users').onDelete('CASCADE');
 		table.uuid('requestId').notNullable().references('id').inTable('requests').onDelete('CASCADE');
-        table.string('comment').notNullable();
+        table.text('comment').notNullable();
 		table.boolean('isDeleted').notNullable().defaultTo(false);
 		table.timestamps(true, true);
 	});

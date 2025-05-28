@@ -48,6 +48,7 @@ import { startAllQueuesAndWorkers, stopAllQueuesAndWorkers } from './queues';
 import { socketAuthMiddleware } from '@/middlewares/socketAuthMiddleware';
 import { initSocketHandlers } from '@/sockets';
 import path from 'path';
+import './jobs/recurring';
 
 dotenv.config();
 /**
