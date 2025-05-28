@@ -113,13 +113,20 @@ export const baseTemplate = (template: string): string => {
           <td align="center">
             <table class="email-content" cellpadding="0" cellspacing="0">
               <tr>
-                <td class="email-masthead">
-                  <img src="https://res.cloudinary.com/dnhu3eqn5/image/upload/v1745082143/Screenshot_2025-04-19_180017_zjtdpf.png" 
-                       alt="100minds logo" 
-                       width="100" 
-                       height="auto" 
-                       style="display: block; margin: 0 auto;">
-                </td>            
+               <td class="email-masthead">
+                <h1 style="
+                  margin: 0;
+                  font-size: 28px;
+                  font-weight: 700;
+                  color: #bd531e;
+                  font-family: 'Inter', Helvetica, Arial, sans-serif;
+                  text-align: center;
+                  letter-spacing: 1px;
+                ">
+                  Expert Layer
+                </h1>
+              </td>
+         
               </tr>
   
               <!-- Email Body -->
