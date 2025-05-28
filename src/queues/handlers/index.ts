@@ -36,8 +36,10 @@ import {
 } from '../templates';
 
 const transporter = nodemailer.createTransport({
-	service: 'gmail',
+	//service: 'gmail',
+	host: 'smtp.zeptomail.com',
 	port: 587,
+	secure: false,
 	auth: {
 		user: ENVIRONMENT.EMAIL.GMAIL_USER,
 		pass: ENVIRONMENT.EMAIL.GMAIL_PASSWORD,
@@ -113,7 +115,7 @@ export const sendEmail = async (job: EmailJobData) => {
 	}
 
 	const mailOptions = {
-		from: `"Expert Layer" <${ENVIRONMENT.EMAIL.GMAIL_USER}>`,
+		from: `"Expert Layer" <support@expertlayer.co`,
 		to: data.to,
 		subject: subject,
 		html: htmlContent,
