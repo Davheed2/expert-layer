@@ -275,19 +275,21 @@ export class WalletService {
 		const user = await this.db('users').where({ id: userId }).first();
 
 		if (!user) {
-			throw new Error('User not found');
+			throw new AppError('User not found');
+		}
+
+		if (amount < 50) {
+			throw new AppError('Amount must be at least $0.50');
 		}
 
 		const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
 		const reference = referenceGenerator();
 
-		// Create a payment intent for wallet top-up
-		const paymentIntent = await stripe.paymentIntents.create({
-			amount,
+		const paymentIntentData: Stripe.PaymentIntentCreateParams = {
+			amount, // already in cents
 			currency: 'usd',
 			customer: stripeCustomerId,
 			payment_method_types: ['card'],
-			setup_future_usage: recurring ? 'off_session' : undefined,
 			metadata: {
 				user_id: userId,
 				transaction_type: 'wallet_topup',
@@ -295,7 +297,13 @@ export class WalletService {
 				reference,
 				recurring: recurring.toString(),
 			},
-		});
+		};
+
+		if (recurring) {
+			paymentIntentData.setup_future_usage = 'off_session';
+		}
+
+		const paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
 
 		return paymentIntent;
 	}
