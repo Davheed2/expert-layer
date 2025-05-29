@@ -278,6 +278,8 @@ export class WalletService {
 			throw new AppError('User not found');
 		}
 
+		console.log('amount', amount)
+
 		if (amount < 50) {
 			throw new AppError('Amount must be at least $0.50');
 		}
