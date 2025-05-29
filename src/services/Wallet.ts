@@ -214,8 +214,10 @@ export class WalletService {
 
 			if (!user || !request || !wallet) throw new Error('User, request, or wallet not found');
 
-			const amountPaid = paymentIntent.amount;
-			const walletUsed = parseInt(wallet_amount_used || '0');
+			const amountPaidInCents = paymentIntent.amount;
+			const amountPaid = amountPaidInCents / 100;
+
+			const walletUsed = parseFloat(wallet_amount_used || '0'); // assume already in dollars
 			const taskPrice = Number(request.servicePrice) + Number(request.durationAmount);
 			const totalPayment = amountPaid + walletUsed;
 			const excessAmount = totalPayment - taskPrice;
@@ -278,7 +280,8 @@ export class WalletService {
 			throw new AppError('User not found');
 		}
 
-		console.log('amount', amount)
+		console.log('amount', amount);
+		const amountToPay = Math.round(amount * 100);
 
 		if (amount < 0.5) {
 			throw new AppError('Amount must be at least $0.50');
@@ -288,7 +291,7 @@ export class WalletService {
 		const reference = referenceGenerator();
 
 		const paymentIntentData: Stripe.PaymentIntentCreateParams = {
-			amount, // already in cents
+			amount: amountToPay,
 			currency: 'usd',
 			customer: stripeCustomerId,
 			payment_method_types: ['card'],
@@ -319,10 +322,11 @@ export class WalletService {
 		}
 
 		const recurringPayment = paymentIntent.metadata.recurring;
-
 		const userId = paymentIntent.metadata.user_id;
 		const reference = paymentIntent.metadata.reference;
-		const amount = parseInt(paymentIntent.amount.toString());
+
+		const amountInCents = paymentIntent.amount;
+		const amountInDollars = amountInCents / 100;
 
 		await this.db.transaction(async (trx) => {
 			const wallet = await trx('wallets').where({ userId }).first();
@@ -331,11 +335,11 @@ export class WalletService {
 			let newBalance = 0;
 
 			if (!wallet) {
-				await trx('wallets').insert({ userId, balance: amount });
-				newBalance = amount;
+				await trx('wallets').insert({ userId, balance: amountInDollars });
+				newBalance = amountInDollars;
 			} else {
 				walletBefore = wallet.balance;
-				newBalance = walletBefore + amount;
+				newBalance = walletBefore + amountInDollars;
 				await trx('wallets').where({ id: wallet.id }).update({
 					balance: newBalance,
 					updated_at: new Date(),
@@ -346,7 +350,7 @@ export class WalletService {
 				.where({ reference })
 				.update({
 					status: 'success',
-					description: `$${amount} Credit`,
+					description: `$${amountInDollars} Credit`,
 					walletBalanceBefore: walletBefore,
 					walletBalanceAfter: newBalance,
 				});
@@ -354,7 +358,7 @@ export class WalletService {
 			if (recurringPayment === 'true') {
 				await trx('wallet_topup_subscriptions').insert({
 					userId,
-					amount,
+					amount: amountInDollars,
 					currency: paymentIntent.currency,
 					stripeCustomerId: paymentIntent.customer,
 					reference,
@@ -365,7 +369,7 @@ export class WalletService {
 			await Notification.add({
 				userId,
 				title: 'Wallet Top-Up Successful',
-				message: `Your wallet has been successfully topped up with $${amount}.`,
+				message: `Your wallet has been successfully topped up with $${amountInDollars}.`,
 			});
 		});
 	}
