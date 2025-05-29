@@ -80,7 +80,7 @@ export class WalletController {
 		if (!user) {
 			throw new AppError('Please log in again', 400);
 		}
-		if (typeof recurring !== "boolean") {
+		if (typeof recurring !== 'boolean') {
 			throw new AppError('Invalid recurring value', 400);
 		}
 
