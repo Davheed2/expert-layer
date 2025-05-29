@@ -280,7 +280,7 @@ export class WalletService {
 
 		console.log('amount', amount)
 
-		if (amount < 50) {
+		if (amount < 0.5) {
 			throw new AppError('Amount must be at least $0.50');
 		}
 
