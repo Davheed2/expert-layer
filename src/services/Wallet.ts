@@ -287,7 +287,7 @@ export class WalletService {
 			currency: 'usd',
 			customer: stripeCustomerId,
 			payment_method_types: ['card'],
-			setup_future_usage: 'off_session',
+			setup_future_usage: recurring ? 'off_session' : undefined,
 			metadata: {
 				user_id: userId,
 				transaction_type: 'wallet_topup',
