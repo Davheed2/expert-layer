@@ -6,6 +6,7 @@ import { AppResponse } from '@/common/utils';
 import { toJSON } from '@/common/utils';
 import { knexDb as db } from '@/common/config';
 import { requestsRepository } from '@/repository';
+import Stripe from 'stripe';
 
 export class WalletController {
 	constructor(private walletService = new WalletService(db)) {}
@@ -83,24 +84,48 @@ export class WalletController {
 		if (typeof recurring !== 'boolean') {
 			throw new AppError('Invalid recurring value', 400);
 		}
-
 		if (!amount || amount <= 0) {
 			throw new AppError('Invalid amount', 400);
 		}
 
-		const paymentIntent = await this.walletService.createWalletTopUpIntent(user.id, amount, recurring);
+		const result = await this.walletService.createWalletTopUpIntent(user.id, amount, recurring);
 
-		return AppResponse(
-			res,
-			200,
-			{
-				clientSecret: paymentIntent.client_secret,
-				amount: 'amount' in paymentIntent ? paymentIntent.amount : amount,
-				customerId: paymentIntent.customer
-			},
-			'Top-up payment intent created successfully',
-			req
-		);
+		// Type narrowing
+		if ('client_secret' in result) {
+			// One-time PaymentIntent
+			return AppResponse(
+				res,
+				200,
+				{
+					clientSecret: result.client_secret,
+					amount: result.amount,
+				},
+				'One-time top-up payment intent created successfully',
+				req
+			);
+		} else if (
+			'latest_invoice' in result &&
+			result.latest_invoice &&
+			typeof result.latest_invoice === 'object' &&
+			'payment_intent' in result.latest_invoice &&
+			result.latest_invoice.payment_intent &&
+			typeof result.latest_invoice.payment_intent === 'object'
+		) {
+			const paymentIntent = result.latest_invoice.payment_intent as Stripe.PaymentIntent;
+
+			return AppResponse(
+				res,
+				200,
+				{
+					clientSecret: paymentIntent.client_secret,
+					amount: paymentIntent.amount,
+				},
+				'Recurring top-up subscription created successfully',
+				req
+			);
+		} else {
+			throw new AppError('Unexpected Stripe response structure', 500);
+		}
 	});
 
 	getTransactionHistory = catchAsync(async (req: Request, res: Response) => {

@@ -50,12 +50,34 @@ export class StripeWebhookController {
 					break;
 				}
 
+				case 'invoice.paid': {
+					const invoice = event.data.object as Stripe.Invoice & { payment_intent: string };
+
+					if (invoice.payment_intent) {
+						await walletService.handleWalletTopUp(invoice.payment_intent);
+						console.log(`Wallet credited from recurring subscription. PaymentIntent: ${invoice.payment_intent}`);
+					}
+					break;
+				}
+
 				// case 'charge.refunded': {
 				// 	const charge = event.data.object as Stripe.Charge;
 				// 	console.log('Charge refunded:', charge.id);
 				// 	await walletService.handleRefund(charge.payment_intent as string);
 				// 	break;
 				// }
+
+				case 'invoice.payment_failed': {
+					const invoice = event.data.object as Stripe.Invoice & { payment_intent?: string };
+					const paymentIntentId = invoice.payment_intent;
+
+					if (paymentIntentId) {
+						console.warn(`Recurring payment failed for PaymentIntent ${paymentIntentId}`);
+						// Optional: Notify user or update DB to flag subscription issue
+						await walletService.handleFailedRecurringPayment(paymentIntentId);
+					}
+					break;
+				}
 
 				default:
 					console.log(`Unhandled event type ${event.type}`);

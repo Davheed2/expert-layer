@@ -277,39 +277,46 @@ export class WalletService {
 		userId: string,
 		amount: number,
 		recurring: boolean
-	): Promise<Stripe.PaymentIntent | Stripe.SetupIntent> {
+	): Promise<Stripe.PaymentIntent | Stripe.Subscription> {
 		const user = await this.db('users').where({ id: userId }).first();
+		if (!user) throw new AppError('User not found');
 
-		if (!user) {
-			throw new AppError('User not found');
-		}
-
-		if (amount < 0.5) {
-			throw new AppError('Amount must be at least $0.50');
-		}
+		if (amount < 0.5) throw new AppError('Amount must be at least $0.50');
 
 		const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
 		const reference = referenceGenerator();
 
 		if (recurring) {
-			// Just save card for future use
-			const setupIntent = await stripe.setupIntents.create({
+			// 1. Check if product/price exists, or create one dynamically
+			const product = await stripe.products.create({
+				name: `Wallet Top-Up for ${user.email}`,
+			});
+
+			const price = await stripe.prices.create({
+				unit_amount: Math.round(amount * 100),
+				currency: 'usd',
+				recurring: { interval: 'month' },
+				product: product.id,
+			});
+
+			// 2. Create a subscription
+			const subscription = await stripe.subscriptions.create({
 				customer: stripeCustomerId,
-				usage: 'off_session',
-				payment_method_types: ['card'],
+				items: [{ price: price.id }],
+				payment_behavior: 'default_incomplete',
 				metadata: {
 					user_id: userId,
-					transaction_type: 'wallet_topup_setup',
+					transaction_type: 'wallet_subscription',
 					amount: amount.toString(),
 					reference,
-					recurring: 'true',
 				},
+				expand: ['latest_invoice.payment_intent'],
 			});
-			return setupIntent;
-		} else {
-			// Proceed with immediate payment
-			const amountToPay = Math.round(amount * 100);
 
+			return subscription;
+		} else {
+			// One-time top-up flow (no change)
+			const amountToPay = Math.round(amount * 100);
 			const paymentIntent = await stripe.paymentIntents.create({
 				amount: amountToPay,
 				currency: 'usd',
@@ -335,7 +342,7 @@ export class WalletService {
 			throw new AppError('Not a wallet top-up transaction');
 		}
 
-		const recurringPayment = paymentIntent.metadata.recurring;
+		//const recurringPayment = paymentIntent.metadata.recurring;
 		const userId = paymentIntent.metadata.user_id;
 		const reference = paymentIntent.metadata.reference;
 
@@ -369,16 +376,16 @@ export class WalletService {
 					walletBalanceAfter: newBalance,
 				});
 
-			if (recurringPayment === 'true') {
-				await trx('wallet_topup_subscriptions').insert({
-					userId,
-					amount: amountInDollars,
-					currency: paymentIntent.currency,
-					stripeCustomerId: paymentIntent.customer,
-					reference,
-					nextBillingDate: new Date(new Date().setMonth(new Date().getMonth() + 1)),
-				});
-			}
+			// if (recurringPayment === 'true') {
+			// 	await trx('wallet_topup_subscriptions').insert({
+			// 		userId,
+			// 		amount: amountInDollars,
+			// 		currency: paymentIntent.currency,
+			// 		stripeCustomerId: paymentIntent.customer,
+			// 		reference,
+			// 		nextBillingDate: new Date(new Date().setMonth(new Date().getMonth() + 1)),
+			// 	});
+			// }
 
 			await Notification.add({
 				userId,
@@ -424,6 +431,23 @@ export class WalletService {
 						? 'Your wallet top-up payment has failed.'
 						: 'Your payment for a service has failed.',
 			});
+		});
+	}
+
+	async handleFailedRecurringPayment(paymentIntentId: string): Promise<void> {
+		const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+		const userId = paymentIntent.metadata?.user_id;
+		const amount = paymentIntent.metadata?.amount;
+		const reference = paymentIntent.metadata?.reference;
+
+		console.warn(`Failed recurring payment for user ${userId}, amount: ${amount}, reference: ${reference}`);
+
+		// Optional: log it to DB, flag subscription, or notify user
+		await Notification.add({
+			userId,
+			title: 'Recurring Payment Failed',
+			message: `Your recurring wallet top-up of $${amount} failed. Please update your payment method.`,
 		});
 	}
 
