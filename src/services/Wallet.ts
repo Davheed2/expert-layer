@@ -296,6 +296,7 @@ export class WalletService {
 			const setupIntent = await stripe.setupIntents.create({
 				customer: stripeCustomerId,
 				usage: 'off_session',
+				payment_method_types: ['card'],
 				metadata: {
 					user_id: userId,
 					transaction_type: 'wallet_topup_setup',
