@@ -50,6 +50,7 @@ export const mainSchema = z.object({
 	isDefault: z.string(),
 	serviceImage: z.string(),
 	type: z.enum([ServiceType.ONE_OFF, ServiceType.RECURRING]),
+	recurring: z.boolean(),
 	serviceName: z.string().min(3).trim(),
 	serviceCategory: z.string().min(3).trim(),
 	serviceDescription: z.string().min(3).trim(),
