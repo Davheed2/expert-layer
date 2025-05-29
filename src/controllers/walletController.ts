@@ -96,6 +96,7 @@ export class WalletController {
 			{
 				clientSecret: paymentIntent.client_secret,
 				amount: 'amount' in paymentIntent ? paymentIntent.amount : amount,
+				customerId: paymentIntent.customer
 			},
 			'Top-up payment intent created successfully',
 			req
