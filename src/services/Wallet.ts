@@ -273,15 +273,16 @@ export class WalletService {
 	}
 
 	// Top up wallet directly
-	async createWalletTopUpIntent(userId: string, amount: number, recurring: boolean): Promise<Stripe.PaymentIntent> {
+	async createWalletTopUpIntent(
+		userId: string,
+		amount: number,
+		recurring: boolean
+	): Promise<Stripe.PaymentIntent | Stripe.SetupIntent> {
 		const user = await this.db('users').where({ id: userId }).first();
 
 		if (!user) {
 			throw new AppError('User not found');
 		}
-
-		console.log('amount', amount);
-		const amountToPay = Math.round(amount * 100);
 
 		if (amount < 0.5) {
 			throw new AppError('Amount must be at least $0.50');
@@ -290,27 +291,39 @@ export class WalletService {
 		const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
 		const reference = referenceGenerator();
 
-		const paymentIntentData: Stripe.PaymentIntentCreateParams = {
-			amount: amountToPay,
-			currency: 'usd',
-			customer: stripeCustomerId,
-			payment_method_types: ['card'],
-			metadata: {
-				user_id: userId,
-				transaction_type: 'wallet_topup',
-				amount: amount.toString(),
-				reference,
-				recurring: recurring.toString(),
-			},
-		};
-
 		if (recurring) {
-			paymentIntentData.setup_future_usage = 'off_session';
+			// Just save card for future use
+			const setupIntent = await stripe.setupIntents.create({
+				customer: stripeCustomerId,
+				usage: 'off_session',
+				metadata: {
+					user_id: userId,
+					transaction_type: 'wallet_topup_setup',
+					amount: amount.toString(),
+					reference,
+					recurring: 'true',
+				},
+			});
+			return setupIntent;
+		} else {
+			// Proceed with immediate payment
+			const amountToPay = Math.round(amount * 100);
+
+			const paymentIntent = await stripe.paymentIntents.create({
+				amount: amountToPay,
+				currency: 'usd',
+				customer: stripeCustomerId,
+				payment_method_types: ['card'],
+				metadata: {
+					user_id: userId,
+					transaction_type: 'wallet_topup',
+					amount: amount.toString(),
+					reference,
+					recurring: 'false',
+				},
+			});
+			return paymentIntent;
 		}
-
-		const paymentIntent = await stripe.paymentIntents.create(paymentIntentData);
-
-		return paymentIntent;
 	}
 
 	// Handle successful wallet top-up

@@ -95,7 +95,7 @@ export class WalletController {
 			200,
 			{
 				clientSecret: paymentIntent.client_secret,
-				amount: paymentIntent.amount,
+				amount: 'amount' in paymentIntent ? paymentIntent.amount : undefined,
 			},
 			'Top-up payment intent created successfully',
 			req
