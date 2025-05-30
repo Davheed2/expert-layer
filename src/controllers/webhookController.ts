@@ -28,8 +28,26 @@ export class StripeWebhookController {
 					const paymentIntent = event.data.object as Stripe.PaymentIntent;
 					console.log('Payment succeeded:', paymentIntent.id);
 
-					if (paymentIntent.metadata.transaction_type === 'wallet_topup') {
+					const { transaction_type, user_id, reference, amount } = paymentIntent.metadata || {};
+
+					if (transaction_type === 'wallet_topup') {
 						await walletService.handleWalletTopUp(paymentIntent.id);
+					} else if (transaction_type === 'wallet_subscription') {
+						console.log('wallet_subscription reference', reference);
+						if (!user_id || !reference || !amount) {
+							console.warn('Missing metadata for wallet subscription:', paymentIntent.id);
+							break;
+						}
+
+						// Convert amount from cents to dollars
+						const amountInDollars = Number(paymentIntent.amount) / 100;
+
+						await walletService.handleProcessingPaymentForRecurring({
+							userId: user_id,
+							amount: amountInDollars,
+							reference,
+							stripeInvoiceId: '', // No invoice yet for first payment
+						});
 					} else if (paymentIntent.metadata.request_id) {
 						await walletService.handleSuccessfulPayment(paymentIntent.id);
 					}
@@ -71,7 +89,7 @@ export class StripeWebhookController {
 							userId: user_id,
 							amount: parseFloat(amount),
 							reference,
-							//stripeInvoiceId: invoice.id!,
+							stripeInvoiceId: invoice.id!,
 						});
 
 						console.log(`Wallet credited from recurring subscription. Invoice: ${invoice.id}`);

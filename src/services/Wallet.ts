@@ -411,6 +411,7 @@ export class WalletService {
 		userId: string;
 		amount: number;
 		reference: string;
+		stripeInvoiceId: string;
 	}): Promise<void> {
 		await this.db.transaction(async (trx) => {
 			const wallet = await trx('wallets').where({ userId }).first();
@@ -437,6 +438,7 @@ export class WalletService {
 					description: `$${amount} Credit`,
 					walletBalanceBefore: walletBefore,
 					walletBalanceAfter: newBalance,
+					//stripeInvoiceId,
 				});
 
 			await Notification.add({
