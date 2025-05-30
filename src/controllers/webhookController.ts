@@ -46,7 +46,7 @@ export class StripeWebhookController {
 							userId: user_id,
 							amount: amountInDollars,
 							reference,
-							stripeInvoiceId: '', // No invoice yet for first payment
+							stripePaymentIntentId: paymentIntent.id, // Add this for tracking
 						});
 					} else if (paymentIntent.metadata.request_id) {
 						await walletService.handleSuccessfulPayment(paymentIntent.id);
@@ -68,34 +68,38 @@ export class StripeWebhookController {
 					break;
 				}
 
-				case 'invoice.paid': {
-					const invoice = event.data.object as Stripe.Invoice & { payment_intent: string };
+				case 'invoice.payment_succeeded': {
+					const invoice = event.data.object as Stripe.Invoice & {
+						subscription?: string;
+						payment_intent?: string;
+					};
+					console.log('Invoice payment succeeded:', invoice.id);
 
-					// Attempt to extract metadata from line items (for recurring subs)
-					const lineItem = invoice.lines?.data?.[0]; // usually just one item for subs
+					// For subscription invoices, get metadata from the subscription
+					if (invoice.subscription) {
+						const subscription = await stripe.subscriptions.retrieve(invoice.subscription!);
+						const { user_id, transaction_type, amount, reference } = subscription.metadata || {};
 
-					if (lineItem?.metadata?.reference) {
-						const { user_id, reference, amount } = lineItem.metadata;
+						if (transaction_type === 'wallet_subscription') {
+							console.log('Processing subscription payment for invoice:', invoice.id);
 
-						console.log('invoice reference', reference);
+							if (!user_id || !reference || !amount) {
+								console.warn('Missing subscription metadata for invoice:', invoice.id);
+								break;
+							}
 
-						console.log('Recurring wallet top-up metadata found in invoice line item:', {
-							user_id,
-							reference,
-							amount,
-						});
+							await walletService.handleProcessingPaymentForRecurring({
+								userId: user_id,
+								amount: Number(amount),
+								reference,
+								stripePaymentIntentId: invoice.id,
+							});
 
-						await walletService.handleProcessingPaymentForRecurring({
-							userId: user_id,
-							amount: parseFloat(amount),
-							reference,
-							stripeInvoiceId: invoice.id!,
-						});
-
-						console.log(`Wallet credited from recurring subscription. Invoice: ${invoice.id}`);
+							console.log(`Wallet credited from recurring subscription. Invoice: ${invoice.id}`);
+						}
 					} else if (invoice.payment_intent) {
-						// fallback: non-subscription payment (one-time wallet top-up)
-						await walletService.handleWalletTopUp(invoice.payment_intent);
+						// Fallback: non-subscription payment (one-time wallet top-up)
+						await walletService.handleWalletTopUp(invoice.payment_intent!);
 						console.log(`Wallet credited from one-time top-up. PaymentIntent: ${invoice.payment_intent}`);
 					}
 					break;

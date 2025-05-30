@@ -299,12 +299,12 @@ export class WalletService {
 				currency: 'usd',
 				recurring: { interval: 'month' },
 				product: product.id,
-				metadata: {
-					user_id: userId,
-					amount: amount.toString(),
-					reference,
-					transaction_type: 'wallet_subscription',
-				},
+				// metadata: {
+				// 	user_id: userId,
+				// 	amount: amount.toString(),
+				// 	reference,
+				// 	transaction_type: 'wallet_subscription',
+				// },
 			});
 
 			// 2. Create a subscription
@@ -312,16 +312,20 @@ export class WalletService {
 				customer: stripeCustomerId,
 				items: [{ price: price.id }],
 				payment_behavior: 'default_incomplete',
-				// metadata: {
-				// 	user_id: userId,
-				// 	transaction_type: 'wallet_subscription',
-				// 	amount: amount.toString(),
-				// 	reference: referenceGenerator(),
-				// },
-				expand: ['latest_invoice.payment_intent'],
+				expand: ['latest_invoice'],
 			});
 
-			return subscription;
+			// Update with metadata after creation
+			const updatedSubscription = await stripe.subscriptions.update(subscription.id, {
+				metadata: {
+					user_id: userId,
+					transaction_type: 'wallet_subscription',
+					amount: amount.toString(),
+					reference,
+				},
+			});
+
+			return updatedSubscription;
 		} else {
 			// One-time top-up flow (no change)
 			const amountToPay = Math.round(amount * 100);
@@ -406,12 +410,13 @@ export class WalletService {
 	async handleProcessingPaymentForRecurring({
 		userId,
 		amount,
-		reference
+		reference,
+		stripePaymentIntentId
 	}: {
 		userId: string;
 		amount: number;
 		reference: string;
-		stripeInvoiceId: string;
+		stripePaymentIntentId?: string;
 	}): Promise<void> {
 		await this.db.transaction(async (trx) => {
 			const wallet = await trx('wallets').where({ userId }).first();
@@ -438,7 +443,7 @@ export class WalletService {
 					description: `$${amount} Credit`,
 					walletBalanceBefore: walletBefore,
 					walletBalanceAfter: newBalance,
-					//stripeInvoiceId,
+					stripePaymentIntentId,
 				});
 
 			await Notification.add({
