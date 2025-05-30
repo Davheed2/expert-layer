@@ -287,6 +287,7 @@ export class WalletService {
 
 		const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
 		const reference = referenceGenerator();
+		console.log('main reference', reference)
 
 		if (recurring) {
 			// 1. Check if product/price exists, or create one dynamically
@@ -310,7 +311,7 @@ export class WalletService {
 					user_id: userId,
 					transaction_type: 'wallet_subscription',
 					amount: amount.toString(),
-					reference,
+					reference: referenceGenerator(),
 				},
 				expand: ['latest_invoice.payment_intent'],
 			});
@@ -328,7 +329,7 @@ export class WalletService {
 					user_id: userId,
 					transaction_type: 'wallet_topup',
 					amount: amount.toString(),
-					reference,
+					reference: referenceGenerator(),
 					recurring: 'false',
 				},
 			});
