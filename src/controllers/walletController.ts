@@ -90,6 +90,8 @@ export class WalletController {
 
 		const result = await this.walletService.createWalletTopUpIntent(user.id, amount, recurring);
 
+		console.log('result', result);
+
 		// Type narrowing
 		if ('client_secret' in result) {
 			// One-time PaymentIntent

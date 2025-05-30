@@ -20,7 +20,7 @@ export class StripeWebhookController {
 				case 'payment_intent.created': {
 					const paymentIntent = event.data.object as Stripe.PaymentIntent;
 					console.log('payment intent', paymentIntent)
-					console.log('Payment processing:', paymentIntent.id);
+					//console.log('Payment processing:', paymentIntent.id);
 					await walletService.handleProcessingPayment(paymentIntent.id);
 					break;
 				}

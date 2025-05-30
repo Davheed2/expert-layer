@@ -216,7 +216,7 @@ export class WalletService {
 
 		if (isSubscriptionPayment) {
 			// This is a subscription payment - find the subscription for this customer
-			console.log('Detected subscription payment, finding subscription for customer:', paymentIntent.customer);
+			//console.log('Detected subscription payment, finding subscription for customer:', paymentIntent.customer);
 
 			try {
 				// Get the most recent subscription for this customer
@@ -239,8 +239,8 @@ export class WalletService {
 				reference = subscriptionMetadata.reference;
 				amount = subscriptionMetadata.amount;
 
-				console.log('Found subscription:', subscription.id);
-				console.log('Subscription metadata:', subscriptionMetadata);
+				// console.log('Found subscription:', subscription.id);
+				// console.log('Subscription metadata:', subscriptionMetadata);
 
 				if (!user_id || !reference || !amount || transaction_type !== 'wallet_subscription') {
 					console.warn('Invalid subscription metadata for customer:', paymentIntent.customer);
@@ -267,11 +267,11 @@ export class WalletService {
 			}
 		}
 
-		console.log('Processing payment with:');
-		console.log('- reference:', reference);
-		console.log('- transaction_type:', transaction_type);
-		console.log('- user_id:', user_id);
-		console.log('- amount:', amount);
+		// console.log('Processing payment with:');
+		// console.log('- reference:', reference);
+		// console.log('- transaction_type:', transaction_type);
+		// console.log('- user_id:', user_id);
+		// console.log('- amount:', amount);
 
 		const paymentAmount = paymentIntent.amount;
 
