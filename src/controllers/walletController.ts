@@ -4,8 +4,13 @@ import { catchAsync } from '@/middlewares';
 import { Request, Response } from 'express';
 import { AppResponse } from '@/common/utils';
 import { toJSON } from '@/common/utils';
-import { knexDb as db } from '@/common/config';
+import { knexDb as db, ENVIRONMENT } from '@/common/config';
 import { requestsRepository } from '@/repository';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(ENVIRONMENT.STRIPE_SECRET_KEY as string, {
+	apiVersion: '2025-03-31.basil',
+});
 
 export class WalletController {
 	constructor(private walletService = new WalletService(db)) {}
@@ -108,14 +113,27 @@ export class WalletController {
 		// Recurring subscription with expanded invoice + payment_intent
 		// Recurring subscription with invoice ID only
 		if (typeof result.latest_invoice === 'string') {
+			const invoice = await stripe.invoices.retrieve(result.latest_invoice as string, {
+				expand: ['payment_intent'],
+			});
+
+			// first cast to unknown, then to Invoice & { payment_intent: PaymentIntent }
+			const typedInvoice = invoice as unknown as Stripe.Invoice & { payment_intent: Stripe.PaymentIntent };
+
+			const paymentIntent = typedInvoice.payment_intent;
+
+			if (!paymentIntent?.client_secret) {
+				throw new AppError('Failed to retrieve payment intent client secret', 500);
+			}
+
 			return AppResponse(
 				res,
 				200,
 				{
-					invoiceId: result.latest_invoice,
-					amount: amount,
+					clientSecret: paymentIntent.client_secret,
+					amount: paymentIntent.amount,
 				},
-				'Recurring top-up subscription created successfully. Awaiting payment.',
+				'Recurring top-up subscription created successfully.',
 				req
 			);
 		}
