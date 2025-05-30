@@ -117,6 +117,8 @@ export class WalletController {
 				expand: ['confirmation_secret'],
 			});
 
+			console.log('invoice id', invoice)
+
 			return AppResponse(
 				res,
 				200,
