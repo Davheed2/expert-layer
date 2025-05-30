@@ -53,9 +53,32 @@ export class StripeWebhookController {
 				case 'invoice.paid': {
 					const invoice = event.data.object as Stripe.Invoice & { payment_intent: string };
 
-					if (invoice.payment_intent) {
+					// Attempt to extract metadata from line items (for recurring subs)
+					const lineItem = invoice.lines?.data?.[0]; // usually just one item for subs
+
+					if (lineItem?.metadata?.reference) {
+						const { user_id, reference, amount } = lineItem.metadata;
+
+						console.log('invoice reference', reference);
+
+						console.log('Recurring wallet top-up metadata found in invoice line item:', {
+							user_id,
+							reference,
+							amount,
+						});
+
+						await walletService.handleProcessingPaymentForRecurring({
+							userId: user_id,
+							amount: parseFloat(amount),
+							reference,
+							//stripeInvoiceId: invoice.id!,
+						});
+
+						console.log(`Wallet credited from recurring subscription. Invoice: ${invoice.id}`);
+					} else if (invoice.payment_intent) {
+						// fallback: non-subscription payment (one-time wallet top-up)
 						await walletService.handleWalletTopUp(invoice.payment_intent);
-						console.log(`Wallet credited from recurring subscription. PaymentIntent: ${invoice.payment_intent}`);
+						console.log(`Wallet credited from one-time top-up. PaymentIntent: ${invoice.payment_intent}`);
 					}
 					break;
 				}

@@ -168,7 +168,7 @@ export class WalletService {
 		const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 		const { user_id, request_id, wallet_amount_used, transaction_type, reference } = paymentIntent.metadata;
 
-		console.log('reference', reference)
+		console.log('reference', reference);
 
 		const amount = paymentIntent.amount;
 
@@ -287,7 +287,6 @@ export class WalletService {
 
 		const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
 		const reference = referenceGenerator();
-		console.log('main reference', reference)
 
 		if (recurring) {
 			// 1. Check if product/price exists, or create one dynamically
@@ -300,6 +299,12 @@ export class WalletService {
 				currency: 'usd',
 				recurring: { interval: 'month' },
 				product: product.id,
+				metadata: {
+					user_id: userId,
+					amount: amount.toString(),
+					reference,
+					transaction_type: 'wallet_subscription',
+				},
 			});
 
 			// 2. Create a subscription
@@ -307,12 +312,12 @@ export class WalletService {
 				customer: stripeCustomerId,
 				items: [{ price: price.id }],
 				payment_behavior: 'default_incomplete',
-				metadata: {
-					user_id: userId,
-					transaction_type: 'wallet_subscription',
-					amount: amount.toString(),
-					reference: referenceGenerator(),
-				},
+				// metadata: {
+				// 	user_id: userId,
+				// 	transaction_type: 'wallet_subscription',
+				// 	amount: amount.toString(),
+				// 	reference: referenceGenerator(),
+				// },
 				expand: ['latest_invoice.payment_intent'],
 			});
 
@@ -329,7 +334,7 @@ export class WalletService {
 					user_id: userId,
 					transaction_type: 'wallet_topup',
 					amount: amount.toString(),
-					reference: referenceGenerator(),
+					reference,
 					recurring: 'false',
 				},
 			});
@@ -394,6 +399,50 @@ export class WalletService {
 				userId,
 				title: 'Wallet Top-Up Successful',
 				message: `Your wallet has been successfully topped up with $${amountInDollars}.`,
+			});
+		});
+	}
+
+	async handleProcessingPaymentForRecurring({
+		userId,
+		amount,
+		reference
+	}: {
+		userId: string;
+		amount: number;
+		reference: string;
+	}): Promise<void> {
+		await this.db.transaction(async (trx) => {
+			const wallet = await trx('wallets').where({ userId }).first();
+
+			let walletBefore = 0;
+			let newBalance = 0;
+
+			if (!wallet) {
+				await trx('wallets').insert({ userId, balance: amount });
+				newBalance = amount;
+			} else {
+				walletBefore = wallet.balance;
+				newBalance = walletBefore + amount;
+				await trx('wallets').where({ id: wallet.id }).update({
+					balance: newBalance,
+					updated_at: new Date(),
+				});
+			}
+
+			await trx('transactions')
+				.where({ reference })
+				.update({
+					status: 'success',
+					description: `$${amount} Credit`,
+					walletBalanceBefore: walletBefore,
+					walletBalanceAfter: newBalance,
+				});
+
+			await Notification.add({
+				userId,
+				title: 'Recurring Wallet Top-Up Successful',
+				message: `Your wallet has been topped up with $${amount} from your subscription.`,
 			});
 		});
 	}
