@@ -6,7 +6,6 @@ import { AppResponse } from '@/common/utils';
 import { toJSON } from '@/common/utils';
 import { knexDb as db } from '@/common/config';
 import { requestsRepository } from '@/repository';
-import Stripe from 'stripe';
 
 export class WalletController {
 	constructor(private walletService = new WalletService(db)) {}
@@ -107,24 +106,16 @@ export class WalletController {
 		}
 
 		// Recurring subscription with expanded invoice + payment_intent
-		if (
-			typeof result.latest_invoice === 'object' &&
-			result.latest_invoice !== null &&
-			'payment_intent' in result.latest_invoice
-		) {
-			const invoice = result.latest_invoice as Stripe.Invoice & {
-				payment_intent: Stripe.PaymentIntent;
-			};
-			const paymentIntent = invoice.payment_intent;
-
+		// Recurring subscription with invoice ID only
+		if (typeof result.latest_invoice === 'string') {
 			return AppResponse(
 				res,
 				200,
 				{
-					clientSecret: paymentIntent.client_secret,
-					amount: paymentIntent.amount,
+					invoiceId: result.latest_invoice,
+					amount: amount,
 				},
-				'Recurring top-up subscription created successfully',
+				'Recurring top-up subscription created successfully. Awaiting payment.',
 				req
 			);
 		}
