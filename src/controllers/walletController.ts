@@ -92,9 +92,8 @@ export class WalletController {
 
 		console.log('result', result);
 
-		// Type narrowing
+		// One-time PaymentIntent response
 		if ('client_secret' in result) {
-			// One-time PaymentIntent
 			return AppResponse(
 				res,
 				200,
@@ -105,15 +104,18 @@ export class WalletController {
 				'One-time top-up payment intent created successfully',
 				req
 			);
-		} else if (
-			'latest_invoice' in result &&
-			result.latest_invoice &&
+		}
+
+		// Recurring subscription with expanded invoice + payment_intent
+		if (
 			typeof result.latest_invoice === 'object' &&
-			'payment_intent' in result.latest_invoice &&
-			result.latest_invoice.payment_intent &&
-			typeof result.latest_invoice.payment_intent === 'object'
+			result.latest_invoice !== null &&
+			'payment_intent' in result.latest_invoice
 		) {
-			const paymentIntent = result.latest_invoice.payment_intent as Stripe.PaymentIntent;
+			const invoice = result.latest_invoice as Stripe.Invoice & {
+				payment_intent: Stripe.PaymentIntent;
+			};
+			const paymentIntent = invoice.payment_intent;
 
 			return AppResponse(
 				res,
@@ -125,9 +127,10 @@ export class WalletController {
 				'Recurring top-up subscription created successfully',
 				req
 			);
-		} else {
-			throw new AppError('Unexpected Stripe response structure', 500);
 		}
+
+		// If the structure is unexpected
+		throw new AppError('Unexpected Stripe response structure', 500);
 	});
 
 	getTransactionHistory = catchAsync(async (req: Request, res: Response) => {

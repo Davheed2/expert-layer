@@ -451,7 +451,7 @@ export class WalletService {
 				customer: stripeCustomerId,
 				items: [{ price: price.id }],
 				payment_behavior: 'default_incomplete',
-				expand: ['latest_invoice'],
+				expand: ['latest_invoice.payment_intent'],
 			});
 
 			// Update with metadata after creation
