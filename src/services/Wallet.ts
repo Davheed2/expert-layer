@@ -164,41 +164,180 @@ export class WalletService {
 		});
 	}
 
+	// async handleProcessingPayment(paymentIntentId: string): Promise<void> {
+	// 	const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+	// 	const { user_id, request_id, wallet_amount_used, transaction_type, reference } = paymentIntent.metadata;
+
+	// 	console.log('reference', reference);
+
+	// 	const amount = paymentIntent.amount;
+
+	// 	await this.db.transaction(async (trx) => {
+	// 		await trx('transactions').insert({
+	// 			userId: user_id,
+	// 			type: transaction_type === 'wallet_topup' ? 'credit' : 'request',
+	// 			amount,
+	// 			status: 'processing',
+	// 			description:
+	// 				transaction_type === 'wallet_topup' ? `$${amount} Credit` : `Payment of $${amount} for request ${request_id}`,
+	// 			reference,
+	// 			stripePaymentIntentId: paymentIntentId,
+	// 			walletBalanceBefore: wallet_amount_used,
+	// 			walletBalanceAfter: wallet_amount_used,
+	// 			metadata: {
+	// 				attempted_amount: amount,
+	// 				wallet_amount_used,
+	// 				request_id,
+	// 			},
+	// 		});
+
+	// 		await Notification.add({
+	// 			userId: user_id,
+	// 			title: 'Payment Processing',
+	// 			message:
+	// 				transaction_type === 'wallet_topup'
+	// 					? 'Your wallet top-up is being processed.'
+	// 					: 'Your service payment is being processed.',
+	// 		});
+	// 	});
+	// }
+
 	async handleProcessingPayment(paymentIntentId: string): Promise<void> {
 		const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-		const { user_id, request_id, wallet_amount_used, transaction_type, reference } = paymentIntent.metadata;
 
-		console.log('reference', reference);
+		let user_id, request_id, wallet_amount_used, transaction_type, reference, amount;
 
-		const amount = paymentIntent.amount;
+		// Check if this is a subscription payment by looking for customer and empty metadata
+		const isSubscriptionPayment =
+			paymentIntent.customer &&
+			paymentIntent.metadata &&
+			Object.keys(paymentIntent.metadata).length === 0 &&
+			paymentIntent.description === 'Subscription creation';
+
+		if (isSubscriptionPayment) {
+			// This is a subscription payment - find the subscription for this customer
+			console.log('Detected subscription payment, finding subscription for customer:', paymentIntent.customer);
+
+			try {
+				// Get the most recent subscription for this customer
+				const subscriptions = await stripe.subscriptions.list({
+					customer: paymentIntent.customer as string,
+					limit: 1,
+					expand: ['data.latest_invoice'],
+				});
+
+				if (subscriptions.data.length === 0) {
+					console.warn('No subscriptions found for customer:', paymentIntent.customer);
+					return;
+				}
+
+				const subscription = subscriptions.data[0];
+				const subscriptionMetadata = subscription.metadata || {};
+
+				user_id = subscriptionMetadata.user_id;
+				transaction_type = subscriptionMetadata.transaction_type;
+				reference = subscriptionMetadata.reference;
+				amount = subscriptionMetadata.amount;
+
+				console.log('Found subscription:', subscription.id);
+				console.log('Subscription metadata:', subscriptionMetadata);
+
+				if (!user_id || !reference || !amount || transaction_type !== 'wallet_subscription') {
+					console.warn('Invalid subscription metadata for customer:', paymentIntent.customer);
+					return;
+				}
+			} catch (error) {
+				console.error('Error retrieving subscriptions:', error);
+				return;
+			}
+		} else {
+			// Regular payment - use payment intent metadata
+			const metadata = paymentIntent.metadata || {};
+			user_id = metadata.user_id;
+			request_id = metadata.request_id;
+			wallet_amount_used = metadata.wallet_amount_used;
+			transaction_type = metadata.transaction_type;
+			reference = metadata.reference;
+			amount = metadata.amount;
+
+			// If no metadata found in regular payment, skip processing
+			if (!user_id) {
+				console.log('No user_id found in payment intent metadata, skipping processing');
+				return;
+			}
+		}
+
+		console.log('Processing payment with:');
+		console.log('- reference:', reference);
+		console.log('- transaction_type:', transaction_type);
+		console.log('- user_id:', user_id);
+		console.log('- amount:', amount);
+
+		const paymentAmount = paymentIntent.amount;
 
 		await this.db.transaction(async (trx) => {
-			await trx('transactions').insert({
-				userId: user_id,
-				type: transaction_type === 'wallet_topup' ? 'credit' : 'request',
-				amount,
-				status: 'processing',
-				description:
-					transaction_type === 'wallet_topup' ? `$${amount} Credit` : `Payment of $${amount} for request ${request_id}`,
-				reference,
-				stripePaymentIntentId: paymentIntentId,
-				walletBalanceBefore: wallet_amount_used,
-				walletBalanceAfter: wallet_amount_used,
-				metadata: {
-					attempted_amount: amount,
-					wallet_amount_used,
-					request_id,
-				},
-			});
+			if (transaction_type === 'wallet_subscription') {
+				// Handle recurring subscription processing
+				if (!user_id || !reference || !amount) {
+					console.warn('Missing metadata for wallet subscription processing:', paymentIntentId);
+					return;
+				}
 
-			await Notification.add({
-				userId: user_id,
-				title: 'Payment Processing',
-				message:
-					transaction_type === 'wallet_topup'
-						? 'Your wallet top-up is being processed.'
-						: 'Your service payment is being processed.',
-			});
+				// Convert amount from cents to dollars
+				const amountInDollars = Number(paymentAmount) / 100;
+
+				await trx('transactions').insert({
+					userId: user_id,
+					type: 'credit',
+					amount: amountInDollars,
+					status: 'processing',
+					description: `${amountInDollars} Recurring Credit`,
+					reference,
+					stripePaymentIntentId: paymentIntentId,
+					walletBalanceBefore: 0, // Will be updated when payment succeeds
+					walletBalanceAfter: 0, // Will be updated when payment succeeds
+					metadata: {
+						attempted_amount: amountInDollars,
+						transaction_type: 'wallet_subscription',
+					},
+				});
+
+				await Notification.add({
+					userId: user_id,
+					title: 'Recurring Payment Processing',
+					message: 'Your recurring wallet top-up is being processed.',
+				});
+			} else {
+				// Handle regular wallet top-up and service payments
+				await trx('transactions').insert({
+					userId: user_id,
+					type: transaction_type === 'wallet_topup' ? 'credit' : 'request',
+					amount: paymentAmount,
+					status: 'processing',
+					description:
+						transaction_type === 'wallet_topup'
+							? `${paymentAmount} Credit`
+							: `Payment of ${paymentAmount} for request ${request_id}`,
+					reference,
+					stripePaymentIntentId: paymentIntentId,
+					walletBalanceBefore: wallet_amount_used,
+					walletBalanceAfter: wallet_amount_used,
+					metadata: {
+						attempted_amount: paymentAmount,
+						wallet_amount_used,
+						request_id,
+					},
+				});
+
+				await Notification.add({
+					userId: user_id,
+					title: 'Payment Processing',
+					message:
+						transaction_type === 'wallet_topup'
+							? 'Your wallet top-up is being processed.'
+							: 'Your service payment is being processed.',
+				});
+			}
 		});
 	}
 
@@ -411,7 +550,7 @@ export class WalletService {
 		userId,
 		amount,
 		reference,
-		stripePaymentIntentId
+		stripePaymentIntentId,
 	}: {
 		userId: string;
 		amount: number;
