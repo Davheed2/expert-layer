@@ -168,6 +168,8 @@ export class WalletService {
 		const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 		const { user_id, request_id, wallet_amount_used, transaction_type, reference } = paymentIntent.metadata;
 
+		console.log('reference', reference)
+
 		const amount = paymentIntent.amount;
 
 		await this.db.transaction(async (trx) => {
