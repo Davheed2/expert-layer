@@ -443,7 +443,7 @@ export class WalletService {
 					description: `$${amount} Credit`,
 					walletBalanceBefore: walletBefore,
 					walletBalanceAfter: newBalance,
-					stripePaymentIntentId,
+					//stripePaymentIntentId,
 				});
 
 			await Notification.add({
