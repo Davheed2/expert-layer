@@ -94,7 +94,7 @@ export class WalletController {
 
 		const result = await this.walletService.createWalletTopUpIntent(user.id, amount, recurring);
 
-		//console.log('result', result);
+		console.log('result', result);
 
 		// One-time PaymentIntent response
 		if ('client_secret' in result) {
@@ -117,18 +117,15 @@ export class WalletController {
 			// 	expand: ['payment_intent'],
 			// });
 
-			//const invoice = await stripe.invoices.retrieve(result.latest_invoice);
+			const invoice = await stripe.invoices.retrieve(result.latest_invoice);
 
-			// Finalize the Stripe invoice before proceeding
-			const finalizedInvoice = await stripe.invoices.finalizeInvoice(result.latest_invoice);
-
-			console.log('Finalized invoice id', finalizedInvoice.id);
+			console.log('invoice id', invoice);
 
 			return AppResponse(
 				res,
 				200,
 				{
-					clientSecret: finalizedInvoice.confirmation_secret?.client_secret,
+					clientSecret: invoice.confirmation_secret?.client_secret,
 					amount: amount,
 				},
 				'Recurring top-up subscription created successfully. Awaiting payment.',

@@ -451,7 +451,11 @@ export class WalletService {
 				customer: stripeCustomerId,
 				items: [{ price: price.id }],
 				payment_behavior: 'default_incomplete',
-				expand: ['latest_invoice'],
+				payment_settings: {
+					payment_method_types: ['card'],
+					save_default_payment_method: 'on_subscription', // Save payment method for future payments
+				},
+				expand: ['latest_invoice.payment_intent'],
 			});
 
 			// Update with metadata after creation
