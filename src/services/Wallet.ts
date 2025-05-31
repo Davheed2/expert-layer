@@ -418,7 +418,7 @@ export class WalletService {
 		userId: string,
 		amount: number,
 		recurring: boolean
-	): Promise<Stripe.PaymentIntent | Stripe.Subscription> {
+	): Promise<Stripe.PaymentIntent | { priceId: string; customerId: string }> {
 		const user = await this.db('users').where({ id: userId }).first();
 		if (!user) throw new AppError('User not found');
 
@@ -428,7 +428,47 @@ export class WalletService {
 		const reference = referenceGenerator();
 
 		if (recurring) {
-			// 1. Check if product/price exists, or create one dynamically
+			// // 1. Check if product/price exists, or create one dynamically
+			// const product = await stripe.products.create({
+			// 	name: `Wallet Top-Up for ${user.email}`,
+			// });
+
+			// const price = await stripe.prices.create({
+			// 	unit_amount: Math.round(amount * 100),
+			// 	currency: 'usd',
+			// 	recurring: { interval: 'month' },
+			// 	product: product.id,
+			// 	// metadata: {
+			// 	// 	user_id: userId,
+			// 	// 	amount: amount.toString(),
+			// 	// 	reference,
+			// 	// 	transaction_type: 'wallet_subscription',
+			// 	// },
+			// });
+
+			// const subscription = await stripe.subscriptions.create({
+			// 	customer: stripeCustomerId,
+			// 	items: [{ price: price.id }],
+			// 	payment_behavior: 'default_incomplete',
+			// 	payment_settings: {
+			// 		payment_method_types: ['card'],
+			// 		save_default_payment_method: 'on_subscription',
+			// 	},
+			// 	expand: ['latest_invoice'],
+			// });
+
+			// // Update with metadata after creation
+			// const updatedSubscription = await stripe.subscriptions.update(subscription.id, {
+			// 	metadata: {
+			// 		user_id: userId,
+			// 		transaction_type: 'wallet_subscription',
+			// 		amount: amount.toString(),
+			// 		reference,
+			// 	},
+			// });
+
+			// return updatedSubscription;
+
 			const product = await stripe.products.create({
 				name: `Wallet Top-Up for ${user.email}`,
 			});
@@ -438,28 +478,6 @@ export class WalletService {
 				currency: 'usd',
 				recurring: { interval: 'month' },
 				product: product.id,
-				// metadata: {
-				// 	user_id: userId,
-				// 	amount: amount.toString(),
-				// 	reference,
-				// 	transaction_type: 'wallet_subscription',
-				// },
-			});
-
-			// 2. Create a subscription
-			const subscription = await stripe.subscriptions.create({
-				customer: stripeCustomerId,
-				items: [{ price: price.id }],
-				payment_behavior: 'default_incomplete',
-				payment_settings: {
-					payment_method_types: ['card'],
-					save_default_payment_method: 'on_subscription', // Save payment method for future payments
-				},
-				expand: ['latest_invoice'],
-			});
-
-			// Update with metadata after creation
-			const updatedSubscription = await stripe.subscriptions.update(subscription.id, {
 				metadata: {
 					user_id: userId,
 					transaction_type: 'wallet_subscription',
@@ -468,7 +486,11 @@ export class WalletService {
 				},
 			});
 
-			return updatedSubscription;
+			// Return price ID and customer ID for Checkout to create the subscription
+			return {
+				priceId: price.id,
+				customerId: stripeCustomerId,
+			};
 		} else {
 			// One-time top-up flow (no change)
 			const amountToPay = Math.round(amount * 100);
@@ -553,13 +575,11 @@ export class WalletService {
 	async handleProcessingPaymentForRecurring({
 		userId,
 		amount,
-		reference,
-		stripePaymentIntentId,
+		reference
 	}: {
 		userId: string;
 		amount: number;
 		reference: string;
-		stripePaymentIntentId?: string;
 	}): Promise<void> {
 		await this.db.transaction(async (trx) => {
 			const wallet = await trx('wallets').where({ userId }).first();
@@ -586,7 +606,6 @@ export class WalletService {
 					description: `$${amount} Credit`,
 					walletBalanceBefore: walletBefore,
 					walletBalanceAfter: newBalance,
-					//stripePaymentIntentId,
 				});
 
 			await Notification.add({

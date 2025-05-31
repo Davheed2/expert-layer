@@ -110,29 +110,39 @@ export class WalletController {
 			);
 		}
 
-		// Recurring subscription with expanded invoice + payment_intent
-		// Recurring subscription with invoice ID only
-		if (typeof result.latest_invoice === 'string') {
-			// const invoice = await stripe.invoices.retrieve(result.latest_invoice, {
-			// 	expand: ['payment_intent'],
-			// });
-
-			const invoice = await stripe.invoices.retrieve(result.latest_invoice);
-
-			console.log('invoice id', invoice);
+		// Recurring subscription flow: Redirect to Stripe Checkout
+		if ('priceId' in result) {
+			const session = await stripe.checkout.sessions.create({
+				customer: result.customerId, // String customer ID
+				payment_method_types: ['card'],
+				mode: 'subscription',
+				line_items: [
+					{
+						price: result.priceId,
+						quantity: 1,
+					},
+				],
+				success_url: `${req.protocol}://${req.get('host')}/success?session_id={CHECKOUT_SESSION_ID}`,
+				cancel_url: `${req.protocol}://${req.get('host')}/cancel`,
+				metadata: {
+					user_id: user.id,
+					amount: amount.toString(),
+					transaction_type: 'wallet_subscription',
+				},
+			});
 
 			return AppResponse(
 				res,
 				200,
 				{
-					clientSecret: invoice.confirmation_secret?.client_secret,
+					redirectUrl: session.url,
+					sessionId: session.id,
 					amount: amount,
 				},
-				'Recurring top-up subscription created successfully. Awaiting payment.',
+				'Redirecting to Stripe Checkout for recurring subscription',
 				req
 			);
 		}
-
 		// If the structure is unexpected
 		throw new AppError('Unexpected Stripe response structure', 500);
 	});

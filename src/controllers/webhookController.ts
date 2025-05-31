@@ -47,7 +47,6 @@ export class StripeWebhookController {
 							userId: user_id,
 							amount: amountInDollars,
 							reference,
-							stripePaymentIntentId: paymentIntent.id, // Add this for tracking
 						});
 					} else if (paymentIntent.metadata.request_id) {
 						await walletService.handleSuccessfulPayment(paymentIntent.id);
@@ -93,7 +92,6 @@ export class StripeWebhookController {
 								userId: user_id,
 								amount: Number(amount),
 								reference,
-								stripePaymentIntentId: invoice.id,
 							});
 
 							console.log(`Wallet credited from recurring subscription. Invoice: ${invoice.id}`);
