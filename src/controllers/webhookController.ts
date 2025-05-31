@@ -116,6 +116,7 @@ export class StripeWebhookController {
 							expand: ['customer'], // Optional: expand customer if needed
 						});
 						const { user_id, transaction_type, amount, reference } = subscription.metadata || {};
+						console.log('subscription.metadata 1', subscription.metadata);
 
 						if (transaction_type === 'wallet_subscription') {
 							console.log('Processing subscription payment for invoice:', invoice.id);
@@ -131,6 +132,7 @@ export class StripeWebhookController {
 									const session = sessions.data[0];
 									if (session && session.metadata?.transaction_type === 'wallet_subscription') {
 										const { user_id, amount, reference } = session.metadata;
+										console.log('session.metadata 2', session.metadata);
 										if (!user_id || !reference || !amount) {
 											console.warn('Missing metadata in checkout session for invoice:', invoice.id);
 											break;
