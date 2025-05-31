@@ -4,6 +4,7 @@ import { AppError, referenceGenerator } from '@/common/utils';
 import { ITransaction } from '@/common/interfaces';
 import { ENVIRONMENT } from '@/common/config';
 import { Notification } from './Notification';
+import { userRepository } from '@/repository';
 
 const stripe = new Stripe(ENVIRONMENT.STRIPE_SECRET_KEY as string, {
 	apiVersion: '2025-03-31.basil',
@@ -341,6 +342,59 @@ export class WalletService {
 		});
 	}
 
+	async handleInvoiceProcessingPayment(id: string): Promise<void> {
+		const invoiceIntent = await stripe.invoices.retrieve(id);
+
+		const subscriptions = await stripe.subscriptions.list({
+			customer: invoiceIntent.customer as string,
+			limit: 1,
+			expand: ['data.latest_invoice'],
+		});
+
+		//subscriptions.data[0].
+
+		if (subscriptions.data.length === 0) {
+			console.warn('No subscriptions found for customer:', invoiceIntent.customer);
+			return;
+		}
+
+		const paymentAmount = invoiceIntent.amount_paid;
+		const reference = referenceGenerator();
+		if (!invoiceIntent.customer_email) {
+			throw new AppError('Customer email not found on invoice', 400);
+		}
+		const user = await userRepository.findByEmail(invoiceIntent.customer_email);
+		if (!user || !user.id) {
+			throw new AppError('User not found for the provided email', 400);
+		}
+		const userId = user.id;
+
+		await this.db.transaction(async (trx) => {
+			// Convert amount from cents to dollars
+			const amountInDollars = Number(paymentAmount) / 100;
+			await trx('transactions').insert({
+				userId,
+				type: 'credit',
+				amount: amountInDollars,
+				status: 'processing',
+				description: `${amountInDollars} Recurring Credit`,
+				reference,
+				walletBalanceBefore: 0, // Will be updated when payment succeeds
+				walletBalanceAfter: 0, // Will be updated when payment succeeds
+				metadata: {
+					attempted_amount: amountInDollars,
+					transaction_type: 'wallet_subscription',
+				},
+			});
+
+			await Notification.add({
+				userId,
+				title: 'Recurring Payment Processing',
+				message: 'Your recurring wallet top-up is being processed.',
+			});
+		});
+	}
+
 	// Handle successful payment and wallet updates
 	async handleSuccessfulPayment(paymentIntentId: string): Promise<void> {
 		const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
@@ -572,15 +626,33 @@ export class WalletService {
 		});
 	}
 
-	async handleProcessingPaymentForRecurring({
-		userId,
-		amount,
-		reference
-	}: {
-		userId: string;
-		amount: number;
-		reference: string;
-	}): Promise<void> {
+	async handleProcessingPaymentForRecurring(id: string): Promise<void> {
+		const invoiceIntent = await stripe.invoices.retrieve(id);
+
+		const subscriptions = await stripe.subscriptions.list({
+			customer: invoiceIntent.customer as string,
+			limit: 1,
+			expand: ['data.latest_invoice'],
+		});
+
+		//subscriptions.data[0].
+
+		if (subscriptions.data.length === 0) {
+			console.warn('No subscriptions found for customer:', invoiceIntent.customer);
+			return;
+		}
+
+		const paymentAmount = Number(invoiceIntent.amount_paid) / 100;
+		const reference = referenceGenerator();
+		if (!invoiceIntent.customer_email) {
+			throw new AppError('Customer email not found on invoice', 400);
+		}
+		const user = await userRepository.findByEmail(invoiceIntent.customer_email);
+		if (!user || !user.id) {
+			throw new AppError('User not found for the provided email', 400);
+		}
+		const userId = user.id;
+
 		await this.db.transaction(async (trx) => {
 			const wallet = await trx('wallets').where({ userId }).first();
 
@@ -588,30 +660,38 @@ export class WalletService {
 			let newBalance = 0;
 
 			if (!wallet) {
-				await trx('wallets').insert({ userId, balance: amount });
-				newBalance = amount;
+				await trx('wallets').insert({ userId, balance: paymentAmount });
+				newBalance = paymentAmount;
 			} else {
 				walletBefore = wallet.balance;
-				newBalance = walletBefore + amount;
+				newBalance = walletBefore + paymentAmount;
 				await trx('wallets').where({ id: wallet.id }).update({
 					balance: newBalance,
 					updated_at: new Date(),
 				});
 			}
 
-			await trx('transactions')
-				.where({ reference })
-				.update({
+			await this.db.transaction(async (trx) => {
+				await trx('transactions').insert({
+					userId,
+					type: 'credit',
+					amount: paymentAmount,
 					status: 'success',
-					description: `$${amount} Credit`,
+					description: `${paymentAmount} Recurring Credit`,
+					reference,
 					walletBalanceBefore: walletBefore,
 					walletBalanceAfter: newBalance,
+					metadata: {
+						attempted_amount: paymentAmount,
+						transaction_type: 'wallet_subscription',
+					},
 				});
 
-			await Notification.add({
-				userId,
-				title: 'Recurring Wallet Top-Up Successful',
-				message: `Your wallet has been topped up with $${amount} from your subscription.`,
+				await Notification.add({
+					userId,
+					title: 'Recurring Wallet Top-Up Successful',
+					message: `Your wallet has been topped up with $${paymentAmount} from your subscription.`,
+				});
 			});
 		});
 	}

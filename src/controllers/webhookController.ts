@@ -25,29 +25,37 @@ export class StripeWebhookController {
 					break;
 				}
 
+				case 'invoice.created': {
+					const invoice = event.data.object as Stripe.Invoice;
+					console.log('invoice intent', invoice);
+					// if (invoice.id) {
+					// 	await walletService.handleInvoiceProcessingPayment(invoice.id);
+					// } else {
+					// 	console.warn('invoice.id is null, skipping handleProcessingPayment');
+					// }
+					break;
+				}
+
 				case 'payment_intent.succeeded': {
 					const paymentIntent = event.data.object as Stripe.PaymentIntent;
 					console.log('Payment succeeded:', paymentIntent.id);
 
-					const { transaction_type, user_id, reference, amount } = paymentIntent.metadata || {};
-
+					const { transaction_type, user_id, amount } = paymentIntent.metadata || {};
 					if (transaction_type === 'wallet_topup') {
 						await walletService.handleWalletTopUp(paymentIntent.id);
 					} else if (transaction_type === 'wallet_subscription') {
-						console.log('wallet_subscription reference', reference);
-						if (!user_id || !reference || !amount) {
+						if (!user_id || !amount) {
 							console.warn('Missing metadata for wallet subscription:', paymentIntent.id);
 							break;
 						}
 
 						// Convert amount from cents to dollars
-						const amountInDollars = Number(paymentIntent.amount) / 100;
+						//const amountInDollars = Number(paymentIntent.amount) / 100;
 
-						await walletService.handleProcessingPaymentForRecurring({
-							userId: user_id,
-							amount: amountInDollars,
-							reference,
-						});
+						// await walletService.handleProcessingPaymentForRecurring({
+						// 	userId: user_id,
+						// 	amount: amountInDollars,
+						// });
 					} else if (paymentIntent.metadata.request_id) {
 						await walletService.handleSuccessfulPayment(paymentIntent.id);
 					}
@@ -59,30 +67,29 @@ export class StripeWebhookController {
 					console.log('Checkout session completed:', session.id);
 
 					if (session.mode === 'subscription' && session.subscription) {
-						const { user_id, transaction_type, amount, reference } = session.metadata || {};
+						const { user_id, transaction_type, amount } = session.metadata || {};
 
 						if (transaction_type === 'wallet_subscription') {
-							if (!user_id || !reference || !amount) {
+							if (!user_id || !amount) {
 								console.warn('Missing metadata in checkout session:', session.id);
 								break;
 							}
 
 							// Optionally update subscription with metadata for future invoices
-							await stripe.subscriptions.update(session.subscription as string, {
-								metadata: {
-									user_id,
-									transaction_type: 'wallet_subscription',
-									amount,
-									reference,
-								},
-							});
+							// await stripe.subscriptions.update(session.subscription as string, {
+							// 	metadata: {
+							// 		user_id,
+							// 		transaction_type: 'wallet_subscription',
+							// 		amount,
+							// 		reference,
+							// 	},
+							// });
 
 							// Handle initial subscription payment
-							await walletService.handleProcessingPaymentForRecurring({
-								userId: user_id,
-								amount: Number(amount),
-								reference,
-							});
+							// await walletService.handleProcessingPaymentForRecurring({
+							// 	userId: user_id,
+							// 	amount: Number(amount),
+							// });
 
 							console.log(`Initial wallet credit from subscription. Session: ${session.id}`);
 						}
@@ -111,57 +118,17 @@ export class StripeWebhookController {
 					};
 					console.log('Invoice payment succeeded:', invoice);
 
-					if (invoice.subscription) {
-						const subscription = await stripe.subscriptions.retrieve(invoice.subscription, {
-							expand: ['customer'], // Optional: expand customer if needed
-						});
-						const { user_id, transaction_type, amount, reference } = subscription.metadata || {};
-						console.log('subscription.metadata 1', subscription.metadata);
-
-						if (transaction_type === 'wallet_subscription') {
-							console.log('Processing subscription payment for invoice:', invoice.id);
-
-							if (!user_id || !reference || !amount) {
-								console.warn('Missing subscription metadata for invoice:', invoice.id);
-								// Fallback: Check the Checkout Session if metadata is missing
-								if (invoice.subscription) {
-									const sessions = await stripe.checkout.sessions.list({
-										subscription: invoice.subscription,
-										limit: 1,
-									});
-									const session = sessions.data[0];
-									if (session && session.metadata?.transaction_type === 'wallet_subscription') {
-										const { user_id, amount, reference } = session.metadata;
-										console.log('session.metadata 2', session.metadata);
-										if (!user_id || !reference || !amount) {
-											console.warn('Missing metadata in checkout session for invoice:', invoice.id);
-											break;
-										}
-										await walletService.handleProcessingPaymentForRecurring({
-											userId: user_id,
-											amount: Number(amount),
-											reference,
-										});
-										console.log(`Wallet credited from recurring subscription. Invoice: ${invoice.id}`);
-										break;
-									}
-								}
-								break;
-							}
-
-							await walletService.handleProcessingPaymentForRecurring({
-								userId: user_id,
-								amount: Number(amount),
-								reference,
-							});
-
-							console.log(`Wallet credited from recurring subscription. Invoice: ${invoice.id}`);
-						}
-					} else if (invoice.payment_intent) {
-						// Fallback: non-subscription payment (one-time wallet top-up)
-						await walletService.handleWalletTopUp(invoice.payment_intent);
-						console.log(`Wallet credited from one-time top-up. PaymentIntent: ${invoice.payment_intent}`);
+					if (invoice.id) {
+						await walletService.handleProcessingPaymentForRecurring(invoice.id);
+					} else {
+						console.warn('invoice.id is null, skipping handleProcessingPayment');
 					}
+
+					// if (invoice.subscription) {
+					// 	const subscription = await stripe.subscriptions.retrieve(invoice.subscription, {
+					// 		expand: ['customer'], // Optional: expand customer if needed
+					// 	});
+
 					break;
 				}
 
