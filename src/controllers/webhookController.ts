@@ -19,7 +19,7 @@ export class StripeWebhookController {
 			switch (event.type) {
 				case 'payment_intent.created': {
 					const paymentIntent = event.data.object as Stripe.PaymentIntent;
-					console.log('payment intent', paymentIntent)
+					console.log('payment intent', paymentIntent);
 					//console.log('Payment processing:', paymentIntent.id);
 					await walletService.handleProcessingPayment(paymentIntent.id);
 					break;
@@ -54,6 +54,42 @@ export class StripeWebhookController {
 					break;
 				}
 
+				case 'checkout.session.completed': {
+					const session = event.data.object as Stripe.Checkout.Session;
+					console.log('Checkout session completed:', session.id);
+
+					if (session.mode === 'subscription' && session.subscription) {
+						const { user_id, transaction_type, amount, reference } = session.metadata || {};
+
+						if (transaction_type === 'wallet_subscription') {
+							if (!user_id || !reference || !amount) {
+								console.warn('Missing metadata in checkout session:', session.id);
+								break;
+							}
+
+							// Optionally update subscription with metadata for future invoices
+							await stripe.subscriptions.update(session.subscription as string, {
+								metadata: {
+									user_id,
+									transaction_type: 'wallet_subscription',
+									amount,
+									reference,
+								},
+							});
+
+							// Handle initial subscription payment
+							await walletService.handleProcessingPaymentForRecurring({
+								userId: user_id,
+								amount: Number(amount),
+								reference,
+							});
+
+							console.log(`Initial wallet credit from subscription. Session: ${session.id}`);
+						}
+					}
+					break;
+				}
+
 				case 'payment_intent.payment_failed': {
 					const paymentIntent = event.data.object as Stripe.PaymentIntent;
 					console.log('Payment failed:', paymentIntent.id);
@@ -75,9 +111,10 @@ export class StripeWebhookController {
 					};
 					console.log('Invoice payment succeeded:', invoice.id);
 
-					// For subscription invoices, get metadata from the subscription
 					if (invoice.subscription) {
-						const subscription = await stripe.subscriptions.retrieve(invoice.subscription!);
+						const subscription = await stripe.subscriptions.retrieve(invoice.subscription, {
+							expand: ['customer'], // Optional: expand customer if needed
+						});
 						const { user_id, transaction_type, amount, reference } = subscription.metadata || {};
 
 						if (transaction_type === 'wallet_subscription') {
@@ -85,6 +122,28 @@ export class StripeWebhookController {
 
 							if (!user_id || !reference || !amount) {
 								console.warn('Missing subscription metadata for invoice:', invoice.id);
+								// Fallback: Check the Checkout Session if metadata is missing
+								if (invoice.subscription) {
+									const sessions = await stripe.checkout.sessions.list({
+										subscription: invoice.subscription,
+										limit: 1,
+									});
+									const session = sessions.data[0];
+									if (session && session.metadata?.transaction_type === 'wallet_subscription') {
+										const { user_id, amount, reference } = session.metadata;
+										if (!user_id || !reference || !amount) {
+											console.warn('Missing metadata in checkout session for invoice:', invoice.id);
+											break;
+										}
+										await walletService.handleProcessingPaymentForRecurring({
+											userId: user_id,
+											amount: Number(amount),
+											reference,
+										});
+										console.log(`Wallet credited from recurring subscription. Invoice: ${invoice.id}`);
+										break;
+									}
+								}
 								break;
 							}
 
@@ -98,7 +157,7 @@ export class StripeWebhookController {
 						}
 					} else if (invoice.payment_intent) {
 						// Fallback: non-subscription payment (one-time wallet top-up)
-						await walletService.handleWalletTopUp(invoice.payment_intent!);
+						await walletService.handleWalletTopUp(invoice.payment_intent);
 						console.log(`Wallet credited from one-time top-up. PaymentIntent: ${invoice.payment_intent}`);
 					}
 					break;
@@ -117,7 +176,6 @@ export class StripeWebhookController {
 
 					if (paymentIntentId) {
 						console.warn(`Recurring payment failed for PaymentIntent ${paymentIntentId}`);
-						// Optional: Notify user or update DB to flag subscription issue
 						await walletService.handleFailedRecurringPayment(paymentIntentId);
 					}
 					break;
