@@ -277,38 +277,38 @@ export class WalletService {
 		const paymentAmount = paymentIntent.amount;
 
 		await this.db.transaction(async (trx) => {
-			if (transaction_type === 'wallet_subscription') {
-				// Handle recurring subscription processing
-				if (!user_id || !reference || !amount) {
-					console.warn('Missing metadata for wallet subscription processing:', paymentIntentId);
-					return;
-				}
+			// if (transaction_type === 'wallet_subscription') {
+			// 	// Handle recurring subscription processing
+			// 	if (!user_id || !reference || !amount) {
+			// 		console.warn('Missing metadata for wallet subscription processing:', paymentIntentId);
+			// 		return;
+			// 	}
 
-				// Convert amount from cents to dollars
-				const amountInDollars = Number(paymentAmount) / 100;
+			// 	// Convert amount from cents to dollars
+			// 	const amountInDollars = Number(paymentAmount) / 100;
 
-				await trx('transactions').insert({
-					userId: user_id,
-					type: 'credit',
-					amount: amountInDollars,
-					status: 'processing',
-					description: `${amountInDollars} Recurring Credit`,
-					reference,
-					stripePaymentIntentId: paymentIntentId,
-					walletBalanceBefore: 0, // Will be updated when payment succeeds
-					walletBalanceAfter: 0, // Will be updated when payment succeeds
-					metadata: {
-						attempted_amount: amountInDollars,
-						transaction_type: 'wallet_subscription',
-					},
-				});
+			// 	await trx('transactions').insert({
+			// 		userId: user_id,
+			// 		type: 'credit',
+			// 		amount: amountInDollars,
+			// 		status: 'processing',
+			// 		description: `${amountInDollars} Recurring Credit`,
+			// 		reference,
+			// 		stripePaymentIntentId: paymentIntentId,
+			// 		walletBalanceBefore: 0, // Will be updated when payment succeeds
+			// 		walletBalanceAfter: 0, // Will be updated when payment succeeds
+			// 		metadata: {
+			// 			attempted_amount: amountInDollars,
+			// 			transaction_type: 'wallet_subscription',
+			// 		},
+			// 	});
 
-				await Notification.add({
-					userId: user_id,
-					title: 'Recurring Payment Processing',
-					message: 'Your recurring wallet top-up is being processed.',
-				});
-			} else {
+			// 	await Notification.add({
+			// 		userId: user_id,
+			// 		title: 'Recurring Payment Processing',
+			// 		message: 'Your recurring wallet top-up is being processed.',
+			// 	});
+			// } else {
 				// Handle regular wallet top-up and service payments
 				await trx('transactions').insert({
 					userId: user_id,
@@ -338,7 +338,7 @@ export class WalletService {
 							? 'Your wallet top-up is being processed.'
 							: 'Your service payment is being processed.',
 				});
-			}
+			//}
 		});
 	}
 
