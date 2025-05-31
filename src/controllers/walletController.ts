@@ -113,11 +113,13 @@ export class WalletController {
 		// Recurring subscription with expanded invoice + payment_intent
 		// Recurring subscription with invoice ID only
 		if (typeof result.latest_invoice === 'string') {
-			const invoice = await stripe.invoices.finalizeInvoice(result.latest_invoice, {
-				expand: ['confirmation_secret'],
-			});
+			// const invoice = await stripe.invoices.retrieve(result.latest_invoice, {
+			// 	expand: ['payment_intent'],
+			// });
 
-			console.log('invoice id', invoice)
+			const invoice = await stripe.invoices.retrieve(result.latest_invoice);
+
+			console.log('invoice id', invoice);
 
 			return AppResponse(
 				res,
