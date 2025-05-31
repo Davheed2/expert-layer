@@ -110,10 +110,9 @@ export class WalletController {
 			);
 		}
 
-		// Recurring subscription flow: Redirect to Stripe Checkout
 		if ('priceId' in result) {
 			const session = await stripe.checkout.sessions.create({
-				customer: result.customerId, // String customer ID
+				customer: result.customerId,
 				payment_method_types: ['card'],
 				mode: 'subscription',
 				line_items: [
@@ -122,8 +121,8 @@ export class WalletController {
 						quantity: 1,
 					},
 				],
-				success_url: `${req.protocol}://${req.get('host')}/success?session_id={CHECKOUT_SESSION_ID}`,
-				cancel_url: `${req.protocol}://${req.get('host')}/cancel`,
+				success_url: 'https://app.expertlayer.co/dashboard',
+				cancel_url: 'https://app.expertlayer.co/dashboard',
 				metadata: {
 					user_id: user.id,
 					amount: amount.toString(),
