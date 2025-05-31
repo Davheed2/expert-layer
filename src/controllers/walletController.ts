@@ -117,15 +117,18 @@ export class WalletController {
 			// 	expand: ['payment_intent'],
 			// });
 
-			const invoice = await stripe.invoices.retrieve(result.latest_invoice);
+			//const invoice = await stripe.invoices.retrieve(result.latest_invoice);
 
-			console.log('invoice id', invoice);
+			// Finalize the Stripe invoice before proceeding
+			const finalizedInvoice = await stripe.invoices.finalizeInvoice(result.latest_invoice);
+
+			console.log('Finalized invoice id', finalizedInvoice.id);
 
 			return AppResponse(
 				res,
 				200,
 				{
-					clientSecret: invoice.confirmation_secret?.client_secret,
+					clientSecret: finalizedInvoice.confirmation_secret?.client_secret,
 					amount: amount,
 				},
 				'Recurring top-up subscription created successfully. Awaiting payment.',
