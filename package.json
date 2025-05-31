@@ -76,6 +76,7 @@
 		"@types/morgan": "^1.9.9",
 		"@types/nodemailer": "^6.4.17",
 		"@types/otp-generator": "^4.0.2",
+		"@types/stripe": "^8.0.416",
 		"@typescript-eslint/eslint-plugin": "^8.24.1",
 		"@typescript-eslint/parser": "^8.24.1",
 		"eslint": "^9.21.0",
