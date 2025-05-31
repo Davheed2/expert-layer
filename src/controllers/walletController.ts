@@ -117,25 +117,15 @@ export class WalletController {
 			// 	expand: ['payment_intent'],
 			// });
 
-			const invoice = (await stripe.invoices.retrieve(result.latest_invoice, {
-				expand: ['payment_intent'],
-			})) as Stripe.Invoice & { payment_intent?: Stripe.PaymentIntent };
+			const invoice = await stripe.invoices.retrieve(result.latest_invoice);
 
-			console.log('invoice id', invoice)
-
-			let clientSecret: string | null = null;
-			if (invoice.payment_intent && 'client_secret' in invoice.payment_intent) {
-				clientSecret = invoice.payment_intent.client_secret;
-				console.log('Client Secret:', clientSecret);
-			} else {
-				console.log('No payment intent or client secret available for this invoice');
-			}
+			console.log('invoice id', invoice);
 
 			return AppResponse(
 				res,
 				200,
 				{
-					clientSecret: invoice.payment_intent?.client_secret,
+					clientSecret: invoice.confirmation_secret?.client_secret,
 					amount: amount,
 				},
 				'Recurring top-up subscription created successfully. Awaiting payment.',
