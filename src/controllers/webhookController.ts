@@ -109,7 +109,7 @@ export class StripeWebhookController {
 						subscription?: string;
 						payment_intent?: string;
 					};
-					console.log('Invoice payment succeeded:', invoice.id);
+					console.log('Invoice payment succeeded:', invoice);
 
 					if (invoice.subscription) {
 						const subscription = await stripe.subscriptions.retrieve(invoice.subscription, {
