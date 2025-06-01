@@ -240,8 +240,8 @@ export class WalletService {
 				reference = subscriptionMetadata.reference;
 				amount = subscriptionMetadata.amount;
 
-				console.log('Found subscription:', subscription.id);
-				console.log('Subscription metadata:', subscriptionMetadata);
+				// console.log('Found subscription:', subscription.id);
+				// console.log('Subscription metadata:', subscriptionMetadata);
 
 				if (!user_id || !reference || !amount || transaction_type !== 'wallet_subscription') {
 					console.warn('Invalid subscription metadata for customer:', paymentIntent.customer);
@@ -268,11 +268,11 @@ export class WalletService {
 			}
 		}
 
-		console.log('Processing payment with:');
-		console.log('- reference:', reference);
-		console.log('- transaction_type:', transaction_type);
-		console.log('- user_id:', user_id);
-		console.log('- amount:', amount);
+		// console.log('Processing payment with:');
+		// console.log('- reference:', reference);
+		// console.log('- transaction_type:', transaction_type);
+		// console.log('- user_id:', user_id);
+		// console.log('- amount:', amount);
 
 		const paymentAmount = paymentIntent.amount;
 
@@ -309,35 +309,35 @@ export class WalletService {
 			// 		message: 'Your recurring wallet top-up is being processed.',
 			// 	});
 			// } else {
-				// Handle regular wallet top-up and service payments
-				await trx('transactions').insert({
-					userId: user_id,
-					type: transaction_type === 'wallet_topup' ? 'credit' : 'request',
-					amount: paymentAmount,
-					status: 'processing',
-					description:
-						transaction_type === 'wallet_topup'
-							? `${paymentAmount} Credit`
-							: `Payment of ${paymentAmount} for request ${request_id}`,
-					reference,
-					stripePaymentIntentId: paymentIntentId,
-					walletBalanceBefore: wallet_amount_used,
-					walletBalanceAfter: wallet_amount_used,
-					metadata: {
-						attempted_amount: paymentAmount,
-						wallet_amount_used,
-						request_id,
-					},
-				});
+			// Handle regular wallet top-up and service payments
+			await trx('transactions').insert({
+				userId: user_id,
+				type: transaction_type === 'wallet_topup' ? 'credit' : 'request',
+				amount: paymentAmount,
+				status: 'processing',
+				description:
+					transaction_type === 'wallet_topup'
+						? `${paymentAmount} Credit`
+						: `Payment of ${paymentAmount} for request ${request_id}`,
+				reference,
+				stripePaymentIntentId: paymentIntentId,
+				walletBalanceBefore: wallet_amount_used,
+				walletBalanceAfter: wallet_amount_used,
+				metadata: {
+					attempted_amount: paymentAmount,
+					wallet_amount_used,
+					request_id,
+				},
+			});
 
-				await Notification.add({
-					userId: user_id,
-					title: 'Payment Processing',
-					message:
-						transaction_type === 'wallet_topup'
-							? 'Your wallet top-up is being processed.'
-							: 'Your service payment is being processed.',
-				});
+			await Notification.add({
+				userId: user_id,
+				title: 'Payment Processing',
+				message:
+					transaction_type === 'wallet_topup'
+						? 'Your wallet top-up is being processed.'
+						: 'Your service payment is being processed.',
+			});
 			//}
 		});
 	}
@@ -578,7 +578,7 @@ export class WalletService {
 		const reference = paymentIntent.metadata.reference;
 
 		const amountInCents = paymentIntent.amount;
-		const amountInDollars = amountInCents / 100;
+		const amountInDollars = Number(amountInCents) / 100;
 
 		await this.db.transaction(async (trx) => {
 			const wallet = await trx('wallets').where({ userId }).first();
@@ -603,6 +603,7 @@ export class WalletService {
 				.update({
 					status: 'success',
 					description: `$${amountInDollars} Credit`,
+					amount: amountInDollars,
 					walletBalanceBefore: walletBefore,
 					walletBalanceAfter: newBalance,
 				});
@@ -698,6 +699,7 @@ export class WalletService {
 
 	async handleFailedPayment(paymentIntentId: string): Promise<void> {
 		const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+		console.log('failedpaymentIntent', paymentIntent);
 		const { user_id, request_id, transaction_type } = paymentIntent.metadata;
 
 		await this.db.transaction(async (trx) => {

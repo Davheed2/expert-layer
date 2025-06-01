@@ -15,7 +15,6 @@ export class StripeWebhookController {
 		try {
 			const event = stripe.webhooks.constructEvent(req.body, sig, ENVIRONMENT.STRIPE_WEBHOOK_SECRET as string);
 
-			// Handle different event types
 			switch (event.type) {
 				case 'payment_intent.created': {
 					const paymentIntent = event.data.object as Stripe.PaymentIntent;
@@ -48,14 +47,6 @@ export class StripeWebhookController {
 							console.warn('Missing metadata for wallet subscription:', paymentIntent.id);
 							break;
 						}
-
-						// Convert amount from cents to dollars
-						//const amountInDollars = Number(paymentIntent.amount) / 100;
-
-						// await walletService.handleProcessingPaymentForRecurring({
-						// 	userId: user_id,
-						// 	amount: amountInDollars,
-						// });
 					} else if (paymentIntent.metadata.request_id) {
 						await walletService.handleSuccessfulPayment(paymentIntent.id);
 					}
