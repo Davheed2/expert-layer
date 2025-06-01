@@ -530,7 +530,7 @@ export class WalletService {
 			const price = await stripe.prices.create({
 				unit_amount: Math.round(amount * 100),
 				currency: 'usd',
-				recurring: { interval: 'month' },
+				recurring: { interval: 'day', interval_count: 1 }, // lowest interval for testing
 				product: product.id,
 				metadata: {
 					user_id: userId,
@@ -604,20 +604,10 @@ export class WalletService {
 					status: 'success',
 					description: `$${amountInDollars} Credit`,
 					amount: amountInDollars,
+					stripePaymentIntentId: paymentIntentId,
 					walletBalanceBefore: walletBefore,
 					walletBalanceAfter: newBalance,
 				});
-
-			// if (recurringPayment === 'true') {
-			// 	await trx('wallet_topup_subscriptions').insert({
-			// 		userId,
-			// 		amount: amountInDollars,
-			// 		currency: paymentIntent.currency,
-			// 		stripeCustomerId: paymentIntent.customer,
-			// 		reference,
-			// 		nextBillingDate: new Date(new Date().setMonth(new Date().getMonth() + 1)),
-			// 	});
-			// }
 
 			await Notification.add({
 				userId,
@@ -699,13 +689,18 @@ export class WalletService {
 
 	async handleFailedPayment(paymentIntentId: string): Promise<void> {
 		const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-		console.log('failedpaymentIntent', paymentIntent);
-		const { user_id, request_id, transaction_type } = paymentIntent.metadata;
+		const { customer } = paymentIntent;
+
+		const customerId = typeof customer === 'string' ? customer : customer && 'id' in customer ? customer.id : null;
+		if (!customerId) {
+			throw new AppError('Customer ID not found on payment intent', 400);
+		}
+		const user = await userRepository.findByCustomerId(customerId);
 
 		await this.db.transaction(async (trx) => {
 			// Record the failed transaction
 			await trx('transactions').insert({
-				userId: user_id,
+				userId: user[0].id,
 				type: 'failed',
 				amount: 0,
 				status: 'failed',
@@ -718,21 +713,10 @@ export class WalletService {
 				},
 			});
 
-			// If this was a service payment, update the service status
-			if (request_id) {
-				await trx('requests').where({ id: request_id }).update({
-					status: 'blocked',
-					updated_at: new Date(),
-				});
-			}
-
 			await Notification.add({
-				userId: user_id,
+				userId: user[0].id,
 				title: 'Payment Failed',
-				message:
-					transaction_type === 'wallet_topup'
-						? 'Your wallet top-up payment has failed.'
-						: 'Your payment for a service has failed.',
+				message: 'Your wallet top-up payment has failed.',
 			});
 		});
 	}
@@ -756,17 +740,22 @@ export class WalletService {
 
 	async handleCanceledPayment(paymentIntentId: string): Promise<void> {
 		const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-		const { user_id, request_id, transaction_type } = paymentIntent.metadata;
+		const { customer } = paymentIntent;
+
+		const customerId = typeof customer === 'string' ? customer : customer && 'id' in customer ? customer.id : null;
+		if (!customerId) {
+			throw new AppError('Customer ID not found on payment intent', 400);
+		}
+		const user = await userRepository.findByCustomerId(customerId);
 
 		await this.db.transaction(async (trx) => {
 			// Record the canceled transaction
 			await trx('transactions').insert({
-				userId: user_id,
-				//USE FAILED INSTEAD
-				type: 'request',
+				userId: user[0].id,
 				reference: referenceGenerator(),
 				description: 'Payment canceled',
-				amount: 0, // No money moved
+				type: 'failed',
+				amount: 0,
 				status: 'failed',
 				stripePaymentIntentId: paymentIntentId,
 				metadata: {
@@ -775,21 +764,10 @@ export class WalletService {
 				},
 			});
 
-			// If this was a service payment, update the service status
-			if (request_id) {
-				await trx('requests').where({ id: request_id }).update({
-					status: 'blocked',
-					updated_at: new Date(),
-				});
-			}
-
 			await Notification.add({
-				userId: user_id,
+				userId: user[0].id,
 				title: 'Payment Canceled',
-				message:
-					transaction_type === 'wallet_topup'
-						? 'Your wallet top-up payment has been canceled.'
-						: 'Your payment for a service has been canceled.',
+				message: 'Your wallet top-up payment has been canceled.',
 			});
 		});
 	}

@@ -23,6 +23,7 @@ export interface IUser {
 	loginToken: string | null;
 	loginTokenExpires: Date | null;
 	referralCode: string;
+	stripe_customer_id: string
 	isDeleted: boolean;
 	created_at?: Date;
 	updated_at?: Date;

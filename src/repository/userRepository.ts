@@ -159,6 +159,10 @@ class UserRepository {
 	findAllManagerRoleUsers = async (): Promise<IUser[]> => {
 		return knexDb('users').where('role', 'accountmanager').andWhere('isDeleted', false);
 	};
+
+	findByCustomerId = async (stripe_customer_id: string): Promise<IUser[]> => {
+		return knexDb('users').where({ stripe_customer_id }).andWhere('isDeleted', false);
+	};
 }
 
 export const userRepository = new UserRepository();
