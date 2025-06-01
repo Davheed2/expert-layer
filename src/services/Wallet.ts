@@ -111,6 +111,62 @@ export class WalletService {
 		return paymentIntent;
 	}
 
+	async createWalletTopUpIntent(
+		userId: string,
+		amount: number,
+		recurring: boolean
+	): Promise<Stripe.PaymentIntent | { priceId: string; customerId: string }> {
+		const user = await this.db('users').where({ id: userId }).first();
+		if (!user) throw new AppError('User not found');
+
+		if (amount < 0.5) throw new AppError('Amount must be at least $0.50');
+
+		const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
+		const reference = referenceGenerator();
+
+		if (recurring) {
+			const product = await stripe.products.create({
+				name: `Wallet Top-Up for ${user.email}`,
+			});
+
+			const price = await stripe.prices.create({
+				unit_amount: Math.round(amount * 100),
+				currency: 'usd',
+				recurring: { interval: 'month', interval_count: 1 }, 
+				product: product.id,
+				metadata: {
+					user_id: userId,
+					transaction_type: 'wallet_subscription',
+					amount: amount.toString(),
+					reference,
+				},
+			});
+
+			// Return price ID and customer ID for Checkout to create the subscription
+			return {
+				priceId: price.id,
+				customerId: stripeCustomerId,
+			};
+		} else {
+			// One-time top-up flow (no change)
+			const amountToPay = Math.round(amount * 100);
+			const paymentIntent = await stripe.paymentIntents.create({
+				amount: amountToPay,
+				currency: 'usd',
+				customer: stripeCustomerId,
+				payment_method_types: ['card'],
+				metadata: {
+					user_id: userId,
+					transaction_type: 'wallet_topup',
+					amount: amount.toString(),
+					reference,
+					recurring: 'false',
+				},
+			});
+			return paymentIntent;
+		}
+	}
+
 	// Process payment when wallet balance is sufficient
 	async processWalletPayment(userId: string, requestId: string): Promise<ITransaction> {
 		// Use transaction to ensure data consistency
@@ -164,44 +220,6 @@ export class WalletService {
 			return transaction;
 		});
 	}
-
-	// async handleProcessingPayment(paymentIntentId: string): Promise<void> {
-	// 	const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-	// 	const { user_id, request_id, wallet_amount_used, transaction_type, reference } = paymentIntent.metadata;
-
-	// 	console.log('reference', reference);
-
-	// 	const amount = paymentIntent.amount;
-
-	// 	await this.db.transaction(async (trx) => {
-	// 		await trx('transactions').insert({
-	// 			userId: user_id,
-	// 			type: transaction_type === 'wallet_topup' ? 'credit' : 'request',
-	// 			amount,
-	// 			status: 'processing',
-	// 			description:
-	// 				transaction_type === 'wallet_topup' ? `$${amount} Credit` : `Payment of $${amount} for request ${request_id}`,
-	// 			reference,
-	// 			stripePaymentIntentId: paymentIntentId,
-	// 			walletBalanceBefore: wallet_amount_used,
-	// 			walletBalanceAfter: wallet_amount_used,
-	// 			metadata: {
-	// 				attempted_amount: amount,
-	// 				wallet_amount_used,
-	// 				request_id,
-	// 			},
-	// 		});
-
-	// 		await Notification.add({
-	// 			userId: user_id,
-	// 			title: 'Payment Processing',
-	// 			message:
-	// 				transaction_type === 'wallet_topup'
-	// 					? 'Your wallet top-up is being processed.'
-	// 					: 'Your service payment is being processed.',
-	// 		});
-	// 	});
-	// }
 
 	async handleProcessingPayment(paymentIntentId: string): Promise<void> {
 		const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
@@ -277,39 +295,6 @@ export class WalletService {
 		const paymentAmount = paymentIntent.amount;
 
 		await this.db.transaction(async (trx) => {
-			// if (transaction_type === 'wallet_subscription') {
-			// 	// Handle recurring subscription processing
-			// 	if (!user_id || !reference || !amount) {
-			// 		console.warn('Missing metadata for wallet subscription processing:', paymentIntentId);
-			// 		return;
-			// 	}
-
-			// 	// Convert amount from cents to dollars
-			// 	const amountInDollars = Number(paymentAmount) / 100;
-
-			// 	await trx('transactions').insert({
-			// 		userId: user_id,
-			// 		type: 'credit',
-			// 		amount: amountInDollars,
-			// 		status: 'processing',
-			// 		description: `${amountInDollars} Recurring Credit`,
-			// 		reference,
-			// 		stripePaymentIntentId: paymentIntentId,
-			// 		walletBalanceBefore: 0, // Will be updated when payment succeeds
-			// 		walletBalanceAfter: 0, // Will be updated when payment succeeds
-			// 		metadata: {
-			// 			attempted_amount: amountInDollars,
-			// 			transaction_type: 'wallet_subscription',
-			// 		},
-			// 	});
-
-			// 	await Notification.add({
-			// 		userId: user_id,
-			// 		title: 'Recurring Payment Processing',
-			// 		message: 'Your recurring wallet top-up is being processed.',
-			// 	});
-			// } else {
-			// Handle regular wallet top-up and service payments
 			await trx('transactions').insert({
 				userId: user_id,
 				type: transaction_type === 'wallet_topup' ? 'credit' : 'request',
@@ -351,8 +336,6 @@ export class WalletService {
 			expand: ['data.latest_invoice'],
 		});
 
-		//subscriptions.data[0].
-
 		if (subscriptions.data.length === 0) {
 			console.warn('No subscriptions found for customer:', invoiceIntent.customer);
 			return;
@@ -379,8 +362,8 @@ export class WalletService {
 				status: 'processing',
 				description: `${amountInDollars} Recurring Credit`,
 				reference,
-				walletBalanceBefore: 0, // Will be updated when payment succeeds
-				walletBalanceAfter: 0, // Will be updated when payment succeeds
+				walletBalanceBefore: 0,
+				walletBalanceAfter: 0,
 				metadata: {
 					attempted_amount: amountInDollars,
 					transaction_type: 'wallet_subscription',
@@ -468,102 +451,6 @@ export class WalletService {
 	}
 
 	// Top up wallet directly
-	async createWalletTopUpIntent(
-		userId: string,
-		amount: number,
-		recurring: boolean
-	): Promise<Stripe.PaymentIntent | { priceId: string; customerId: string }> {
-		const user = await this.db('users').where({ id: userId }).first();
-		if (!user) throw new AppError('User not found');
-
-		if (amount < 0.5) throw new AppError('Amount must be at least $0.50');
-
-		const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
-		const reference = referenceGenerator();
-
-		if (recurring) {
-			// // 1. Check if product/price exists, or create one dynamically
-			// const product = await stripe.products.create({
-			// 	name: `Wallet Top-Up for ${user.email}`,
-			// });
-
-			// const price = await stripe.prices.create({
-			// 	unit_amount: Math.round(amount * 100),
-			// 	currency: 'usd',
-			// 	recurring: { interval: 'month' },
-			// 	product: product.id,
-			// 	// metadata: {
-			// 	// 	user_id: userId,
-			// 	// 	amount: amount.toString(),
-			// 	// 	reference,
-			// 	// 	transaction_type: 'wallet_subscription',
-			// 	// },
-			// });
-
-			// const subscription = await stripe.subscriptions.create({
-			// 	customer: stripeCustomerId,
-			// 	items: [{ price: price.id }],
-			// 	payment_behavior: 'default_incomplete',
-			// 	payment_settings: {
-			// 		payment_method_types: ['card'],
-			// 		save_default_payment_method: 'on_subscription',
-			// 	},
-			// 	expand: ['latest_invoice'],
-			// });
-
-			// // Update with metadata after creation
-			// const updatedSubscription = await stripe.subscriptions.update(subscription.id, {
-			// 	metadata: {
-			// 		user_id: userId,
-			// 		transaction_type: 'wallet_subscription',
-			// 		amount: amount.toString(),
-			// 		reference,
-			// 	},
-			// });
-
-			// return updatedSubscription;
-
-			const product = await stripe.products.create({
-				name: `Wallet Top-Up for ${user.email}`,
-			});
-
-			const price = await stripe.prices.create({
-				unit_amount: Math.round(amount * 100),
-				currency: 'usd',
-				recurring: { interval: 'day', interval_count: 1 }, // lowest interval for testing
-				product: product.id,
-				metadata: {
-					user_id: userId,
-					transaction_type: 'wallet_subscription',
-					amount: amount.toString(),
-					reference,
-				},
-			});
-
-			// Return price ID and customer ID for Checkout to create the subscription
-			return {
-				priceId: price.id,
-				customerId: stripeCustomerId,
-			};
-		} else {
-			// One-time top-up flow (no change)
-			const amountToPay = Math.round(amount * 100);
-			const paymentIntent = await stripe.paymentIntents.create({
-				amount: amountToPay,
-				currency: 'usd',
-				customer: stripeCustomerId,
-				payment_method_types: ['card'],
-				metadata: {
-					user_id: userId,
-					transaction_type: 'wallet_topup',
-					amount: amount.toString(),
-					reference,
-					recurring: 'false',
-				},
-			});
-			return paymentIntent;
-		}
-	}
 
 	// Handle successful wallet top-up
 	async handleWalletTopUp(paymentIntentId: string): Promise<void> {
@@ -573,7 +460,6 @@ export class WalletService {
 			throw new AppError('Not a wallet top-up transaction');
 		}
 
-		//const recurringPayment = paymentIntent.metadata.recurring;
 		const userId = paymentIntent.metadata.user_id;
 		const reference = paymentIntent.metadata.reference;
 
@@ -625,8 +511,6 @@ export class WalletService {
 			limit: 1,
 			expand: ['data.latest_invoice'],
 		});
-
-		//subscriptions.data[0].
 
 		if (subscriptions.data.length === 0) {
 			console.warn('No subscriptions found for customer:', invoiceIntent.customer);
@@ -698,7 +582,6 @@ export class WalletService {
 		const user = await userRepository.findByCustomerId(customerId);
 
 		await this.db.transaction(async (trx) => {
-			// Record the failed transaction
 			await trx('transactions').insert({
 				userId: user[0].id,
 				type: 'failed',
@@ -730,7 +613,6 @@ export class WalletService {
 
 		console.warn(`Failed recurring payment for user ${userId}, amount: ${amount}, reference: ${reference}`);
 
-		// Optional: log it to DB, flag subscription, or notify user
 		await Notification.add({
 			userId,
 			title: 'Recurring Payment Failed',
@@ -749,14 +631,13 @@ export class WalletService {
 		const user = await userRepository.findByCustomerId(customerId);
 
 		await this.db.transaction(async (trx) => {
-			// Record the canceled transaction
 			await trx('transactions').insert({
 				userId: user[0].id,
 				reference: referenceGenerator(),
 				description: 'Payment canceled',
 				type: 'failed',
 				amount: 0,
-				status: 'failed',
+				status: 'cancelled',
 				stripePaymentIntentId: paymentIntentId,
 				metadata: {
 					cancelled_amount: paymentIntent.amount,
@@ -771,73 +652,6 @@ export class WalletService {
 			});
 		});
 	}
-
-	// async handleRefund(paymentIntentId: string): Promise<void> {
-	// 	const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
-	// 		expand: ['charges'],
-	// 	});
-	// 	const charge = paymentIntent.charges?.data[0];
-
-	// 	if (!charge.refunded) {
-	// 		throw new Error('Charge is not refunded');
-	// 	}
-
-	// 	const { user_id, service_id, transaction_type } = paymentIntent.metadata;
-	// 	const refundAmount = charge.amount_refunded;
-
-	// 	await this.db.transaction(async (trx) => {
-	// 		// Get current wallet balance
-	// 		const wallet = await trx('wallets').where({ userId: user_id }).first();
-	// 		if (!wallet) {
-	// 			throw new Error('Wallet not found');
-	// 		}
-
-	// 		const newBalance = wallet.balance + refundAmount;
-
-	// 		// Update wallet with refunded amount
-	// 		await trx('wallets').where({ id: wallet.id }).update({
-	// 			balance: newBalance,
-	// 			updated_at: new Date(),
-	// 		});
-
-	// 		// Record the refund transaction
-	// 		await trx('transactions').insert({
-	// 			userId: user_id,
-	// 			serviceId: service_id || null,
-	// 			type: 'refund',
-	// 			amount: refundAmount,
-	// 			walletBalanceBefore: wallet.balance,
-	// 			walletBalanceAfter: newBalance,
-	// 			status: 'success',
-	// 			stripePaymentIntentId: paymentIntentId,
-	// 			metadata: {
-	// 				refund_id: charge.refunds.data[0].id,
-	// 				refund_reason: charge.refunds.data[0].reason || 'No reason provided',
-	// 			},
-	// 		});
-
-	// 		// If this was a service payment, update the service status
-	// 		if (service_id) {
-	// 			await trx('services').where({ id: service_id }).update({
-	// 				status: 'refunded',
-	// 				updated_at: new Date(),
-	// 			});
-	// 		}
-
-	// 		// Notify the user about the refund
-	// 		await trx('notifications').insert({
-	// 			userId: user_id,
-	// 			type: 'payment_refunded',
-	// 			message: 'Your payment has been refunded to your wallet.',
-	// 			metadata: {
-	// 				paymentIntentId,
-	// 				refundAmount,
-	// 				service_id: service_id || null,
-	// 			},
-	// 			isRead: false,
-	// 		});
-	// 	});
-	// }
 
 	// Utility function to get payment intent details - useful for frontend status checking
 	async getPaymentStatus(paymentIntentId: string): Promise<{

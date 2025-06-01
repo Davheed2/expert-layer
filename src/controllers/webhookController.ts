@@ -19,7 +19,6 @@ export class StripeWebhookController {
 				case 'payment_intent.created': {
 					const paymentIntent = event.data.object as Stripe.PaymentIntent;
 					console.log('payment intent', paymentIntent);
-					//console.log('Payment processing:', paymentIntent.id);
 					await walletService.handleProcessingPayment(paymentIntent.id);
 					break;
 				}
@@ -66,22 +65,6 @@ export class StripeWebhookController {
 								break;
 							}
 
-							// Optionally update subscription with metadata for future invoices
-							// await stripe.subscriptions.update(session.subscription as string, {
-							// 	metadata: {
-							// 		user_id,
-							// 		transaction_type: 'wallet_subscription',
-							// 		amount,
-							// 		reference,
-							// 	},
-							// });
-
-							// Handle initial subscription payment
-							// await walletService.handleProcessingPaymentForRecurring({
-							// 	userId: user_id,
-							// 	amount: Number(amount),
-							// });
-
 							console.log(`Initial wallet credit from subscription. Session: ${session.id}`);
 						}
 					}
@@ -115,20 +98,8 @@ export class StripeWebhookController {
 						console.warn('invoice.id is null, skipping handleProcessingPayment');
 					}
 
-					// if (invoice.subscription) {
-					// 	const subscription = await stripe.subscriptions.retrieve(invoice.subscription, {
-					// 		expand: ['customer'], // Optional: expand customer if needed
-					// 	});
-
 					break;
 				}
-
-				// case 'charge.refunded': {
-				// 	const charge = event.data.object as Stripe.Charge;
-				// 	console.log('Charge refunded:', charge.id);
-				// 	await walletService.handleRefund(charge.payment_intent as string);
-				// 	break;
-				// }
 
 				case 'invoice.payment_failed': {
 					const invoice = event.data.object as Stripe.Invoice & { payment_intent?: string };
