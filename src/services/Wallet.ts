@@ -132,7 +132,7 @@ export class WalletService {
 			const price = await stripe.prices.create({
 				unit_amount: Math.round(amount * 100),
 				currency: 'usd',
-				recurring: { interval: 'month', interval_count: 1 }, 
+				recurring: { interval: 'month', interval_count: 1 },
 				product: product.id,
 				metadata: {
 					user_id: userId,
@@ -680,5 +680,208 @@ export class WalletService {
 				throw new Error('Failed to retrieve payment status: Unknown error');
 			}
 		}
+	}
+
+	/**
+	 * Get all subscriptions for a user
+	 */
+	async getUserSubscriptions(userId: string): Promise<Stripe.Subscription[]> {
+		const user = await this.db('users').where({ id: userId }).first();
+		if (!user) throw new AppError('User not found');
+
+		const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
+
+		const subscriptions = await stripe.subscriptions.list({
+			customer: stripeCustomerId,
+			status: 'all',
+			expand: ['data.default_payment_method', 'data.items'],
+		});
+
+		return subscriptions.data;
+	}
+
+	/**
+	 * Get a specific subscription by ID
+	 */
+	async getSubscription(userId: string, subscriptionId: string): Promise<Stripe.Subscription> {
+		const user = await this.db('users').where({ id: userId }).first();
+		if (!user) throw new AppError('User not found');
+
+		const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+			expand: ['default_payment_method', 'items.data.price.product'],
+		});
+
+		// Verify the subscription belongs to this user
+		const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
+		if (subscription.customer !== stripeCustomerId) {
+			throw new AppError('Subscription not found', 404);
+		}
+
+		return subscription;
+	}
+
+	/**
+	 * Cancel a subscription
+	 */
+	async cancelSubscription(
+		userId: string,
+		subscriptionId: string,
+		cancelImmediately: boolean = false
+	): Promise<Stripe.Subscription> {
+		const subscription = await this.getSubscription(userId, subscriptionId);
+
+		if (subscription.status === 'canceled') {
+			throw new AppError('Subscription is already canceled', 400);
+		}
+
+		let canceledSubscription: Stripe.Subscription;
+
+		if (cancelImmediately) {
+			// Cancel immediately
+			canceledSubscription = await stripe.subscriptions.cancel(subscriptionId);
+		} else {
+			// Cancel at period end
+			canceledSubscription = await stripe.subscriptions.update(subscriptionId, {
+				cancel_at_period_end: true,
+			});
+		}
+
+		return canceledSubscription;
+	}
+
+	/**
+	 * Reactivate a subscription that was set to cancel at period end
+	 */
+	async reactivateSubscription(userId: string, subscriptionId: string): Promise<Stripe.Subscription> {
+		const subscription = await this.getSubscription(userId, subscriptionId);
+
+		if (subscription.status === 'canceled') {
+			throw new AppError('Cannot reactivate a canceled subscription', 400);
+		}
+
+		if (!subscription.cancel_at_period_end) {
+			throw new AppError('Subscription is not set to cancel', 400);
+		}
+
+		const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+			cancel_at_period_end: false,
+		});
+
+		return updatedSubscription;
+	}
+
+	/**
+	 * Update subscription amount
+	 */
+	async updateSubscriptionAmount(
+		userId: string,
+		subscriptionId: string,
+		newAmount: number
+	): Promise<Stripe.Subscription> {
+		if (newAmount < 0.5) throw new AppError('Amount must be at least $0.50');
+
+		const subscription = await this.getSubscription(userId, subscriptionId);
+
+		if (subscription.status !== 'active') {
+			throw new AppError('Can only update active subscriptions', 400);
+		}
+
+		const user = await this.db('users').where({ id: userId }).first();
+		const reference = referenceGenerator();
+
+		// Create new product and price
+		const product = await stripe.products.create({
+			name: `Wallet Top-Up for ${user.email}`,
+		});
+
+		const newPrice = await stripe.prices.create({
+			unit_amount: Math.round(newAmount * 100),
+			currency: 'usd',
+			recurring: { interval: 'month', interval_count: 1 },
+			product: product.id,
+			metadata: {
+				user_id: userId,
+				transaction_type: 'wallet_subscription',
+				amount: newAmount.toString(),
+				reference,
+			},
+		});
+
+		// Update the subscription with the new price
+		const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+			items: [
+				{
+					id: subscription.items.data[0].id,
+					price: newPrice.id,
+				},
+			],
+			proration_behavior: 'create_prorations', // This will prorate the billing
+		});
+
+		return updatedSubscription;
+	}
+
+	/**
+	 * Update payment method for a subscription
+	 */
+	async updateSubscriptionPaymentMethod(
+		userId: string,
+		subscriptionId: string,
+		paymentMethodId: string
+	): Promise<Stripe.Subscription> {
+		const subscription = await this.getSubscription(userId, subscriptionId);
+
+		if (subscription.status !== 'active') {
+			throw new AppError('Can only update payment method for active subscriptions', 400);
+		}
+
+		const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);
+
+		// Attach payment method to customer
+		await stripe.paymentMethods.attach(paymentMethodId, {
+			customer: stripeCustomerId,
+		});
+
+		// Update the subscription's default payment method
+		const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+			default_payment_method: paymentMethodId,
+		});
+
+		return updatedSubscription;
+	}
+
+	async getSubscriptionInvoices(
+		userId: string,
+		subscriptionId: string,
+		limit: number = 10,
+		offset: number = 0
+	): Promise<{ invoices: Stripe.Invoice[]; hasMore: boolean; totalCount?: number }> {
+		await this.getSubscription(userId, subscriptionId); // Verify ownership
+
+		const invoices = await stripe.invoices.list({
+			subscription: subscriptionId,
+			limit: limit,
+			starting_after: offset > 0 ? await this.getInvoiceIdForOffset(subscriptionId, offset) : undefined,
+		});
+
+		return {
+			invoices: invoices.data,
+			hasMore: invoices.has_more,
+			totalCount: invoices.data.length,
+		};
+	}
+
+	/**
+	 * Helper method to get invoice ID for pagination offset
+	 */
+	private async getInvoiceIdForOffset(subscriptionId: string, offset: number): Promise<string | undefined> {
+		if (offset === 0) return undefined;
+
+		const invoices = await stripe.invoices.list({
+			subscription: subscriptionId,
+			limit: offset,
+		});
+
+		return invoices.data[invoices.data.length - 1]?.id;
 	}
 }

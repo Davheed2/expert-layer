@@ -323,4 +323,477 @@ router.post('/fund', walletController.createWalletTopUp);
  */
 router.get('/transactions', walletController.getTransactionHistory);
 
+/**
+ * @openapi
+ * /wallet/subscriptions:
+ *   get:
+ *     summary: Retrieve user subscriptions
+ *     description: Allows a logged-in user to retrieve their subscription history. The endpoint validates the user’s login status and fetches the user’s subscriptions, including details such as status, amount, currency, and billing information, ordered by creation date.
+ *     tags:
+ *       - Subscription
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Subscriptions retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     subscriptions:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             format: uuid
+ *                             description: The ID of the subscription
+ *                           status:
+ *                             type: string
+ *                             description: The status of the subscription (e.g., active, incomplete_expired)
+ *                           amount:
+ *                             type: number
+ *                             description: The amount of the subscription in the smallest currency unit (e.g., cents for USD)
+ *                           currency:
+ *                             type: string
+ *                             description: The currency of the subscription (e.g., usd)
+ *                           interval:
+ *                             type: string
+ *                             description: The billing interval of the subscription (e.g., month, year)
+ *                           next_billing_date:
+ *                             type: string
+ *                             format: date-time
+ *                             description: The date and time of the next billing attempt
+ *                           cancel_at_period_end:
+ *                             type: boolean
+ *                             description: Indicates if the subscription will cancel at the end of the current period
+ *                           canceled_at:
+ *                             type: string
+ *                             format: date-time
+ *                             description: The date and time the subscription was canceled, if applicable
+ *                             nullable: true
+ *                           created:
+ *                             type: string
+ *                             format: date-time
+ *                             description: The date and time the subscription was created
+ *                           product_name:
+ *                             type: string
+ *                             description: The name of the product associated with the subscription
+ *                           next_payment_attempt:
+ *                             type: string
+ *                             format: date-time
+ *                             description: The date and time of the next payment attempt, if applicable
+ *                             nullable: true
+ *                 message:
+ *                   type: string
+ *                   example: "Subscriptions retrieved successfully"
+ *                 isImpersonating:
+ *                   type: boolean
+ *                   example: false
+ *                   description: Indicates if the request was made in an impersonation context
+ *       400:
+ *         description: Bad Request - User not logged in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Please log in again"
+ */
+router.get('/subscriptions', walletController.getUserSubscriptions);
+/**
+ * @openapi
+ * /wallet/subscription:
+ *   get:
+ *     summary: Retrieve a specific subscription
+ *     description: Allows a logged-in user to retrieve details of a specific subscription by providing a subscription ID. The endpoint validates the user’s login status and the presence of the subscription ID, then fetches the subscription details including status, amount, currency, and billing information.
+ *     tags:
+ *       - Subscription
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: subscriptionId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the subscription to retrieve
+ *     responses:
+ *       200:
+ *         description: Subscription retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     subscription:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           format: uuid
+ *                           description: The ID of the subscription
+ *                         status:
+ *                           type: string
+ *                           description: The status of the subscription (e.g., active, incomplete_expired)
+ *                         amount:
+ *                           type: number
+ *                           description: The amount of the subscription in the smallest currency unit (e.g., cents for USD)
+ *                         currency:
+ *                           type: string
+ *                           description: The currency of the subscription (e.g., usd)
+ *                         interval:
+ *                           type: string
+ *                           description: The billing interval of the subscription (e.g., month, year)
+ *                         next_billing_date:
+ *                           type: string
+ *                           format: date-time
+ *                           description: The date and time of the next billing attempt
+ *                         cancel_at_period_end:
+ *                           type: boolean
+ *                           description: Indicates if the subscription will cancel at the end of the current period
+ *                         canceled_at:
+ *                           type: string
+ *                           format: date-time
+ *                           description: The date and time the subscription was canceled, if applicable
+ *                           nullable: true
+ *                         created:
+ *                           type: string
+ *                           format: date-time
+ *                           description: The date and time the subscription was created
+ *                         product_name:
+ *                           type: string
+ *                           description: The name of the product associated with the subscription
+ *                         default_payment_method:
+ *                           type: object
+ *                           properties:
+ *                             brand:
+ *                               type: string
+ *                               description: The brand of the card (e.g., visa)
+ *                             last4:
+ *                               type: string
+ *                               description: The last 4 digits of the card
+ *                             exp_month:
+ *                               type: integer
+ *                               description: The expiration month of the card
+ *                             exp_year:
+ *                               type: integer
+ *                               description: The expiration year of the card
+ *                 message:
+ *                   type: string
+ *                   example: "Subscription retrieved successfully"
+ *                 isImpersonating:
+ *                   type: boolean
+ *                   example: false
+ *                   description: Indicates if the request was made in an impersonation context
+ *       400:
+ *         description: Bad Request - User not logged in or subscription ID missing
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Please log in again"
+ */
+router.get('/subscription', walletController.getSubscription);
+
+/**
+ * @openapi
+ * /wallet/subscription-cancel:
+ *   post:
+ *     summary: Cancel a subscription
+ *     description: Allows a logged-in user to cancel a specific subscription. The endpoint validates the user’s login status and the presence of the subscription ID, then cancels the subscription either immediately or at the end of the current billing period based on the cancelImmediately flag.
+ *     tags:
+ *       - Subscription
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - subscriptionId
+ *             properties:
+ *               subscriptionId:
+ *                 type: string
+ *                 description: The ID of the subscription to cancel
+ *               cancelImmediately:
+ *                 type: boolean
+ *                 description: Indicates whether to cancel the subscription immediately (true) or at the end of the current billing period (false)
+ *                 default: false
+ *     responses:
+ *       200:
+ *         description: Subscription canceled successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     subscriptionId:
+ *                       type: string
+ *                       format: uuid
+ *                       description: The ID of the canceled subscription
+ *                     status:
+ *                       type: string
+ *                       description: The current status of the subscription (e.g., canceled if canceled immediately, active if pending cancellation)
+ *                     cancel_at_period_end:
+ *                       type: boolean
+ *                       description: Indicates if the subscription will cancel at the end of the current billing period
+ *                 message:
+ *                   type: string
+ *                   description: A message describing the cancellation outcome
+ *                   examples:
+ *                     immediate:
+ *                       value: "Subscription canceled immediately"
+ *                     periodEnd:
+ *                       value: "Subscription will be canceled at the end of the current billing period"
+ *                 isImpersonating:
+ *                   type: boolean
+ *                   example: false
+ *                   description: Indicates if the request was made in an impersonation context
+ *       400:
+ *         description: Bad Request - User not logged in or subscription ID missing
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Please log in again"
+ */
+router.post('/subscription-cancel', walletController.cancelSubscription);
+
+router.post('/subscription-reactivate', walletController.reactivateSubscription);
+
+/**
+ * @openapi
+ * /wallet/subscription/update-amount:
+ *   post:
+ *     summary: Update subscription amount
+ *     description: Allows a logged-in user to update the amount of a specific subscription. The endpoint validates the user’s login status, the presence of the subscription ID, and the validity of the new amount, then updates the subscription amount.
+ *     tags:
+ *       - Subscription
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - subscriptionId
+ *               - amount
+ *             properties:
+ *               subscriptionId:
+ *                 type: string
+ *                 description: The ID of the subscription to update
+ *               amount:
+ *                 type: number
+ *                 description: The new amount for the subscription (must be greater than 0)
+ *     responses:
+ *       200:
+ *         description: Subscription amount updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     subscriptionId:
+ *                       type: string
+ *                       format: uuid
+ *                       description: The ID of the updated subscription
+ *                     newAmount:
+ *                       type: number
+ *                       description: The new amount of the subscription in the currency's smallest unit (e.g., dollars for USD)
+ *                     status:
+ *                       type: string
+ *                       description: The current status of the subscription (e.g., active)
+ *                 message:
+ *                   type: string
+ *                   example: "Subscription amount updated successfully"
+ *                 isImpersonating:
+ *                   type: boolean
+ *                   example: false
+ *                   description: Indicates if the request was made in an impersonation context
+ *       400:
+ *         description: Bad Request - User not logged in, subscription ID missing, or invalid amount
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Please log in again"
+ */
+router.post('/subscription/update-amount', walletController.updateSubscriptionAmount);
+
+/**
+ * @openapi
+ * /wallet/subscription-invoices:
+ *   get:
+ *     summary: Retrieve subscription invoices
+ *     description: Allows a logged-in user to retrieve invoices for a specific subscription. The endpoint validates the user’s login status and the presence of the subscription ID, then fetches invoices with pagination, including details like amount, status, and period.
+ *     tags:
+ *       - Subscription
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: subscriptionId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the subscription to retrieve invoices for
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: The maximum number of invoices to return (1 to 100)
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: The number of invoices to skip for pagination
+ *     responses:
+ *       200:
+ *         description: Billing history retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     invoices:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             description: The ID of the invoice
+ *                           amount_paid:
+ *                             type: number
+ *                             description: The amount paid for the invoice in the currency's smallest unit (e.g., dollars for USD)
+ *                           amount_due:
+ *                             type: number
+ *                             description: The amount due for the invoice in the currency's smallest unit (e.g., dollars for USD)
+ *                           currency:
+ *                             type: string
+ *                             description: The currency of the invoice (e.g., usd)
+ *                           status:
+ *                             type: string
+ *                             description: The status of the invoice (e.g., paid, open)
+ *                           created:
+ *                             type: string
+ *                             format: date-time
+ *                             description: The date and time the invoice was created
+ *                           period_start:
+ *                             type: string
+ *                             format: date-time
+ *                             description: The start date and time of the billing period
+ *                           period_end:
+ *                             type: string
+ *                             format: date-time
+ *                             description: The end date and time of the billing period
+ *                           paid:
+ *                             type: boolean
+ *                             description: Indicates if the invoice has been paid
+ *                           hosted_invoice_url:
+ *                             type: string
+ *                             description: URL to view the invoice on Stripe's hosted page
+ *                           invoice_pdf:
+ *                             type: string
+ *                             description: URL to download the invoice as a PDF
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         limit:
+ *                           type: integer
+ *                           description: The maximum number of invoices returned
+ *                         offset:
+ *                           type: integer
+ *                           description: The number of invoices skipped
+ *                         hasMore:
+ *                           type: boolean
+ *                           description: Indicates if more invoices are available beyond the current page
+ *                         count:
+ *                           type: integer
+ *                           description: The number of invoices in the current response
+ *                 message:
+ *                   type: string
+ *                   example: "Billing history retrieved successfully"
+ *                 isImpersonating:
+ *                   type: boolean
+ *                   example: false
+ *                   description: Indicates if the request was made in an impersonation context
+ *       400:
+ *         description: Bad Request - User not logged in or subscription ID missing
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *                   example: "Please log in again"
+ */
+router.get('/subscription-invoices', walletController.getSubscriptionInvoices);
+
 export { router as walletRouter };

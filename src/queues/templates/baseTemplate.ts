@@ -123,7 +123,7 @@ export const baseTemplate = (template: string): string => {
                   text-align: center;
                   letter-spacing: 1px;
                 ">
-                  Expert Layer
+                  ExpertLayer
                 </h1>
               </td>
          

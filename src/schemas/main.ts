@@ -48,6 +48,8 @@ export const mainSchema = z.object({
 	allocation: z.enum([ServiceRequestAllocation.FIXEDAMOUNT, ServiceRequestAllocation.TOTALCREDITS]),
 	maxRequest: z.number().positive(),
 	isDefault: z.string(),
+	subscriptionId: z.string(),
+	cancelImmediately: z.boolean(),
 	serviceImage: z.string(),
 	type: z.enum([ServiceType.ONE_OFF, ServiceType.RECURRING]),
 	recurring: z.boolean(),
