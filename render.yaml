@@ -1,77 +1,71 @@
-# Exported from Render on 2025-07-09T02:57:59Z
+# Exported from Render on 2025-07-09T01:38:15Z
 services:
 - type: web
-  name: expert-layer-backend
+  name: expert-layer
   runtime: node
   repo: https://github.com/Davheed2/expert-layer
-  plan: paid
-  # Enable PR Previews
-  previewsEnabled: true
-  # Optional: Configure preview settings
-  previewsExpireAfterDays: 7
+  plan: starter
   envVars:
+  - key: STRIPE_WEBHOOK_SECRET
+    sync: false
+  - key: STRIPE_SECRET_KEY
+    sync: false
+  - key: REFRESH_TOKEN_EXPIRES_IN
+    sync: false
+  - key: REFRESH_TOKEN
+    sync: false
+  - key: R2_TOKEN_VALUE
+    sync: false
+  - key: R2_SECRET_ACCESS_KEY
+    sync: false
+  - key: R2_REGION
+    sync: false
   - key: R2_PUBLIC_URL
     sync: false
   - key: R2_CDN_URL
     sync: false
   - key: R2_BUCKET_NAME
     sync: false
-  - key: R2_SECRET_ACCESS_KEY
+  - key: R2_ACCOUNT_ID
     sync: false
   - key: R2_ACCESS_KEY_ID
     sync: false
-  - key: R2_TOKEN_VALUE
-    sync: false
-  - key: R2_REGION
-    sync: false
-  - key: R2_ACCOUNT_ID
-    sync: false
-  - key: GMAIL_PASSWORD
-    sync: false
-  - key: GMAIL_USER
+  - key: QUEUE_REDIS_URL
     sync: false
   - key: QUEUE_REDIS_PORT
     sync: false
   - key: QUEUE_REDIS_PASSWORD
     sync: false
-  - key: QUEUE_REDIS_URL
+  - key: NODE_ENV
+    sync: false
+  - key: GMAIL_USER
+    sync: false
+  - key: GMAIL_PASSWORD
     sync: false
   - key: FRONTEND_URL
     sync: false
-  - key: REFRESH_TOKEN_EXPIRES_IN
-    sync: false
-  - key: ACCESS_TOKEN_EXPIRES_IN
-    sync: false
-  - key: REFRESH_TOKEN
-    sync: false
-  - key: ACCESS_TOKEN
-    sync: false
-  - key: AUTH_SECRET
-    sync: false
-  - key: DB_DATABASE
-    sync: false
-  - key: DB_PASSWORD
-    sync: false
   - key: DB_USER
-    sync: false
-  - key: DB_HOST
     sync: false
   - key: DB_PORT
     sync: false
-  - key: NODE_ENV
+  - key: DB_PASSWORD
+    sync: false
+  - key: DB_HOST
+    sync: false
+  - key: DB_DATABASE
+    sync: false
+  - key: AUTH_SECRET
     sync: false
   - key: APP_PORT
     sync: false
   - key: APP_NAME
     sync: false
-  - key: STRIPE_SECRET_KEY
+  - key: ACCESS_TOKEN_EXPIRES_IN
     sync: false
-  - key: STRIPE_WEBHOOK_SECRET
+  - key: ACCESS_TOKEN
     sync: false
-  region: frankfurt
+  region: ohio
   buildCommand: npm install && npm run build
   startCommand: npm run start-prod
-  # Auto-deploy is enabled by default when using render.yaml
-  # You can explicitly set the branch to deploy from:
-  branch: main  # or your default branch
+  autoDeployTrigger: commit
 version: "1"
