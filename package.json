@@ -13,7 +13,8 @@
 		"watch": "tsc --watch & nodemon build/server.js",
 		"lint": "npx eslint src/",
 		"format": "npx prettier --write .",
-		"check-types": "tsc --noEmit --pretty --skipLibCheck --incremental --project tsconfig.json --strict"
+		"check-types": "tsc --noEmit --pretty --skipLibCheck --incremental --project tsconfig.json --strict",
+		"test": "jest"
 	},
 	"author": "",
 	"license": "ISC",
